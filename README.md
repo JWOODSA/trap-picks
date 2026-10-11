@@ -21,6 +21,7 @@
    - `SUPABASE_SERVICE_ROLE_KEY` (secret)
    - `STRIPE_SECRET_KEY` (secret), `STRIPE_WEBHOOK_SECRET` (secret)
    - `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` (the price_ IDs)
+   - `ANTHROPIC_API_KEY` (secret, from console.anthropic.com): turns on bet slip screenshot upload (`/api/slip`). Optional `SLIP_MODEL` overrides the model. Without it the app says upload is coming soon.
 5. Put the Supabase URL and anon key in `web/config.json`, set `paywall` to true when checkout works, rebuild and push.
 
 Stripe rule to keep: selling sports information is allowed, but sports forecasting, fantasy sports or contests with a cash or prize payout are prohibited. Pick'em and fantasy leagues must never pay prizes.

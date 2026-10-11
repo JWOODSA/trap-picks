@@ -655,6 +655,21 @@ details.card summary { font-size: 16px; }
 .bt-act button { padding: 5px 10px; border-radius: 999px; background: var(--card2); color: var(--ink); font-size: 12px; font-weight: 700; }
 .bt-act button[aria-pressed="true"] { background: var(--yel); color: #08111f; }
 .bt-act .x { margin-left: auto; }
+.bt-add { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bt-add .save-all { margin-top: 0; font-size: 15px; }
+.save-all.alt { background: var(--card2); color: var(--ink); border: 1px solid var(--line); }
+.bt-info { font-size: 13px; color: var(--ink2); background: var(--bg2); border-radius: 10px; padding: 8px 10px; display: grid; gap: 3px; }
+.bt-info p { margin: 0 0 4px; color: var(--yel); }
+.hb-tbl { display: grid; grid-template-columns: 1fr 44px 78px 48px; gap: 4px 10px; font-size: 13px; align-items: center; }
+.hb-tbl .hd { color: var(--ink3); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.hb-tbl .n { font-family: var(--mono); text-align: right; }
+.hb-sec { margin: 12px 0 6px; font-size: 12px; font-weight: 700; color: var(--ink2); text-transform: uppercase; letter-spacing: .04em; }
+.hb-flag { display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.hb-flag:first-of-type { border-top: 0; }
+.hb-flag i { font-style: normal; }
+.hb-bar { height: 10px; border-radius: 99px; background: var(--bg2); overflow: hidden; margin: 6px 0; }
+.hb-bar span { display: block; height: 100%; background: var(--grn); }
+.hb-bar span.over { background: var(--red); }
 </style>
 
 <div class="wrap">
@@ -1129,7 +1144,7 @@ details.card summary { font-size: 16px; }
     db.doc(base + '/picks').onSnapshot((d) => { ACCT.picks = (d.exists && d.data().items) || {}; sync(); }, () => {});
     db.doc(base + '/profile').onSnapshot((d) => { ACCT.teams = (d.exists && d.data().teams) || []; sync(); }, () => {});
     db.doc('members/' + me.id).onSnapshot((d) => { ACCT.groups = (d.exists && d.data().groups) || []; ACCT.pickem = (d.exists && d.data().pickem) || {}; sync(); }, () => {});
-    db.doc(base + '/bets').onSnapshot((d) => { BETS.items = (d.exists && d.data().items) || {}; BETS.bankroll = d.exists ? d.data().bankroll ?? null : null; sync(); if (location.hash === '#bets') route(); }, () => {});
+    db.doc(base + '/bets').onSnapshot((d) => { BETS.items = (d.exists && d.data().items) || {}; BETS.bankroll = d.exists ? d.data().bankroll ?? null : null; BETS.budget = d.exists ? d.data().budget ?? null : null; sync(); if (location.hash === '#bets') route(); }, () => {});
     db.doc(base + '/fantasy').onSnapshot((d) => { ACCT.leagues = (d.exists && d.data().leagues) || []; sync(); }, () => {});
     sync();
     if (SB.client) { await loadPro(); if (SB.checkoutBack) afterCheckout(); else if ((location.hash.slice(1) || 'board') === 'me') route(); }
@@ -2610,13 +2625,13 @@ details.card summary { font-size: 16px; }
   // ---------- bet tracker: real money bets, bankroll and profit ----------
   // Private to each person: data/users/<id>/bets = {items: {id: bet}, bankroll}. A bet logged from a call
   // or slip carries its legs and grades itself from the final score; a hand-entered bet is marked by its owner.
-  const BOOKS = ['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'ESPN BET', 'Fanatics', 'bet365', 'BetRivers', 'Hard Rock', 'Other'];
-  const BETS = { items: {}, bankroll: null };
+  const BOOKS = ['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'ESPN BET', 'Fanatics', 'bet365', 'BetRivers', 'Hard Rock', 'PrizePicks', 'Underdog', 'Other'];
+  const BETS = { items: {}, bankroll: null, budget: null };
   const usd = (v, sign) => (v < 0 ? '-' : sign && v > 0 ? '+' : '') + '$' + Math.abs(v).toFixed(2).replace(/\.00$/, '');
   function betResult(b) {
     if (b.result) return b.result;
     if (!b.legs || !b.legs.length) return null;
-    const rs = b.legs.map(grade);
+    const rs = b.legs.map(legGrade);
     if (rs.includes('L')) return 'L';
     if (rs.includes(null)) return null;
     return rs.every((r) => r === 'P') ? 'P' : 'W';
@@ -2624,21 +2639,29 @@ details.card summary { font-size: 16px; }
   // Pushed parlay legs drop out and the payout uses the remaining legs.
   function betDec(b) {
     if (b.legs && b.legs.length > 1 && b.legs.every((l) => l.odds != null)) {
-      const d = b.legs.filter((l) => grade(l) !== 'P').reduce((a, l) => a * dec(l.odds), 1);
+      const d = b.legs.filter((l) => legGrade(l) !== 'P').reduce((a, l) => a * dec(l.odds), 1);
       if (betResult(b) === 'W') return d;
     }
     return dec(b.odds);
   }
   function betProfit(b) { const r = betResult(b); return r === 'W' ? b.stake * (betDec(b) - 1) : r === 'L' ? -b.stake : r === 'P' ? 0 : null; }
-  function saveBets() { return write('bets', { items: BETS.items, bankroll: BETS.bankroll }); }
+  function saveBets() { return write('bets', { items: BETS.items, bankroll: BETS.bankroll, budget: BETS.budget }); }
+  // Moneyline legs from slips grade on the winner; spreads and totals use the same grading as saved picks.
+  function legGrade(l) {
+    const ml = /^(\S+) ML$/.exec(l.pick || '');
+    if (!ml) return grade(l);
+    const d = coverBy({ ...l, pick: ml[1] + ' +0' });
+    return d == null ? null : d > 0 ? 'W' : d < 0 ? 'L' : 'P';
+  }
   function betSheet(pre) {
     if (ACCT.state !== 'ready') return toast(ACCT.state === 'readonly' ? 'Saving is off for you on this link.' : signIn('track your bets'));
     const close = () => m.remove();
     const last = Object.values(BETS.items).sort((a, b) => b.at.localeCompare(a.at))[0];
-    const desc = h('input', { class: 'search', value: pre.desc || '', placeholder: 'e.g. Chiefs -3, or a 3-leg parlay', maxlength: 80, readonly: pre.legs ? true : null, 'aria-label': 'Bet' });
-    const stake = h('input', { class: 'search', type: 'number', inputmode: 'decimal', min: '0', step: '0.01', placeholder: '25', value: last ? last.stake : '', 'aria-label': 'Stake in dollars' });
+    const desc = h('input', { class: 'search', value: pre.desc || '', placeholder: 'e.g. Chiefs -3, or a 3-leg parlay', maxlength: 80, readonly: pre.legs && pre.src !== 'upload' ? true : null, 'aria-label': 'Bet' });
+    const pick = (v, list) => list.find((x) => x.toLowerCase() === String(v || '').toLowerCase().replace(/sportsbook$/, '').trim());
+    const stake = h('input', { class: 'search', type: 'number', inputmode: 'decimal', min: '0', step: '0.01', placeholder: '25', value: pre.stake ?? (last ? last.stake : ''), 'aria-label': 'Stake in dollars' });
     const od = h('input', { class: 'search', type: 'text', inputmode: 'numeric', value: pre.odds != null ? odds(pre.odds) : '-110', 'aria-label': 'Odds' });
-    const book = h('select', { class: 'search', 'aria-label': 'Sportsbook' }, BOOKS.map((b) => h('option', { value: b, selected: last && last.book === b ? true : null }, b)));
+    const book = h('select', { class: 'search', 'aria-label': 'Sportsbook' }, BOOKS.map((b) => h('option', { value: b, selected: (pre.book ? (pick(pre.book, BOOKS) || 'Other') === b : last && last.book === b) ? true : null }, b)));
     const win = h('p', { class: 'muted', style: 'margin:0;font-size:13px' });
     const calc = () => { const s = parseFloat(stake.value), o = parseFloat(od.value.replace('+', ''));
       win.textContent = s > 0 && Math.abs(o) >= 100 ? `To win ${usd(s * (dec(o) - 1))}, returns ${usd(s * dec(o))}` : 'Odds are American, like -110 or +150.'; };
@@ -2649,26 +2672,27 @@ details.card summary { font-size: 16px; }
       if (!(s > 0)) return toast('Enter how much you bet.');
       if (!(Math.abs(o) >= 100)) return toast('Enter American odds, like -110 or +150.');
       const id = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-      BETS.items = { ...BETS.items, [id]: { id, at: new Date().toISOString(), date: pre.date || new Date().toISOString().slice(0, 10), desc: desc.value.trim().slice(0, 80),
-        stake: Math.round(s * 100) / 100, odds: o, book: book.value, kind: pre.kind || 'manual', legs: pre.legs || null, result: null } };
-      saveBets().then(() => toast(`Logged ${usd(s)} on ${desc.value.trim()}.`));
+      BETS.items = { ...BETS.items, [id]: { id, at: pre.at || new Date().toISOString(), date: pre.date || new Date().toISOString().slice(0, 10), desc: desc.value.trim().slice(0, 80),
+        stake: Math.round(s * 100) / 100, odds: o, book: book.value, kind: pre.kind || 'manual', src: pre.src || null, legs: pre.legs || null, info: pre.info || null, result: pre.legs ? null : pre.result || null } };
+      saveBets().then(() => toast(`Logged ${usd(s)} on ${desc.value.trim()}.` + budgetNote()));
       close(); if (location.hash === '#bets') route();
     };
     const m = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Log a bet', onclick: (e) => { if (e.target === m) close(); } },
       h('div', { class: 'in sheet' }, h('h3', null, 'Log a bet'),
         h('label', null, 'Bet', desc), h('div', { class: 'two' }, h('label', null, 'Stake ($)', stake), h('label', null, 'Odds', od)),
         h('label', null, 'Sportsbook', book), win,
+        pre.info ? h('div', { class: 'bt-info' }, pre.note ? h('p', null, pre.note) : null, pre.info.map((t) => h('div', null, t))) : null,
         h('div', { class: 'row' }, h('button', { class: 'alt', onclick: close }, 'Cancel'), h('button', { onclick: save }, 'Save bet'))));
     document.body.append(m); stake.focus();
   }
   const legOf = (c) => ({ game_id: c.game_id, away: c.away, home: c.home, market: c.market, pick: c.pick, odds: c.odds ?? -110, date: c.date });
   function logBtn(c) {
     return h('button', { class: 'save log', hidden: true, 'data-acct': '1', onclick: (e) => { e.stopPropagation();
-      betSheet({ desc: `${c.pick} (${c.away} @ ${c.home})`, odds: c.odds ?? -110, legs: [legOf(c)], date: c.date, kind: 'single' }); } }, '$ Log bet');
+      betSheet({ desc: `${c.pick} (${c.away} @ ${c.home})`, odds: c.odds ?? -110, legs: [legOf(c)], date: c.date, kind: 'single', src: 'call' }); } }, '$ Log bet');
   }
   function logSlipBtn(legs, d) {
     return h('button', { class: 'shr', hidden: true, 'data-acct': '1', onclick: () => betSheet({ desc: `${legs.length}-leg Slip of the Day`, odds: Math.round((d >= 2 ? (d - 1) * 100 : -100 / (d - 1))),
-      legs: legs.map(legOf), date: legs.map((c) => c.date).sort().pop(), kind: 'parlay' }) }, 'Log as a bet');
+      legs: legs.map(legOf), date: legs.map((c) => c.date).sort().pop(), kind: 'parlay', src: 'slip' }) }, 'Log as a bet');
   }
   function betStats() {
     const all = Object.values(BETS.items);
@@ -2710,7 +2734,9 @@ details.card summary { font-size: 16px; }
         h('div', null, h('b', null, S.roi == null ? '–' : pct(S.roi)), 'ROI'),
         h('div', null, h('b', null, usd(S.atRisk)), `in ${S.open.length} open`),
         bank != null ? h('div', null, h('b', null, usd(bank + S.profit)), 'bankroll') : null))];
-    out.push(h('button', { class: 'save-all', onclick: () => betSheet({}) }, '+ Add a bet'));
+    out.push(h('div', { class: 'bt-add' }, h('button', { class: 'save-all', onclick: () => betSheet({}) }, '+ Add a bet'),
+      h('button', { class: 'save-all alt', onclick: uploadSlip }, '📷 Upload bet slip')));
+    out.push(habitsCard(S));
     const ch = profitChart(S.done);
     if (ch) out.push(h('div', { class: 'card' }, h('h3', null, 'Profit over time'), ch));
     const bi = h('input', { class: 'search', type: 'number', inputmode: 'decimal', min: '0', placeholder: 'Starting bankroll, e.g. 500', value: bank ?? '', style: 'margin:0', 'aria-label': 'Starting bankroll' });
@@ -2734,6 +2760,129 @@ details.card summary { font-size: 16px; }
     }) : h('p', { class: 'muted' }, 'No bets yet. Tap "+ Add a bet", or "$ Log bet" on any call.')));
     out.push(h('p', { class: 'snap', style: 'text-align:center' }, 'Only you can see your bets. Bet responsibly · 21+ · 1-800-522-4700'));
     return out;
+  }
+  // ---------- bet slip upload (website): a screenshot is read on the server, then checked by the user ----------
+  const etDate = (iso) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  function slipGames() {
+    return Object.entries(C.kickoff || {}).map(([id, k]) => { const [, , away, home] = id.split('_'); return { id, away, home, date: etDate(k) }; });
+  }
+  async function shrink(file, max = 2000) {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const cv = document.createElement('canvas'); cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k);
+    cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+    return cv.toDataURL('image/jpeg', 0.85);
+  }
+  function slipToBet(d) {
+    const ids = new Set(Object.keys(C.kickoff || {}));
+    const legs = d.legs.map((l) => {
+      let pick = String(l.pick || '').trim().slice(0, 60);
+      const tot = /^(over|under)\s*([\d.]+)/i.exec(pick);
+      if (l.market === 'total' && tot) pick = (tot[1].toLowerCase() === 'over' ? 'Over ' : 'Under ') + tot[2];
+      const g = l.game_id && ids.has(l.game_id) ? l.game_id.split('_') : null;
+      const team = (t) => g && (t === g[2] || t === g[3]);
+      const ok = !!g && ((l.market === 'spread' && /^(\S+) [+-][\d.]+$/.test(pick) && team(pick.split(' ')[0]))
+        || (l.market === 'total' && /^(Over|Under) [\d.]+$/.test(pick))
+        || (l.market === 'moneyline' && /^(\S+) ML$/.test(pick) && team(pick.split(' ')[0])));
+      const lo = typeof l.odds === 'number' && Math.abs(l.odds) >= 100 ? l.odds : null;
+      return { ok, text: pick + (g ? ` (${g[2]} @ ${g[3]})` : '') + (lo != null ? ` ${odds(lo)}` : ''),
+        leg: ok ? { game_id: l.game_id, away: g[2], home: g[3], market: l.market, pick, odds: lo, date: etDate(C.kickoff[l.game_id]) } : null };
+    });
+    const all = legs.length && legs.every((x) => x.ok), n = legs.length;
+    const placed = d.placed_at && Date.parse(d.placed_at) <= Date.now() ? new Date(d.placed_at).toISOString() : null;
+    const o = typeof d.odds === 'number' && Math.abs(d.odds) >= 100 ? d.odds : n === 1 && legs[0].leg ? legs[0].leg.odds : null;
+    return { desc: (n === 1 ? legs[0].text.replace(/ [+-]\d+$/, '') : `${n}-leg parlay`).slice(0, 80), stake: typeof d.stake === 'number' && d.stake > 0 ? d.stake : undefined,
+      odds: o, book: d.book, kind: n > 1 ? 'parlay' : 'single', src: 'upload', at: placed,
+      legs: all ? legs.map((x) => x.leg) : null, info: legs.map((x) => x.text), result: { won: 'W', lost: 'L', push: 'P' }[d.status] || null,
+      date: all ? legs.map((x) => x.leg.date).sort().pop() : (placed || new Date().toISOString()).slice(0, 10),
+      note: all ? 'Read from your screenshot. Check the numbers, then save. It grades itself after the games.'
+        : 'Read from your screenshot. Some legs are not NFL games on this week\'s board, so mark this bet Won or Lost yourself.' };
+  }
+  function uploadSlip() {
+    if (ACCT.state !== 'ready') return toast(ACCT.state === 'readonly' ? 'Saving is off for you on this link.' : signIn('upload bet slips'));
+    if (!HOSTED) return toast('Bet slip upload works on the Trap Picks website. Here, tap "+ Add a bet".');
+    const inp = h('input', { type: 'file', accept: 'image/*' });
+    inp.addEventListener('change', async () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      toast('Reading your slip…');
+      try {
+        const r = await fetch(`${window.TRAP_API}/slip`, { method: 'POST', headers: { ...authHdr(), 'content-type': 'application/json' }, body: JSON.stringify({ image: await shrink(f), games: slipGames() }) });
+        const d = await r.json().catch(() => null);
+        if (r.status === 503) return toast('Slip upload is coming soon. Tap "+ Add a bet" for now.');
+        if (!r.ok || !d) return toast('Could not read that slip. Try a clearer screenshot, or add it by hand.');
+        if (!d.is_bet_slip || !Array.isArray(d.legs) || !d.legs.length) return toast('That does not look like a bet slip. Try a screenshot of the bet in your sportsbook app.');
+        betSheet(slipToBet(d));
+      } catch (e) { toast('Could not read that slip. Try again, or add it by hand.'); }
+    });
+    inp.click();
+  }
+
+  // ---------- betting habits: patterns in each person's own bets, for them only ----------
+  const DAY = 864e5;
+  function weekSpend() { return Object.values(BETS.items).filter((b) => Date.now() - Date.parse(b.at) < 7 * DAY).reduce((a, b) => a + b.stake, 0); }
+  function budgetNote() {
+    if (!BETS.budget) return '';
+    const s = weekSpend();
+    return s > BETS.budget ? ` That's ${usd(s)} in 7 days, over your ${usd(BETS.budget)} limit.` : s > BETS.budget * 0.8 ? ` ${usd(BETS.budget - s)} left of your weekly limit.` : '';
+  }
+  function grp(list) {
+    const d = list.filter((b) => betResult(b));
+    const p = d.reduce((a, b) => a + betProfit(b), 0), r = d.reduce((a, b) => a + b.stake, 0);
+    return { n: d.length, w: d.filter((b) => betResult(b) === 'W').length, l: d.filter((b) => betResult(b) === 'L').length, p, roi: r ? p / r : null };
+  }
+  function habitsCard(S) {
+    const all = [...S.all].sort((a, b) => a.at.localeCompare(b.at));
+    if (!all.length) return null;
+    const isParlay = (b) => b.kind === 'parlay' || (b.legs && b.legs.length > 1);
+    const singles = all.filter((b) => !isParlay(b));
+    const mkt = (b) => { const m = b.legs && b.legs[0] && String(b.legs[0].market).toLowerCase(); return m === 'spread' ? 'Spreads' : m === 'total' ? 'Totals' : m === 'moneyline' ? 'Moneylines' : 'Other bets'; };
+    const sections = [
+      ['Bet type', [['Singles', singles], ['Parlays', all.filter(isParlay)]]],
+      ['Price', [['Favorites', singles.filter((b) => b.odds < 0)], ['Underdogs', singles.filter((b) => b.odds > 0)]]],
+      ['Market', ['Spreads', 'Totals', 'Moneylines', 'Other bets'].map((k) => [k, singles.filter((b) => mkt(b) === k)])],
+      ['Whose pick', [['Trap Picks calls', all.filter((b) => b.src === 'call' || b.src === 'slip')], ['Your own picks', all.filter((b) => b.src !== 'call' && b.src !== 'slip')]]],
+    ].map(([t, rows]) => [t, rows.map(([k, l]) => [k, grp(l)]).filter(([, g]) => g.n)]).filter(([, rows]) => rows.length);
+
+    const flags = [];
+    const now = Date.now(), wk = all.filter((b) => now - Date.parse(b.at) < 7 * DAY);
+    const spanWk = Math.max(1, (now - Date.parse(all[0].at)) / (7 * DAY));
+    flags.push(['🗓️', `Last 7 days: ${wk.length} bet${wk.length === 1 ? '' : 's'}, ${usd(wk.reduce((a, b) => a + b.stake, 0))} staked. Your weekly average is ${(all.length / spanWk).toFixed(1)} bets, ${usd(all.reduce((a, b) => a + b.stake, 0) / spanWk)}.`]);
+    let chase = 0;
+    for (let i = 1; i < all.length; i++) {
+      const a = all[i - 1], b = all[i];
+      if (betResult(a) === 'L' && b.stake >= a.stake * 1.5 && Date.parse(b.at) - Date.parse(a.at) < DAY) chase++;
+    }
+    if (chase) flags.push(['⚠️', `${chase} time${chase === 1 ? '' : 's'} you raised your next bet by half or more within a day of a loss. Chasing losses is the fastest way to drain a bankroll.`]);
+    if (all.length >= 8) {
+      const avg = (l) => l.reduce((a, b) => a + b.stake, 0) / l.length, recent = avg(all.slice(-5)), before = avg(all.slice(0, -5));
+      if (recent >= before * 1.5) flags.push(['📈', `Your last 5 bets average ${usd(recent)}, up from ${usd(before)} before. Make sure that is a choice, not drift.`]);
+    }
+    const par = all.filter(isParlay);
+    if (all.length >= 4 && par.length / all.length >= 0.5) { const g = grp(par); flags.push(['🎲', `${pct(par.length / all.length, 0)} of your bets are parlays${g.n ? ` (${g.w}-${g.l}, ${usd(g.p, true)})` : ''}. Parlays carry the biggest house edge.`]); }
+    if (BETS.bankroll) { const big = all.filter((b) => b.stake > BETS.bankroll * 0.05).length; if (big) flags.push(['💰', `${big} bet${big === 1 ? ' was' : 's were'} over 5% of your starting bankroll (${usd(BETS.bankroll * 0.05)}).`]); }
+    const late = all.filter((b) => { const hr = new Date(b.at).getHours(); return hr < 5; }).length;
+    if (late >= 2) flags.push(['🌙', `${late} bets were placed or logged between midnight and 5 am.`]);
+    const ranked = sections.flatMap(([, rows]) => rows).filter(([, g]) => g.n >= 3 && g.roi != null).sort((a, b) => b[1].roi - a[1].roi);
+    if (ranked.length >= 2) {
+      const [bk, bg] = ranked[0], [wk2, wg] = ranked[ranked.length - 1];
+      if (bg.roi > 0) flags.push(['✅', `Your best: ${bk}, ${bg.w}-${bg.l}, ${usd(bg.p, true)} (${pct(bg.roi)} ROI).`]);
+      if (wg.roi < 0) flags.push(['❌', `Your worst: ${wk2}, ${wg.w}-${wg.l}, ${usd(wg.p, true)} (${pct(wg.roi)} ROI).`]);
+    }
+    if (flags.length === 1) flags.push(['✅', 'No warning signs in your betting so far.']);
+
+    const spent = weekSpend(), lim = BETS.budget;
+    const li = h('input', { class: 'search', type: 'number', inputmode: 'decimal', min: '0', placeholder: 'Weekly limit, e.g. 100', value: lim ?? '', style: 'margin:0', 'aria-label': 'Weekly limit' });
+    return h('div', { class: 'card' }, h('h3', null, 'Your habits'),
+      flags.map(([i, t]) => h('div', { class: 'hb-flag' }, h('i', null, i), h('span', null, t))),
+      h('div', { class: 'hb-sec' }, 'Weekly limit'),
+      lim ? [h('div', { class: 'hb-bar' }, h('span', { class: spent > lim ? 'over' : '', style: `width:${Math.min(100, spent / lim * 100).toFixed(0)}%` })),
+        h('p', { class: 'muted', style: 'margin:0 0 8px;font-size:13px' }, spent > lim ? `${usd(spent)} in the last 7 days, ${usd(spent - lim)} over your limit. Time for a break?` : `${usd(spent)} of ${usd(lim)} in the last 7 days.`)]
+        : h('p', { class: 'muted', style: 'margin:0 0 8px;font-size:13px' }, 'Set a weekly limit and the tracker warns you when you get close.'),
+      h('div', { class: 'gform', style: 'margin:0' }, li, h('button', { class: 'gbtn', onclick: () => { const v = parseFloat(li.value); BETS.budget = v > 0 ? v : null; saveBets(); route(); } }, 'Save')),
+      sections.flatMap(([t, rows]) => [h('div', { class: 'hb-sec' }, t), h('div', { class: 'hb-tbl' },
+        h('span', { class: 'hd' }, ''), h('span', { class: 'hd n' }, 'Record'), h('span', { class: 'hd n' }, 'Profit'), h('span', { class: 'hd n' }, 'ROI'),
+        rows.flatMap(([k, g]) => [h('span', null, k), h('span', { class: 'n' }, `${g.w}-${g.l}`), h('span', { class: 'n ' + (g.p >= 0 ? 'up' : 'dn') }, usd(g.p, true)), h('span', { class: 'n' }, pct(g.roi, 0))]))]),
+      h('p', { class: 'muted', style: 'margin:10px 0 0;font-size:12px' }, 'Based on your settled bets. Need help? Call 1-800-522-4700.'));
   }
   function route() {
     if (!C) return;
