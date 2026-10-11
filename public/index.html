@@ -365,6 +365,149 @@ details.card[open] summary { margin-bottom: 10px; }
 @keyframes f { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .fade { animation: none; } }
 :focus-visible { outline: 2px solid var(--yel); outline-offset: 2px; }
+
+/* ===== Compact app layer: native-app density on phones ===== */
+html, body { font-size: 15px; }
+.wrap { padding: 0 12px calc(72px + env(safe-area-inset-bottom)); }
+.top { margin: 0 -12px; padding: 8px 12px; min-height: 48px; }
+.mark { font-size: 21px; }
+.back { width: 32px; height: 32px; }
+.top .sub { font-size: 11px; }
+.sh { margin: 18px 2px 8px; }
+.sh h2 { font-size: 19px; letter-spacing: .03em; }
+.sh span { font-size: 12px; }
+.card { padding: 12px; margin-bottom: 10px; border-radius: 12px; }
+.card h3 { font-size: 16px; margin-bottom: 8px; }
+details.card summary { font-size: 16px; }
+.muted { font-size: 13px; }
+.explain { font-size: 13.5px; }
+.kv { gap: 6px; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+.kv div { padding: 8px; }
+.kv b { font-size: 16px; }
+.kv span { font-size: 11px; }
+.search { padding: 10px 12px; font-size: 16px; margin: 10px 0 8px; border-radius: 10px; }
+.tabs2 { gap: 5px; margin-bottom: 8px; }
+.tabs2 button { padding: 6px 11px; font-size: 13px; }
+.fseg { margin: 10px 0 8px; padding: 3px; border-radius: 10px; }
+.fseg button { padding: 7px 0; font-size: 14px; border-radius: 8px; }
+.prow, .frow { padding: 7px 9px; gap: 8px; border-radius: 9px; }
+.plist { gap: 4px; }
+.prow .nm, .frow .nm { font-size: 14px; }
+.prow .nm small, .frow .nm small { font-size: 11.5px; }
+.frow .vl { font-size: 14px; }
+.facts li { padding: 8px 10px 8px 12px; font-size: 13.5px; }
+.tbl { font-size: 12.5px; }
+.tbl td { padding: 6px 5px; }
+
+/* Board hero, compact */
+.hero { margin: 10px 0 4px; padding: 14px 14px 16px; border-radius: 16px; }
+.hero::after { height: 5px; }
+.hero h1 { font-size: 34px; line-height: 1; white-space: nowrap; }
+.hero h1 span { display: inline; }
+.hero .lede { margin: 6px 0 10px; font-size: 14px; line-height: 1.4; color: var(--ink2); max-width: none; }
+.hero .lede em { font-style: normal; font-weight: 700; color: var(--yel); }
+.hero .keys { display: flex; gap: 6px; margin: 0 0 10px; }
+.hero .keys div { display: flex; align-items: center; gap: 6px; padding: 5px 8px 5px 5px; border-radius: 8px; font-size: 12px; white-space: nowrap; }
+.hero .keys .tag { font-size: 11px; padding: 2px 6px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.stats div { padding: 8px; border-radius: 10px; background: rgba(255,255,255,.06); }
+.stats b { display: block; font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--ink); }
+.stats div.hot b { color: var(--yel); }
+.stats span { font-size: 11px; color: var(--ink3); line-height: 1.25; display: block; }
+.hero .meter-key { margin: 8px 0 0; font-size: 12px; }
+
+/* Live strip: swipe through score tiles */
+.lstrip { display: flex; gap: 8px; overflow-x: auto; margin: 0 -12px; padding: 2px 12px 4px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.lstrip::-webkit-scrollbar { display: none; }
+.ltile { flex: 0 0 168px; scroll-snap-align: start; padding: 9px 10px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); text-align: left; }
+.ltile.on { border-color: rgba(255,77,94,.55); }
+.ltile .st { font-size: 11px; font-weight: 700; color: var(--ink3); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ltile.on .st { color: var(--red); }
+.ltile .r { display: grid; grid-template-columns: 8px 1fr auto 34px; gap: 6px; align-items: center; font-size: 14px; line-height: 1.5; }
+.ltile .r i { width: 8px; height: 8px; border-radius: 2px; }
+.ltile .r b { font-family: var(--disp); font-weight: 800; font-size: 16px; }
+.ltile .r .s { font-family: var(--mono); font-weight: 700; }
+.ltile .r .pc { font-family: var(--mono); font-size: 11px; color: var(--yel); text-align: right; }
+.ltile .lbar { height: 4px; margin: 5px 0 4px; }
+.ltile .c { font-size: 11.5px; color: var(--ink2); display: flex; justify-content: space-between; gap: 6px; white-space: nowrap; }
+.ltile .c b { font-family: var(--mono); }
+
+/* Live panel (game page), compact */
+.lt { font-size: 15px; grid-template-columns: 10px 1fr auto 44px 50px; gap: 6px; padding: 1px 0; }
+.lt b { font-size: 17px; }
+.lt .sc { font-size: 18px; }
+.lt .pc { font-size: 13px; }
+.lcall { margin-top: 6px; padding: 6px 9px; font-size: 13px; }
+.lplay { font-size: 12.5px; }
+
+/* Slips, compact */
+.slip { margin: 0 0 10px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,.3); }
+.slip .bar { height: 5px; }
+.slip .hd { padding: 7px 12px 0; font-size: 10.5px; }
+.slip .mu { padding: 3px 12px 8px; gap: 8px; }
+.slip .tm { font-size: 25px; }
+.chip { width: 10px; height: 22px; }
+.stamp { font-size: 15px; padding: 1px 7px; border-width: 2px; }
+.leg { padding: 8px 12px; gap: 2px 8px; }
+.leg .mk { font-size: 10px; }
+.leg .pub { font-size: 12px; }
+.leg .pick { font-size: 21px; }
+.leg .pick small { font-size: 12px; }
+.leg .score b { font-size: 18px; }
+.leg .score { font-size: 10.5px; }
+.meter { gap: 2px; margin-top: 3px; }
+.meter i { height: 5px; }
+.save { margin-top: 4px; padding: 5px 10px; font-size: 12px; border-width: 1.5px; }
+.sides { display: flex; gap: 6px; }
+.why { padding: 0 12px 8px; }
+.why li { font-size: 12.5px; }
+.slip .ft { padding: 7px 12px; font-size: 12px; }
+.lbadge { margin: 0 12px; font-size: 11.5px; }
+.sod { margin: 12px 0 4px; padding: 12px 12px 10px; }
+.sod-hd b { font-size: 24px; }
+.sod-n { padding: 8px 0 4px; }
+.sod-n button { width: 38px; height: 38px; font-size: 20px; }
+.sod-n b { font-size: 34px; }
+.sod-legs button { padding: 7px 0; }
+.sod-legs .sl b { font-size: 17px; }
+.sod-tot b { font-size: 16px; }
+.sod-note { font-size: 12px; }
+.save-all { padding: 10px; font-size: 16px; }
+
+/* Headers on detail pages */
+.gh { margin: 10px 0 10px; border-radius: 14px; }
+.gh .side { padding: 10px 12px; }
+.gh .side .ab { font-size: 34px; }
+.gh .side .nm { font-size: 12px; }
+.gh .side .rec { font-size: 11px; margin-top: 3px; }
+.gh .lines div { padding: 7px; }
+.gh .lines b { font-size: 14px; }
+.gh .lines span { font-size: 10px; }
+.th, .ph { margin: 10px 0 10px; padding: 14px; border-radius: 14px; }
+.ph { min-height: 110px; }
+.ph .pn { font-size: 30px; }
+.ph .num { font-size: 120px; top: -10px; }
+.th .ab { font-size: 46px; }
+.th .big { font-size: 110px; bottom: -20px; }
+.fh { margin: 10px 0 8px; padding: 14px; border-radius: 14px; }
+.fh h1 { font-size: 30px; }
+.fh p { font-size: 13px; margin-top: 6px; }
+.fh .ball { width: 90px; height: 90px; right: -18px; top: -18px; }
+.grph { margin: 10px 0 8px; padding: 14px; border-radius: 14px; }
+.grph > b { font-size: 30px; margin: 2px 0 8px; }
+.gcode .mono { font-size: 18px; padding: 4px 10px; }
+.gcode button { padding: 8px 12px; font-size: 13px; }
+.bigrec { margin-top: 10px; gap: 8px; }
+.bigrec .b { padding: 10px; border-radius: 12px; }
+.bigrec b { font-size: 30px; }
+.tgrid { gap: 8px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+.tt { padding: 9px; }
+.tt .ab { font-size: 24px; }
+
+/* Tab bar like iOS */
+.tabbar { padding: 4px 6px calc(4px + env(safe-area-inset-bottom)); }
+.tabbar a { gap: 1px; padding: 3px 0; font-size: 9.5px; letter-spacing: .02em; text-transform: none; font-weight: 600; }
+.tabbar a svg { width: 22px; height: 22px; }
 </style>
 
 <div class="wrap">
@@ -463,7 +606,7 @@ details.card[open] summary { margin-bottom: 10px; }
       c.call !== 'PASS' ? h('div', { class: 'sides' }, saveBtn(c, 'with'), saveBtn(c, 'fade')) : null);
   }
   function slip(g) {
-    const reasons = [...new Set(g.legs.filter((c) => c.call !== 'PASS' && c.reasons).flatMap((c) => c.reasons.split('; ')))].slice(0, 3);
+    const reasons = [...new Set(g.legs.filter((c) => c.call !== 'PASS' && c.reasons).flatMap((c) => c.reasons.split('; ')))].slice(0, 2);
     const kick = g.info ? `${g.info.spread} · O/U ${g.info.total}` : '';
     const legs = g.legs.filter((c) => c.call !== 'PASS');
     const open = () => go('g_' + g.id);
@@ -487,20 +630,17 @@ details.card[open] summary { margin-bottom: 10px; }
     const traps = gs.filter((g) => g.top.call === 'TRAP').length;
     return [
       h('section', { class: 'hero fade' },
-        h('h1', null, 'Trap', h('span', null, 'or die.')),
-        h('ol', { class: 'steps' },
-          h('li', null, h('b', null, '1'), h('span', null, 'Most people bet the ', h('em', null, 'favorite'), ' and the ', h('em', null, 'over'), '.')),
-          h('li', null, h('b', null, '2'), h('span', null, 'We find games where that popular side has lost more than it should since 1999.')),
-          h('li', null, h('b', null, '3'), h('span', null, 'We bet the other side.'))),
+        h('h1', null, 'Trap ', h('span', null, 'or die.')),
+        h('p', { class: 'lede' }, 'Most people bet the ', h('em', null, 'favorite'), ' and the ', h('em', null, 'over'), '. We find games where that side has lost more than it should since 1999, and show you the other side.'),
         h('div', { class: 'keys' },
-          h('div', null, h('span', { class: 'tag TRAP' }, 'TRAP'), h('span', null, 'Bet it')),
-          h('div', null, h('span', { class: 'tag LEAN' }, 'WATCH'), h('span', null, 'Close, not a bet')),
-          h('div', null, h('span', { class: 'tag PASS' }, 'PASS'), h('span', null, 'Skip'))),
-        h('p', { class: 'meter-key' }, h('b', null, 'Trap meter 0-100:'), ' higher means the popular side is more likely to lose.'),
-        h('p', { class: 'hero-count' }, `${traps} trap${traps === 1 ? '' : 's'} this week.`),
-        h('div', { class: 'ribbon' },
-          h('span', { class: 'pill hot' }, 'Live', h('b', null, recText(live)), live ? sgn(live.units) + 'u' : 'first grades after Sunday'),
-          all ? h('span', { class: 'pill' }, 'Since 2016', h('b', null, recText(all)), `${pct(all.win_pct)} · ${sgn(all.units)}u`) : null)),
+          h('div', null, h('span', { class: 'tag TRAP' }, 'TRAP'), 'Bet it'),
+          h('div', null, h('span', { class: 'tag LEAN' }, 'WATCH'), 'Close'),
+          h('div', null, h('span', { class: 'tag PASS' }, 'PASS'), 'Skip')),
+        h('div', { class: 'stats' },
+          h('div', { class: 'hot' }, h('b', null, traps), h('span', null, `trap${traps === 1 ? '' : 's'} this week`)),
+          h('div', null, h('b', null, recText(live)), h('span', null, live ? `live · ${sgn(live.units)}u` : 'live, grades after Sunday')),
+          all ? h('div', null, h('b', null, pct(all.win_pct)), h('span', null, `${recText(all)} since 2016`)) : null),
+        h('p', { class: 'meter-key' }, h('b', null, 'Trap meter 0-100:'), ' higher means the popular side is more likely to lose.')),
       liveCard(),
       slipOfDay(),
       yourTeams(),
@@ -1007,10 +1147,10 @@ details.card[open] summary { margin-bottom: 10px; }
     });
     const nm = h('input', { class: 'search', placeholder: 'Group name, e.g. Sunday Crew', maxlength: 40, 'aria-label': 'New group name', style: 'margin:0' });
     const cd = h('input', { class: 'search', placeholder: 'Join code, e.g. K7Q2XM', maxlength: 8, 'aria-label': 'Group code', style: 'margin:0;text-transform:uppercase' });
-    card.append(ACCT.groups.length ? list : h('p', { class: 'muted' }, 'Make a group, share its code, and see who picks best this season.'),
+    card.append(...[ACCT.groups.length ? list : h('p', { class: 'muted' }, 'Make a group, share its code, and see who picks best this season.'),
       h('div', { class: 'gform' }, nm, h('button', { class: 'gbtn', onclick: () => createGroup(nm.value) }, 'Create')),
       h('div', { class: 'gform' }, cd, h('button', { class: 'gbtn alt', onclick: () => joinGroup(cd.value) }, 'Join')),
-      ACCT.groups.length ? h('p', { class: 'muted', style: 'margin:8px 0 0;font-size:12.5px' }, 'While you are in a group, your picks show on its leaderboard to anyone with the app link.') : null);
+      ACCT.groups.length ? h('p', { class: 'muted', style: 'margin:8px 0 0;font-size:12.5px' }, 'While you are in a group, your picks show on its leaderboard to anyone with the app link.') : null].filter(Boolean));
     return card;
   }
   function groupPage(code) {
@@ -1713,16 +1853,25 @@ details.card[open] summary { margin-bottom: 10px; }
   }
   // Board: today's NFL games on the board that are live or finished.
   function liveCard() { return h('div', { id: 'liveCard' }); }
+  function liveTile(g, calls, open) {
+    const ch = liveChances(g), on = g.state === 'in', done = g.state === 'post';
+    const row = (t, p) => h('div', { class: 'r' }, h('i', { style: `background:${col(t.abbr)}` }), h('b', null, t.abbr, g.poss === t.abbr && on ? h('span', { class: 'ball', style: 'display:inline-block;width:8px;height:6px;border-radius:50%;background:#c46a2b;margin-left:4px;vertical-align:middle' }) : null),
+      h('span', { class: 's' }, t.score), h('span', { class: 'pc' }, done ? '' : Math.round(p * 100) + '%'));
+    const c = calls[0], cp = c ? callChance(c, g) : null;
+    return h('button', { class: 'ltile' + (on ? ' on' : ''), onclick: open },
+      h('div', { class: 'st' }, (on ? '● ' : '') + g.detail),
+      row(g.away, ch.away), row(g.home, ch.home), liveBar(g, ch, col(g.away.abbr), col(g.home.abbr)),
+      c && cp != null ? h('div', { class: 'c' }, h('span', null, c.pick), h('b', { style: `color:${cp >= 0.5 ? 'var(--grn)' : 'var(--red)'}` }, done ? (cp === 1 ? 'Won' : cp === 0 ? 'Lost' : 'Push') : Math.round(cp * 100) + '%')) : null);
+  }
   function renderLive() {
     const card = document.getElementById('liveCard');
     if (card && C) {
       const gs = LIVE.nfl ? LIVE.nfl.games.filter((g) => g.state !== 'pre' && C.calls.some((c) => c.away === g.away.abbr && c.home === g.home.abbr)) : [];
       gs.sort((a, b) => (a.state === 'in' ? 0 : 1) - (b.state === 'in' ? 0 : 1));
       const byGame = games();
-      card.replaceChildren(...(gs.length ? [sh('Live now', `${gs.filter((g) => g.state === 'in').length} playing`),
-        h('div', { class: 'card lcard' }, gs.map((g) => { const bg = byGame.find((x) => x.away === g.away.abbr && x.home === g.home.abbr);
-          return liveRow(g, { col, calls: bg ? bg.legs.filter((c) => c.call !== 'PASS') : [], go: bg ? () => go('g_' + bg.id) : null }); }),
-          h('p', { class: 'muted', style: 'margin:10px 0 0;font-size:12px' }, `Scores from ESPN, updated ${new Date(LIVE.nfl.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })}. Chances use the score, time left and the pregame line only, not possession or injuries. Fair odds have no bookmaker cut.`))] : []));
+      card.replaceChildren(...(gs.length ? [sh('Live', `${gs.filter((g) => g.state === 'in').length} playing · swipe`),
+        h('div', { class: 'lstrip' }, gs.map((g) => { const bg = byGame.find((x) => x.away === g.away.abbr && x.home === g.home.abbr);
+          return liveTile(g, bg ? bg.legs.filter((c) => c.call !== 'PASS') : [], bg ? () => go('g_' + bg.id) : null); }))] : []));
     }
     document.querySelectorAll('[data-live-game]').forEach((el) => {
       const [away, home] = el.dataset.liveGame.split('@'); const g = liveFor('nfl', away, home);
