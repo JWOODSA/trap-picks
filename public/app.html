@@ -628,6 +628,7 @@ details.card summary { font-size: 16px; }
 .lperks li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; font-size: 14.5px; color: var(--ink2); }
 .lperks li::before { content: '✓'; color: var(--grn); font-weight: 900; }
 .lfine { margin: 16px 4px 0; font-size: 12px; color: var(--ink3); line-height: 1.45; }
+.res.prov { outline: 2px dashed currentColor; outline-offset: 1px; opacity: .85; }
 </style>
 
 <div class="wrap">
@@ -763,7 +764,7 @@ details.card summary { font-size: 16px; }
           h('div', null, h('span', { class: 'tag PASS' }, 'PASS'), 'Skip')),
         h('div', { class: 'stats' },
           h('div', { class: 'hot' }, h('b', null, traps), h('span', null, `trap${traps === 1 ? '' : 's'} this week`)),
-          h('div', null, h('b', null, recText(live)), h('span', null, live ? `live · ${sgn(live.units)}u` : 'live, grades after Sunday')),
+          h('div', { id: 'liveRec' }, h('b', null, recText(live)), h('span', null, live ? `live · ${sgn(live.units)}u` : 'live, grades after Sunday')),
           all ? h('div', null, h('b', null, pct(all.win_pct)), h('span', null, `${recText(all)} since 2016`)) : null),
         h('p', { class: 'meter-key' }, h('b', null, 'Trap meter 0-100:'), ' higher means the popular side is more likely to lose.')),
       liveCard(),
@@ -1042,7 +1043,7 @@ details.card summary { font-size: 16px; }
     const led = [...C.ledger].sort((a, b) => RANK[b.call] - RANK[a.call] || b.meter - a.meter);
     out.push(h('div', { class: 'card' }, h('h3', null, 'Locked this week'), led.length ? led.map((r) => h('div', { class: 'lg' }, h('span', { class: 'tag ' + r.call }, LABEL[r.call]),
       h('span', null, h('b', null, r.pick), ' ', h('span', { class: 'muted' }, `${r.away} @ ${r.home} · ${odds(r.odds)}`)),
-      r.result ? h('span', { class: 'res ' + r.result }, r.result) : h('span', { class: 'muted mono' }, fmtDate(r.date, { month: 'short', day: 'numeric' })))) : h('p', { class: 'muted' }, 'No live calls yet.')));
+      r.result ? h('span', { class: 'res ' + r.result }, r.result) : h('span', { class: 'muted mono', 'data-prov': JSON.stringify([r.away, r.home, r.market, r.pick]) }, fmtDate(r.date, { month: 'short', day: 'numeric' })))) : h('p', { class: 'muted' }, 'No live calls yet.')));
     const recent = C.recent.filter((r) => r.call === 'TRAP').sort((a, b) => b.date.localeCompare(a.date));
     const w = recent.filter((r) => r.result === 'W').length, l = recent.filter((r) => r.result === 'L').length;
     out.push(h('div', { class: 'card' }, h('h3', null, `${C.meta.current_season} TRAP calls · ${w}-${l}`), recent.length ? recent.map((r) => h('div', { class: 'lg' },
@@ -1992,6 +1993,27 @@ details.card summary { font-size: 16px; }
   }
   // Board: today's NFL games on the board that are live or finished.
   function liveCard() { return h('div', { id: 'liveCard' }); }
+  // Grade a locked call from the live final score right away. The official record follows when the
+  // score file posts the final; until then these show as unofficial.
+  function liveResult(r) {
+    const g = liveFor('nfl', r.away, r.home);
+    if (!g || g.state !== 'post') return null;
+    const p = callChance(r, g);
+    return p == null ? null : p === 1 ? 'W' : p === 0 ? 'L' : 'P';
+  }
+  function renderProv() {
+    document.querySelectorAll('[data-prov]').forEach((el) => {
+      const [away, home, market, pick] = JSON.parse(el.dataset.prov), res = liveResult({ away, home, market, pick });
+      if (!res) return;
+      el.className = 'res prov ' + res; el.textContent = res; el.title = 'Graded from the final score; official once the score file posts it';
+    });
+    const box = document.getElementById('liveRec'); if (!box || !C) return;
+    const off = recRow('Live', 'Both');
+    const extra = C.ledger.filter((r) => r.call === 'TRAP' && !r.result).map(liveResult).filter(Boolean);
+    if (!extra.length) return;
+    const w = (off ? off.wins : 0) + extra.filter((x) => x === 'W').length, l = (off ? off.losses : 0) + extra.filter((x) => x === 'L').length;
+    box.replaceChildren(h('b', null, `${w}-${l}`), h('span', null, `live · ${extra.length} unofficial till the score file posts`));
+  }
   function liveTile(g, calls, open) {
     const ch = liveChances(g), on = g.state === 'in', done = g.state === 'post';
     const row = (t, p) => h('div', { class: 'r' }, h('i', { style: `background:${col(t.abbr)}` }), h('b', null, t.abbr, g.poss === t.abbr && on ? h('span', { class: 'ball', style: 'display:inline-block;width:8px;height:6px;border-radius:50%;background:#c46a2b;margin-left:4px;vertical-align:middle' }) : null),
@@ -2018,6 +2040,7 @@ details.card summary { font-size: 16px; }
       el.replaceChildren(...(g && g.state !== 'pre' ? [h('h3', null, g.state === 'in' ? 'Live' : 'Final'), liveRow(g, { col, calls: bg ? bg.legs.filter((c) => edge(c)) : [] })] : []));
       el.hidden = !(g && g.state !== 'pre');
     });
+    renderProv();
     document.querySelectorAll('[data-live-badge]').forEach((el) => {
       const [away, home] = el.dataset.liveBadge.split('@'); const g = liveFor('nfl', away, home);
       el.textContent = g && g.state !== 'pre' ? `${g.state === 'in' ? '● ' : ''}${g.away.abbr} ${g.away.score} - ${g.home.score} ${g.home.abbr} · ${g.detail}` : '';
