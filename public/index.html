@@ -508,6 +508,49 @@ details.card summary { font-size: 16px; }
 .tabbar { padding: 4px 6px calc(4px + env(safe-area-inset-bottom)); }
 .tabbar a { gap: 1px; padding: 3px 0; font-size: 9.5px; letter-spacing: .02em; text-transform: none; font-weight: 600; }
 .tabbar a svg { width: 22px; height: 22px; }
+
+/* recap, line moves, injuries, forecast, share, pick'em */
+.recap { display: block; width: 100%; text-align: left; margin: 12px 0 4px; padding: 11px 13px; border-radius: 14px; background: linear-gradient(150deg, #10402f, #0e1f2a); border: 1px solid #1f5a45; }
+.recap .rh { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--ink2); }
+.recap .rh b { font-family: var(--disp); font-weight: 800; font-size: 18px; text-transform: uppercase; color: var(--grn); letter-spacing: .03em; }
+.recap .rr { display: flex; gap: 16px; margin-top: 4px; font-size: 12px; color: var(--ink2); }
+.recap .rr b { display: block; font-family: var(--mono); font-size: 17px; color: var(--ink); }
+.recap .rbest b { font-family: var(--body); font-weight: 700; font-size: 15px; padding-top: 2px; }
+.rx { margin: 8px 0 0; font-size: 14px; color: var(--ink2); } .rx b { color: var(--ink); }
+.mv { color: var(--yel); font-weight: 700; }
+.lmv { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.lmv:first-of-type { border-top: 0; }
+.lmv .from { color: var(--ink3); text-decoration: line-through; font-size: 13px; }
+.lmv .to { font-family: var(--mono); font-weight: 700; }
+.flag { margin-top: 8px; padding: 7px 10px; border-radius: 8px; background: rgba(255,210,63,.12); color: var(--yel); font-size: 13px; }
+.snap { margin: 8px 0 0; font-size: 12px; color: var(--ink3); }
+.injt { margin: 10px 0 2px; font-weight: 700; color: var(--ink2); display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.injt .dot { width: 10px; height: 10px; border-radius: 3px; }
+.inj { display: grid; grid-template-columns: 50px 30px 1fr; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.inj .st { font-family: var(--disp); font-weight: 800; font-size: 12px; letter-spacing: .05em; padding: 2px 0; border-radius: 5px; text-align: center; }
+.st.Out { background: var(--red); color: #fff; } .st.Doubtful { background: var(--org); color: #241300; } .st.Questionable { background: var(--yel); color: #1a1600; }
+.inj .pos { color: var(--ink3); font-family: var(--mono); font-size: 11px; }
+.inj small { display: block; color: var(--ink3); font-size: 12px; }
+.shr { padding: 7px 12px; border-radius: 999px; background: var(--card2); color: var(--ink); font-weight: 700; font-size: 13px; }
+.sod .shr { display: block; width: 100%; margin-top: 8px; padding: 10px; border-radius: 10px; background: var(--paper-ink); color: var(--paper); font-size: 14px; }
+.card h3 .shr { float: right; font-family: var(--body); text-transform: none; letter-spacing: 0; margin-top: -4px; }
+.modal { position: fixed; inset: 0; z-index: 60; background: rgba(5,9,18,.9); display: grid; place-items: center; padding: 16px; }
+.modal .in { width: min(420px, 100%); display: grid; gap: 10px; }
+.modal img { width: 100%; max-height: 66vh; object-fit: contain; border-radius: 12px; }
+.modal .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.modal button, .modal a { padding: 12px; border-radius: 10px; background: var(--yel); color: #1a1600; font-weight: 800; text-align: center; text-decoration: none; }
+.modal .alt { background: var(--card2); color: var(--ink); }
+.modal p { margin: 0; text-align: center; color: var(--ink2); font-size: 13px; }
+.lbr { display: grid; grid-template-columns: 22px 36px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.pe { padding: 7px 0; border-top: 1px solid var(--line); }
+.pe .ph { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--ink3); margin-bottom: 4px; min-height: 18px; }
+.pe .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pe .opts button { padding: 9px 6px; border-radius: 10px; background: var(--bg2); border: 2px solid var(--line); font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 6px; justify-content: center; }
+.pe .opts .dot { width: 10px; height: 10px; border-radius: 3px; }
+.pe .opts button[aria-pressed=true] { border-color: var(--yel); background: rgba(255,210,63,.14); color: var(--yel); }
+.pe .opts button:disabled { opacity: .6; cursor: default; }
+.pe .opts button[aria-pressed=true]:disabled { opacity: 1; }
+.pe .tp { font-size: 12px; color: var(--ink3); margin-top: 4px; }
 </style>
 
 <div class="wrap">
@@ -608,11 +651,12 @@ details.card summary { font-size: 16px; }
   function slip(g) {
     const reasons = [...new Set(g.legs.filter((c) => c.call !== 'PASS' && c.reasons).flatMap((c) => c.reasons.split('; ')))].slice(0, 2);
     const kick = g.info ? `${g.info.spread} · O/U ${g.info.total}` : '';
+    const mv = lineMoves(g).moved;
     const legs = g.legs.filter((c) => c.call !== 'PASS');
     const open = () => go('g_' + g.id);
     return h('article', { class: 'slip fade', role: 'link', tabindex: 0, onclick: open, onkeydown: (e) => { if (e.key === 'Enter') open(); } },
       h('div', { class: 'bar' }, h('i', { style: `background:${col(g.away)}` }), h('i', { style: `background:${col(g.home)}` })),
-      h('div', { class: 'hd' }, h('span', null, `Week ${g.week} · ${fmtDate(g.date)}`), h('span', null, kick)),
+      h('div', { class: 'hd' }, h('span', null, `Week ${g.week} · ${fmtDate(g.date)}`), h('span', null, kick, mv ? h('b', { class: 'mv' }, ' · moved') : null)),
       h('div', { class: 'lbadge', 'data-live-badge': `${g.away}@${g.home}`, hidden: true }),
       h('div', { class: 'mu' }, h('span', { class: 'chip', style: `background:${col(g.away)}` }), h('span', { class: 'tm' }, g.away), h('span', { class: 'at' }, '@'),
         h('span', { class: 'tm' }, g.home), h('span', { class: 'chip', style: `background:${col(g.home)}` }), h('span', { class: 'stamp', 'data-c': g.top.call }, LABEL[g.top.call])),
@@ -643,6 +687,7 @@ details.card summary { font-size: 16px; }
         h('p', { class: 'meter-key' }, h('b', null, 'Trap meter 0-100:'), ' higher means the popular side is more likely to lose.')),
       liveCard(),
       slipOfDay(),
+      recapCard(),
       yourTeams(),
       sh('This week', `${gs.length} games`),
       plays.length ? plays.map(slip) : h('p', { class: 'muted' }, 'No traps this week. The popular side looks fairly priced everywhere.'),
@@ -697,7 +742,7 @@ details.card summary { font-size: 16px; }
           bt ? `Since 2016, the ${slipN}-leg slip hit ${bt.hits} of ${bt.slips} weeks (${pct(bt.hit_pct)}), ${sgn(bt.units)} units at 1 unit a slip. ` : `No ${slipN}-leg backtest: weeks rarely had this many edges. `,
           max < 15 ? `Only ${max} games left this week have an edge, so the slip tops out at ${max}. ` : '',
           'Parlays are long shots: one miss loses the slip. Play it small.'),
-        saveAllBtn(legs));
+        saveAllBtn(legs), shareSlipBtn(legs, d, hit));
       queueMicrotask(sync);
     };
     draw();
@@ -726,8 +771,9 @@ details.card summary { font-size: 16px; }
       h('div', { class: 'lines' }, h('div', null, h('b', null, u.spread || '–'), h('span', null, 'Spread')), h('div', null, h('b', null, u.total ?? '–'), h('span', null, 'Total')),
         h('div', null, h('b', null, `${odds(u.away_ml)} / ${odds(u.home_ml)}`), h('span', null, 'Moneyline')))));
     out.push(h('div', { class: 'card lcard', 'data-live-game': `${g.away}@${g.home}`, hidden: true }));
-    out.push(h('div', { class: 'card' }, h('h3', null, 'The calls'), h('div', { class: 'slip', style: 'margin:0;box-shadow:none' }, g.legs.map(leg),
+    out.push(h('div', { class: 'card' }, h('h3', null, 'The calls', shareGameBtn(g)), h('div', { class: 'slip', style: 'margin:0;box-shadow:none' }, g.legs.map(leg),
       (() => { const r = [...new Set(g.legs.filter((c) => c.reasons).flatMap((c) => c.reasons.split('; ')))]; return r.length ? h('ul', { class: 'why', style: 'padding-top:10px' }, r.map((x) => h('li', null, x))) : null; })())));
+    out.push(movesCard(g), injuryCard(g), weatherCard(g));
     if (u.away_fair_pct != null) out.push(h('div', { class: 'card' }, h('h3', null, 'Win chance, vig removed'),
       h('div', { class: 'fair' }, h('i', { style: `flex:${u.away_fair_pct};background:${col(g.away)}` }, `${g.away} ${pct(u.away_fair_pct, 0)}`), h('i', { style: `flex:${u.home_fair_pct};background:${col(g.home)}` }, `${pct(u.home_fair_pct, 0)} ${g.home}`)),
       h('p', { class: 'muted', style: 'margin:8px 0 0' }, `Book hold on the moneyline is ${pct(u.hold)}.`)));
@@ -742,8 +788,7 @@ details.card summary { font-size: 16px; }
     for (const t of [g.away, g.home]) {
       const k = C.key_players[t]; if (!k) continue;
       kp.append(h('p', { class: 'muted', style: 'margin:6px 0 6px;font-weight:600;color:var(--ink2)' }, name(t)), h('div', { class: 'plist' },
-        k.top.map((p) => h('button', { class: 'prow', onclick: () => go('p_' + p.player_id) }, h('span', { class: 'pos' }, p.position), h('span', { class: 'nm' }, p.player, h('small', null, `${p.market} · season avg ${p.avg_season?.toFixed(1)}`)), h('span', { class: 'pr' }, p.projection.toFixed(1), h('small', null, 'projection')))),
-        k.out.map((p) => h('button', { class: 'prow', onclick: () => go('p_' + p.player_id) }, h('span', { class: 'pos' }, p.position), h('span', { class: 'nm' }, p.player, h('small', null, p.injury || '')), h('span', { class: 'pr out' }, p.status)))));
+        k.top.map((p) => h('button', { class: 'prow', onclick: () => go('p_' + p.player_id) }, h('span', { class: 'pos' }, p.position), h('span', { class: 'nm' }, p.player, h('small', null, `${p.market} · season avg ${p.avg_season?.toFixed(1)}`)), h('span', { class: 'pr' }, p.projection.toFixed(1), h('small', null, 'projection'))))));
     }
     out.push(kp);
     for (const t of [g.away, g.home]) {
@@ -908,6 +953,7 @@ details.card summary { font-size: 16px; }
       h('div', { class: 'b' }, h('b', null, sp ? pct(sp.win_pct) : '–'), h('span', null, 'Spread traps'), h('small', null, sp ? `${recText(sp)} · ${sgn(sp.units)}u` : '')),
       h('div', { class: 'b' }, h('b', null, tt ? pct(tt.win_pct) : '–'), h('span', null, 'Total traps'), h('small', null, tt ? `${recText(tt)} · ${sgn(tt.units)}u` : '')))];
     out.push(h('p', { class: 'muted', style: 'margin:10px 2px 0' }, 'Breakeven at standard -110 juice is 52.4%. Units assume one unit risked per call at the recorded odds.'));
+    out.push(recapFull());
     out.push(h('div', { class: 'card', style: 'margin-top:14px' }, h('h3', null, 'Units by season'), seasonChart(),
       h('div', { class: 'legend', style: 'margin:8px 0 0' }, h('span', null, h('i', { style: 'background:var(--blu)' }), 'Spread traps'), h('span', null, h('i', { style: 'background:var(--yel)' }), 'Total traps'))));
     const led = [...C.ledger].sort((a, b) => RANK[b.call] - RANK[a.call] || b.meter - a.meter);
@@ -958,7 +1004,7 @@ details.card summary { font-size: 16px; }
   // On the public web host (Cloudflare) there is no Claude sign-in yet; accounts arrive with Supabase.
   const HOSTED = !!window.TRAP_API;
   const signIn = (what) => HOSTED ? `Accounts are coming soon. Then you can ${what}.` : `Sign in to claude.ai to ${what}.`;
-  const ACCT = { state: 'loading', id: null, name: '', avatar: '', picks: {}, teams: [], groups: [], leagues: [], db: null, user: null, writing: Promise.resolve() };
+  const ACCT = { state: 'loading', id: null, name: '', avatar: '', picks: {}, teams: [], groups: [], leagues: [], pickem: {}, db: null, user: null, writing: Promise.resolve() };
   const pk = (c) => `${c.game_id}|${c.market}`;
   const started = (gid) => !!(C.kickoff && C.kickoff[gid] && Date.parse(C.kickoff[gid]) <= Date.now());
   async function initAccount() {
@@ -971,7 +1017,7 @@ details.card summary { font-size: 16px; }
     const base = 'data/users/' + me.id;
     db.doc(base + '/picks').onSnapshot((d) => { ACCT.picks = (d.exists && d.data().items) || {}; sync(); }, () => {});
     db.doc(base + '/profile').onSnapshot((d) => { ACCT.teams = (d.exists && d.data().teams) || []; sync(); }, () => {});
-    db.doc('members/' + me.id).onSnapshot((d) => { ACCT.groups = (d.exists && d.data().groups) || []; sync(); }, () => {});
+    db.doc('members/' + me.id).onSnapshot((d) => { ACCT.groups = (d.exists && d.data().groups) || []; ACCT.pickem = (d.exists && d.data().pickem) || {}; sync(); }, () => {});
     db.doc(base + '/fantasy').onSnapshot((d) => { ACCT.leagues = (d.exists && d.data().leagues) || []; sync(); }, () => {});
     sync();
   }
@@ -1053,7 +1099,9 @@ details.card summary { font-size: 16px; }
     return box;
   }
   // Grade a saved pick from the final score, at the line it was saved with.
-  function grade(p) {
+  function grade(p) { const d = coverBy(p); return d == null ? null : d > 0 ? 'W' : d < 0 ? 'L' : 'P'; }
+  // Points a pick won or lost by against its line, from the final score (null until final).
+  function coverBy(p) {
     const m = /^(\d{4})_(\d{2})_/.exec(p.game_id); if (!m) return null;
     const r = C.schedule.find((x) => x.team === p.away && x.season === +m[1] && x.week === +m[2] && x.opp === p.home);
     if (!r || r.pf == null || r.pa == null || !r.result) return null;
@@ -1062,7 +1110,7 @@ details.card summary { font-size: 16px; }
     if (tot) d = (r.pf + r.pa - +tot[2]) * (tot[1] === 'Over' ? 1 : -1);
     else if (sp) d = (sp[1] === p.away ? r.pf - r.pa : r.pa - r.pf) + +sp[2];
     else return null;
-    return d > 0 ? 'W' : d < 0 ? 'L' : 'P';
+    return Math.round(d * 10) / 10;
   }
   function mePage() {
     if (ACCT.state === 'loading') return [h('div', { class: 'loading' }, 'Checking your sign-in…')];
@@ -1094,7 +1142,7 @@ details.card summary { font-size: 16px; }
   // ---------- groups: friends compare picks on a leaderboard ----------
   // groups/<CODE> holds the name; members/<uid> is each person's group card (their groups and a copy
   // of their picks), readable by everyone with the link and writable only by that person.
-  const GROUP = { code: null, unsub: null, rows: [], names: {} };
+  const GROUP = { code: null, unsub: null, rows: [], names: {}, tab: 'pickem', draw: null };
   const tally = (picks, side) => {
     const ps = Object.values(picks || {}).filter((p) => !side || (p.side || 'with') === side).map((p) => ({ ...p, res: grade(p) }));
     const d = ps.filter((p) => p.res), w = d.filter((p) => p.res === 'W').length, l = d.filter((p) => p.res === 'L').length;
@@ -1102,11 +1150,11 @@ details.card summary { font-size: 16px; }
   };
   function shareCard() {
     if (ACCT.state !== 'ready' || !ACCT.groups.length) return;
-    return ACCT.writing = ACCT.writing.then(() => ACCT.db.doc('members/' + ACCT.id).set({ groups: ACCT.groups, picks: ACCT.picks })).catch(() => toast('Could not update your group card.'));
+    return ACCT.writing = ACCT.writing.then(() => ACCT.db.doc('members/' + ACCT.id).set({ groups: ACCT.groups, picks: ACCT.picks, pickem: ACCT.pickem })).catch(() => toast('Could not update your group card.'));
   }
   async function setGroups(groups) {
     ACCT.groups = groups; sync();
-    await (ACCT.writing = ACCT.writing.then(() => ACCT.db.doc('members/' + ACCT.id).set({ groups, picks: groups.length ? ACCT.picks : {} })));
+    await (ACCT.writing = ACCT.writing.then(() => ACCT.db.doc('members/' + ACCT.id).set({ groups, picks: groups.length ? ACCT.picks : {}, pickem: groups.length ? ACCT.pickem : {} })));
   }
   const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   async function createGroup(nameText) {
@@ -1147,7 +1195,7 @@ details.card summary { font-size: 16px; }
     });
     const nm = h('input', { class: 'search', placeholder: 'Group name, e.g. Sunday Crew', maxlength: 40, 'aria-label': 'New group name', style: 'margin:0' });
     const cd = h('input', { class: 'search', placeholder: 'Join code, e.g. K7Q2XM', maxlength: 8, 'aria-label': 'Group code', style: 'margin:0;text-transform:uppercase' });
-    card.append(...[ACCT.groups.length ? list : h('p', { class: 'muted' }, 'Make a group, share its code, and see who picks best this season.'),
+    card.append(...[ACCT.groups.length ? list : h('p', { class: 'muted' }, 'Make a group, share its code, and play weekly pick\'em against your friends.'),
       h('div', { class: 'gform' }, nm, h('button', { class: 'gbtn', onclick: () => createGroup(nm.value) }, 'Create')),
       h('div', { class: 'gform' }, cd, h('button', { class: 'gbtn alt', onclick: () => joinGroup(cd.value) }, 'Join')),
       ACCT.groups.length ? h('p', { class: 'muted', style: 'margin:8px 0 0;font-size:12.5px' }, 'While you are in a group, your picks show on its leaderboard to anyone with the app link.') : null].filter(Boolean));
@@ -1165,7 +1213,7 @@ details.card summary { font-size: 16px; }
       const rows = GROUP.rows.map((r) => ({ id: r.id, all: tally(r.picks), with: tally(r.picks, 'with'), fade: tally(r.picks, 'fade') }))
         .sort((a, b) => b.all.u - a.all.u || (b.all.w - b.all.l) - (a.all.w - a.all.l));
       const mine = ACCT.groups.includes(code);
-      const invite = `Join my Trap Picks group "${g.data().name}". Open the app, go to My Picks, and enter code ${code}.`;
+      const invite = `Join my Trap Picks group "${g.data().name}" for weekly pick'em. Open the app, go to My Picks, and enter code ${code}.`;
       box.replaceChildren(...[
         h('div', { class: 'grph fade' }, h('span', null, 'Group'), h('b', null, g.data().name),
           h('div', { class: 'gcode' }, h('span', { class: 'mono' }, code), h('button', { onclick: () => {
@@ -1173,7 +1221,9 @@ details.card summary { font-size: 16px; }
             else navigator.clipboard.writeText(invite).then(() => toast('Invite copied. Send it to your friends.'), () => toast('Code: ' + code));
           } }, 'Share invite'))),
         mine ? null : h('button', { class: 'save-all', onclick: () => joinGroup(code) }, 'Join this group'),
-        h('div', { class: 'card', style: 'margin-top:12px' }, h('h3', null, 'Leaderboard'), h('p', { class: 'muted', style: 'margin:-4px 0 10px' }, 'Ranked by units won this season. Picks lock at kickoff.'),
+        h('div', { class: 'fseg', role: 'tablist', 'aria-label': 'Group view' }, [['pickem', 'Pick\'em'], ['board', 'Saved picks']].map(([k, t]) => h('button', { role: 'tab', 'aria-pressed': GROUP.tab === k ? 'true' : 'false', onclick: () => { GROUP.tab = k; draw(); } }, t))),
+        GROUP.tab === 'pickem' ? pickemView(code, ps) : null,
+        GROUP.tab !== 'pickem' ? h('div', { class: 'card', style: 'margin-top:12px' }, h('h3', null, 'Leaderboard'), h('p', { class: 'muted', style: 'margin:-4px 0 10px' }, 'Ranked by units won this season. Picks lock at kickoff.'),
           rows.length ? rows.map((r, i) => {
             const p = ps[r.id] || {};
             return h('details', { class: 'lb' }, h('summary', null, h('span', { class: 'rk' }, i + 1), h('img', { src: p.avatarUrl || '', alt: '' }),
@@ -1182,14 +1232,15 @@ details.card summary { font-size: 16px; }
               r.all.open.length ? r.all.open.map((x) => h('div', { class: 'lg', role: 'link', tabindex: 0, onclick: () => go('g_' + x.game_id) },
                 h('span', { class: 'tag ' + ((x.side || 'with') === 'fade' ? 'FADE' : x.call) }, (x.side || 'with') === 'fade' ? 'AGAINST' : LABEL[x.call]),
                 h('span', null, h('b', null, x.pick), ' ', h('span', { class: 'muted' }, `${x.away} @ ${x.home}`)), h('span', { class: 'muted mono' }, odds(x.odds)))) : h('p', { class: 'muted' }, 'No open picks.'));
-          }) : h('p', { class: 'muted' }, 'Nobody here yet. Share the code to invite friends.')),
-        mine ? h('button', { class: 'leave', onclick: () => leaveGroup(code) }, 'Leave group') : null].filter(Boolean));
+          }) : h('p', { class: 'muted' }, 'Nobody here yet. Share the code to invite friends.')) : null,
+        mine ? h('button', { class: 'leave', onclick: () => leaveGroup(code) }, 'Leave group') : null].flat().filter(Boolean));
     };
+    GROUP.draw = draw;
     if (GROUP.code !== code) {
       if (GROUP.unsub) GROUP.unsub();
       GROUP.code = code; GROUP.rows = [];
       GROUP.unsub = ACCT.db.collection('members').where('groups', 'array-contains', code).onSnapshot((snap) => {
-        GROUP.rows = snap.docs.map((d) => ({ id: d.id, picks: d.data().picks || {} }));
+        GROUP.rows = snap.docs.map((d) => ({ id: d.id, picks: d.data().picks || {}, pickem: d.data().pickem || {} }));
         if (location.hash === '#grp_' + code) draw();
       }, () => box.replaceChildren(h('p', { class: 'muted' }, 'The leaderboard could not load.')));
     } else draw();
@@ -1895,6 +1946,268 @@ details.card summary { font-size: 16px; }
 
   // ---------- router ----------
   const hist = [];
+
+  // ---------- weekly recap: how the most recent graded week went ----------
+  // Uses the locked live record when that week has graded live calls, otherwise the season's
+  // walk-forward calls (what the model would have called then, before the live record started).
+  function lastWeek() {
+    const live = C.ledger.filter((r) => r.result).map((r) => ({ ...r, live: true }));
+    const rows = [...live, ...C.recent.filter((r) => r.result)];
+    if (!rows.length) return null;
+    const key = (r) => r.season * 100 + r.week;
+    const top = Math.max(...rows.map(key));
+    let wk = rows.filter((r) => key(r) === top);
+    const isLive = wk.some((r) => r.live);
+    if (isLive) wk = wk.filter((r) => r.live);
+    const tally = (rs) => { const w = rs.filter((r) => r.result === 'W').length, l = rs.filter((r) => r.result === 'L').length, p = rs.filter((r) => r.result === 'P').length;
+      return { w, l, p, u: rs.reduce((a, r) => a + (r.result === 'W' ? dec(r.odds) - 1 : r.result === 'L' ? -1 : 0), 0) }; };
+    const traps = wk.filter((r) => r.call === 'TRAP');
+    const scored = traps.map((r) => ({ ...r, by: coverBy(r) })).filter((r) => r.by != null);
+    const best = scored.filter((r) => r.result === 'W').sort((a, b) => b.by - a.by)[0];
+    const worst = scored.filter((r) => r.result === 'L').sort((a, b) => a.by - b.by)[0];
+    return { season: wk[0].season, week: wk[0].week, live: isLive, rows: wk, trap: tally(traps), watch: tally(wk.filter((r) => r.call === 'LEAN')), best, worst };
+  }
+  const recLine = (t) => `${t.w}-${t.l}${t.p ? '-' + t.p : ''}`;
+  const byText = (r) => `${r.pick} ${r.result === 'W' ? 'covered by' : 'missed by'} ${Math.abs(r.by)}`;
+  function recapCard() {
+    const R = lastWeek(); if (!R) return null;
+    return h('button', { class: 'recap fade', onclick: () => go('record') },
+      h('div', { class: 'rh' }, h('b', null, `Week ${R.week} recap`), h('span', null, R.live ? 'Live record →' : 'Model calls →')),
+      h('div', { class: 'rr' },
+        h('div', null, h('b', null, recLine(R.trap)), 'TRAP calls'),
+        h('div', null, h('b', null, sgn(R.trap.u) + 'u'), 'units'),
+        R.best ? h('div', { class: 'rbest' }, h('b', null, R.best.pick), `won by ${R.best.by}`) : null));
+  }
+  function recapFull() {
+    const R = lastWeek(); if (!R) return null;
+    const sorted = [...R.rows].sort((a, b) => RANK[b.call] - RANK[a.call] || b.meter - a.meter);
+    return h('div', { class: 'card' }, h('h3', null, `Week ${R.week} recap`),
+      h('p', { class: 'muted', style: 'margin:-4px 0 10px' }, R.live ? 'Graded from the live record, at the lines locked at kickoff.'
+        : 'These are the model\'s walk-forward calls for that week (each season scored only with earlier seasons). The live record starts with week 5.'),
+      kv([[recLine(R.trap), 'TRAP record', R.trap.u > 0 ? 'hot' : null], [sgn(R.trap.u) + 'u', 'TRAP units'], [recLine(R.watch), 'WATCH (not bets)']]),
+      R.best ? h('p', { class: 'rx' }, h('b', null, 'Best call: '), byText(R.best), ` (${R.best.away} @ ${R.best.home}).`) : null,
+      R.worst ? h('p', { class: 'rx' }, h('b', null, 'Worst miss: '), byText(R.worst), ` (${R.worst.away} @ ${R.worst.home}).`) : null,
+      sorted.map((r) => h('div', { class: 'lg', role: 'link', tabindex: 0, onclick: () => go('t_' + r.home) }, h('span', { class: 'tag ' + r.call }, LABEL[r.call]),
+        h('span', null, h('b', null, r.pick), ' ', h('span', { class: 'muted' }, `${r.away} @ ${r.home} · ${odds(r.odds)}`)), h('span', { class: 'res ' + r.result }, r.result))));
+  }
+
+  // ---------- line movement ----------
+  // C.moves[game_id] = [[checked_at, spread_line, total_line, away_ml, home_ml], ...], recorded each time
+  // our refresh saw a change. spread_line is the home team's expected margin (positive = home favored).
+  const spreadTxt = (g, s) => s == null ? '–' : s === 0 ? 'Pick\'em' : s > 0 ? `${g.home} -${s}` : `${g.away} -${-s}`;
+  function lineMoves(g) {
+    const m = (C.moves || {})[g.id] || [];
+    const series = (i) => m.filter((r) => r[i] != null).map((r) => ({ at: r[0], v: r[i] }));
+    const sp = series(1), tt = series(2), ml = m.filter((r) => r[3] != null);
+    const first = (s) => s[0], last = (s) => s[s.length - 1];
+    const out = { m, sp, tt, ml, spMove: 0, ttMove: 0 };
+    if (sp.length > 1) out.spMove = Math.abs(last(sp).v) - Math.abs(first(sp).v);   // negative = favorite's number shrank
+    if (sp.length > 1 && Math.sign(last(sp).v) !== Math.sign(first(sp).v)) out.flip = true;
+    if (tt.length > 1) out.ttMove = last(tt).v - first(tt).v;
+    // Books moved off the popular side: the favorite gives fewer points, or the total dropped.
+    out.offPublic = !out.flip && (out.spMove < 0 || out.ttMove < 0);
+    out.moved = sp.length > 1 && last(sp).v !== first(sp).v || tt.length > 1 && last(tt).v !== first(tt).v;
+    return out;
+  }
+  const at = (s) => new Date(s).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  function movesCard(g) {
+    const L = lineMoves(g);
+    if (!L.m.length) return null;
+    const row = (label, s, fmt) => s.length ? h('div', { class: 'lmv' }, h('span', null, label),
+      s.length > 1 && s[0].v !== s[s.length - 1].v ? h('span', { class: 'from mono' }, fmt(s[0].v)) : h('span'),
+      h('span', { class: 'to' }, fmt(s[s.length - 1].v))) : null;
+    const notes = [];
+    if (L.spMove < 0) notes.push(`The favorite now gives ${-L.spMove} fewer point${L.spMove === -1 ? '' : 's'}.`);
+    if (L.spMove > 0) notes.push(`The favorite now gives ${L.spMove} more point${L.spMove === 1 ? '' : 's'}.`);
+    if (L.flip) notes.push('The favorite switched sides.');
+    if (L.ttMove) notes.push(`The total ${L.ttMove < 0 ? 'dropped' : 'rose'} ${Math.abs(L.ttMove)}.`);
+    const mls = L.ml.length ? L.ml[L.ml.length - 1] : null;
+    return h('div', { class: 'card' }, h('h3', null, 'Line movement'),
+      row('Spread', L.sp, (v) => spreadTxt(g, v)), row('Total', L.tt, (v) => String(v)),
+      mls ? h('div', { class: 'lmv' }, h('span', null, 'Moneyline'), h('span'), h('span', { class: 'to' }, `${odds(mls[3])} / ${odds(mls[4])}`)) : null,
+      notes.length ? h('p', { class: 'rx' }, notes.join(' ')) : h('p', { class: 'rx' }, 'No move since we started tracking.'),
+      L.offPublic ? h('div', { class: 'flag' }, 'Moved off the popular side. That can mean bigger money came in on the other side.') : null,
+      h('p', { class: 'snap' }, `${L.m.length} check${L.m.length === 1 ? '' : 's'} with a change, first ${at(L.m[0][0])}, latest ${at(L.m[L.m.length - 1][0])}. Lines from nflverse; tracking began Oct 11, 2026.`));
+  }
+
+  // ---------- injury report ----------
+  function injuryCard(g) {
+    const I = C.injuries; if (!I) return null;
+    const card = h('div', { class: 'card' }, h('h3', null, 'Injury report'));
+    if (I.week !== g.week) return card.append(h('p', { class: 'muted' }, `The official week ${g.week} report is not out yet. Teams file it Wednesday to Friday.`)), card;
+    for (const t of [g.away, g.home]) {
+      const rs = I.teams[t] || [];
+      card.append(h('div', { class: 'injt' }, h('span', { class: 'dot', style: `background:${col(t)}` }), name(t), h('span', { class: 'muted', style: 'font-weight:400' }, rs.length ? `${rs.length} listed` : 'nobody listed')));
+      rs.forEach((p) => card.append(h('div', { class: 'inj' }, h('span', { class: 'st ' + p.status }, p.status === 'Questionable' ? 'Q' : p.status === 'Doubtful' ? 'DOUBT' : 'OUT'),
+        h('span', { class: 'pos' }, p.position), h('span', null, p.player, h('small', null, [p.injury, p.practice].filter(Boolean).join(' · '))))));
+    }
+    card.append(h('p', { class: 'snap' }, `Official NFL report for week ${I.week}, via nflverse. Updated with each refresh.`));
+    return card;
+  }
+
+  // ---------- kickoff forecast (website only: the relay reaches Open-Meteo) ----------
+  function weatherCard(g) {
+    const u = g.info || {}, ko = C.kickoff && C.kickoff[g.id];
+    if (!HOSTED || u.lat == null || !ko) return null;
+    const box = h('div', { class: 'card' }, h('h3', null, 'Kickoff forecast'), h('p', { class: 'muted' }, 'Loading forecast…'));
+    fetch(`${window.TRAP_API}/weather?lat=${u.lat}&lon=${u.lon}&at=${encodeURIComponent(ko)}`).then((r) => r.json()).then((w) => {
+      if (w.error) { box.lastChild.textContent = w.error.includes('window') ? 'Forecast opens about two weeks before kickoff.' : 'Forecast unavailable right now.'; return; }
+      const windy = w.wind >= 15;
+      const under = windy ? (w.wind >= 20 ? C.wind['20+ mph'] : C.wind['15-19 mph']) : null;
+      box.replaceChildren(...[h('h3', null, 'Kickoff forecast'),
+        kv([[`${Math.round(w.temp)}°`, 'Temp'], [`${Math.round(w.wind)} mph`, `Wind, gusts ${Math.round(w.gust)}`, windy ? 'hot' : null], [`${Math.round(w.rain)}%`, 'Chance of rain']]),
+        windy && under ? h('div', { class: 'flag' }, `Unders hit ${pct(under, 0)} of the time in ${w.wind >= 20 ? '20+' : '15-19'} mph wind since 1999.`) : null,
+        /Retractable/.test(u.roof_label || '') ? h('p', { class: 'snap' }, 'Retractable roof: the team decides on game day whether it is open.') : null,
+        h('p', { class: 'snap' }, `Open-Meteo forecast for ${at(w.at)}. Checked ${at(w.fetched)}.`)].filter(Boolean));
+    }).catch(() => { box.lastChild.textContent = 'Forecast unavailable right now.'; });
+    return box;
+  }
+
+  // ---------- share images ----------
+  const TAGC = { TRAP: ['#ff4d5e', '#fff'], LEAN: ['#ff9f43', '#241300'], PASS: ['#1b2a4d', '#a9b6d3'] };
+  async function ticketImage(spec) {
+    try { await document.fonts.ready; } catch (e) {}
+    const W = 1080, RH = 150, n = spec.rows.length, top = 400, ph = n * RH + 30;
+    const H = top + ph + (spec.totals ? 230 : 120) + 60;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const x = cv.getContext('2d');
+    const rr = (X, Y, w, hh, r) => { x.beginPath(); if (x.roundRect) x.roundRect(X, Y, w, hh, r); else x.rect(X, Y, w, hh); x.fill(); };
+    const fit = (txt, X, Y, max) => { const w = x.measureText(txt).width; if (w > max) { x.save(); x.translate(X, Y); x.scale(max / w, 1); x.fillText(txt, 0, 0); x.restore(); } else x.fillText(txt, X, Y); };
+    const bg = x.createLinearGradient(0, 0, W * .4, H); bg.addColorStop(0, '#1d3566'); bg.addColorStop(.55, '#0f1a33'); bg.addColorStop(1, '#0b1324');
+    x.fillStyle = bg; x.fillRect(0, 0, W, H);
+    const stripes = (Y) => { x.save(); x.beginPath(); x.rect(0, Y, W, 16); x.clip(); x.fillStyle = '#111'; x.fillRect(0, Y, W, 16);
+      x.fillStyle = '#ffd23f'; for (let i = -40; i < W + 40; i += 48) { x.beginPath(); x.moveTo(i, Y + 16); x.lineTo(i + 24, Y + 16); x.lineTo(i + 40, Y); x.lineTo(i + 16, Y); x.fill(); } x.restore(); };
+    stripes(0); stripes(H - 16);
+    x.textAlign = 'left';
+    x.font = '900 64px "Big Shoulders Display", sans-serif'; x.fillStyle = '#eef2fb'; x.fillText('TRAP', 64, 118);
+    const tw = x.measureText('TRAP ').width; x.fillStyle = '#ffd23f'; x.fillText('PICKS', 64 + tw, 118);
+    x.font = '600 30px Barlow, sans-serif'; x.fillStyle = '#a9b6d3'; x.textAlign = 'right'; x.fillText(spec.kicker, W - 64, 116); x.textAlign = 'left';
+    x.font = '900 110px "Big Shoulders Display", sans-serif'; x.fillStyle = '#ffffff'; fit(spec.title.toUpperCase(), 64, 262, W - 128);
+    x.font = '600 34px Barlow, sans-serif'; x.fillStyle = '#ffd23f'; fit(spec.sub, 64, 322, W - 128);
+    x.fillStyle = '#f6f1e4'; rr(48, top, W - 96, ph, 18);
+    spec.rows.forEach((r, i) => {
+      const y = top + 15 + i * RH;
+      if (i) { x.strokeStyle = '#d9cfb8'; x.setLineDash([12, 10]); x.lineWidth = 3; x.beginPath(); x.moveTo(80, y); x.lineTo(W - 80, y); x.stroke(); x.setLineDash([]); }
+      const [tb, tf] = TAGC[r.call] || TAGC.PASS;
+      x.fillStyle = tb; rr(80, y + 42, 160, 62, 10);
+      x.font = '800 36px "Big Shoulders Display", sans-serif'; x.fillStyle = tf; x.textAlign = 'center'; x.fillText(LABEL[r.call] || r.call, 160, y + 86);
+      x.textAlign = 'left'; x.font = '800 58px "Big Shoulders Display", sans-serif'; x.fillStyle = '#1a1d29'; fit(r.main, 270, y + 80, W - 270 - 250);
+      x.font = '500 28px Barlow, sans-serif'; x.fillStyle = '#6b6455'; fit(r.sub, 270, y + 120, W - 270 - 120);
+      x.font = '700 40px "JetBrains Mono", monospace'; x.fillStyle = '#1a1d29'; x.textAlign = 'right'; x.fillText(r.odds || '', W - 84, y + 82); x.textAlign = 'left';
+    });
+    let y = top + ph + 70;
+    if (spec.totals) {
+      const cw = (W - 128) / spec.totals.length;
+      spec.totals.forEach(([v, k], i) => { const X = 64 + i * cw;
+        x.font = '600 26px Barlow, sans-serif'; x.fillStyle = '#a9b6d3'; x.fillText(k.toUpperCase(), X, y);
+        x.font = '700 54px "JetBrains Mono", monospace'; x.fillStyle = i === 0 ? '#ffd23f' : '#eef2fb'; x.fillText(v, X, y + 64); });
+      y += 150;
+    }
+    x.font = '500 26px Barlow, sans-serif'; x.fillStyle = '#7182a8'; fit(spec.foot || 'Trap Picks · Bet responsibly · 21+', 64, y, W - 128);
+    return cv;
+  }
+  async function shareImage(spec, fname) {
+    const cv = await ticketImage(spec);
+    const url = cv.toDataURL('image/png');
+    const close = () => { m.remove(); document.removeEventListener('keydown', esc); };
+    const esc = (e) => { if (e.key === 'Escape') close(); };
+    const share = () => cv.toBlob((b) => {
+      const f = b && new File([b], fname, { type: 'image/png' });
+      if (f && navigator.canShare && navigator.canShare({ files: [f] })) navigator.share({ files: [f], title: spec.title }).catch(() => {});
+      else toast('Sharing is not available here. Press and hold the image, or tap Save.');
+    }, 'image/png');
+    const m = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Share image', onclick: (e) => { if (e.target === m) close(); } },
+      h('div', { class: 'in' }, h('img', { src: url, alt: spec.title }),
+        h('p', null, 'Press and hold the image to save it, or use the buttons.'),
+        h('div', { class: 'row' }, h('button', { onclick: share }, 'Share'), h('a', { href: url, download: fname }, 'Save image')),
+        h('button', { class: 'alt', onclick: close }, 'Close')));
+    document.addEventListener('keydown', esc);
+    document.body.append(m);
+  }
+  function shareSlipBtn(legs, d, hit) {
+    return h('button', { class: 'shr', onclick: () => shareImage({
+      kicker: `NFL · Week ${legs[0].week}`, title: 'Slip of the day', sub: `${legs.length} legs · pays ${amer(d)}`,
+      rows: legs.map((c) => ({ call: c.call, main: c.pick, sub: `${c.away} @ ${c.home} · ${c.market} · meter ${c.meter}`, odds: odds(c.odds ?? -110) })),
+      totals: [[amer(d), 'Pays'], ['$' + (10 * d).toFixed(2), '$10 returns'], [hit >= 0.01 ? pct(hit) : '<1%', 'Model hit chance']],
+    }, `trap-picks-slip-week-${legs[0].week}.png`) }, 'Share as image');
+  }
+  function shareGameBtn(g) {
+    const legs = g.legs.filter((c) => c.call !== 'PASS');
+    if (!legs.length) return null;
+    const u = g.info || {};
+    return h('button', { class: 'shr', onclick: () => shareImage({
+      kicker: `NFL · Week ${g.week} · ${fmtDate(g.date)}`, title: `${g.away} @ ${g.home}`, sub: u.spread ? `${u.spread} · O/U ${u.total}` : '',
+      rows: legs.map((c) => ({ call: c.call, main: c.pick, sub: `Trap meter ${c.meter} · public on ${c.popular}`, odds: odds(c.odds ?? -110) })),
+    }, `trap-picks-${g.away}-${g.home}.png`) }, 'Share');
+  }
+
+  // ---------- weekly pick'em (inside groups) ----------
+  // Each member's picks live on their own group card: members/<uid>.pickem = {"2026_05": {game_id: pick}}.
+  // Everyone picks every game against the spread at the current line; a pick locks at kickoff.
+  const wkKey = (gid) => gid.slice(0, 7);
+  const lineTxt = (v) => (v < 0 ? '' : '+') + (v || 0);
+  function spreadNow(gid) { const m = (C.moves || {})[gid] || []; for (let i = m.length - 1; i >= 0; i--) if (m[i][1] != null) return m[i][1]; return null; }
+  const pickOpts = (g, s) => [{ side: g.away, pick: `${g.away} ${lineTxt(s)}` }, { side: g.home, pick: `${g.home} ${lineTxt(-s)}` }];
+  function pickemTally(pe, wk) {
+    const t = { w: 0, l: 0, p: 0, open: 0, n: 0 };
+    for (const [k, picks] of Object.entries(pe || {})) {
+      if (wk && k !== wk) continue;
+      for (const x of Object.values(picks)) { t.n++; const r = grade(x); if (r === 'W') t.w++; else if (r === 'L') t.l++; else if (r === 'P') t.p++; else t.open++; }
+    }
+    return t;
+  }
+  function setPickem(g, o) {
+    if (ACCT.state !== 'ready') return toast(ACCT.state === 'readonly' ? 'Saving is off for you on this link.' : signIn('play pick\'em'));
+    if (!ACCT.groups.length) return toast('Join a group to play pick\'em.');
+    if (started(g.id)) return toast('This game has started, so the pick is locked.');
+    const wk = wkKey(g.id), pe = { ...ACCT.pickem, [wk]: { ...(ACCT.pickem[wk] || {}) } };
+    if (pe[wk][g.id] && pe[wk][g.id].side === o.side) delete pe[wk][g.id];
+    else pe[wk][g.id] = { game_id: g.id, away: g.away, home: g.home, side: o.side, pick: o.pick, at: new Date().toISOString() };
+    ACCT.pickem = pe;
+    const me = GROUP.rows.find((r) => r.id === ACCT.id); if (me) me.pickem = pe;
+    if (GROUP.draw) GROUP.draw();
+    shareCard();
+  }
+  function pickemView(code, ps) {
+    const gs = games().filter((g) => spreadNow(g.id) != null)
+      .sort((a, b) => ((C.kickoff || {})[a.id] || a.date).localeCompare(((C.kickoff || {})[b.id] || b.date)));
+    const weeks = [...new Set(gs.map((g) => wkKey(g.id)))];
+    const mine = ACCT.groups.includes(code);
+    const nm = (id) => (ps[id] || {}).name || 'Member';
+    const rows = GROUP.rows.map((r) => ({ id: r.id, pe: r.pickem || {}, all: pickemTally(r.pickem), wk: pickemTally(r.pickem, weeks[0]) }))
+      .sort((a, b) => b.all.w - a.all.w || a.all.l - b.all.l || b.wk.n - a.wk.n);
+    const out = [];
+    out.push(h('div', { class: 'card' }, h('h3', null, 'Pick\'em standings'),
+      h('p', { class: 'muted', style: 'margin:-4px 0 8px' }, 'One point for every pick that covers. Season totals, this week in small print.'),
+      rows.length ? rows.map((r, i) => h('div', { class: 'lb' }, h('div', { class: 'lbr' }, h('span', { class: 'rk' }, i + 1), h('img', { src: (ps[r.id] || {}).avatarUrl || '', alt: '' }),
+        h('span', { class: 'nm' }, nm(r.id) + (r.id === ACCT.id ? ' (you)' : ''), h('small', null, `Week ${+weeks[0]?.slice(5) || ''}: ${r.wk.w}-${r.wk.l} · ${r.wk.n} picked`)),
+        h('span', { class: 'u mono' }, h('b', null, `${r.all.w}-${r.all.l}${r.all.p ? '-' + r.all.p : ''}`), `${r.all.open} open`)))) : h('p', { class: 'muted' }, 'Nobody has picked yet.')));
+    for (const wk of weeks) {
+      const list = gs.filter((g) => wkKey(g.id) === wk);
+      const myPicks = (ACCT.pickem || {})[wk] || {};
+      const card = h('div', { class: 'card' }, h('h3', null, `Week ${+wk.slice(5)} picks`, h('small', { class: 'muted', style: 'float:right;font-family:var(--body);text-transform:none;letter-spacing:0;font-size:13px;font-weight:500' }, `${Object.keys(myPicks).length} of ${list.length} picked`)));
+      if (!mine) card.append(h('p', { class: 'muted' }, 'Join this group to make picks.'));
+      list.forEach((g) => {
+        const lock = started(g.id), mp = myPicks[g.id];
+        const s = mp ? null : spreadNow(g.id);
+        const opts = mp ? pickOpts(g, spreadNow(g.id)).map((o) => o.side === mp.side ? { ...o, pick: mp.pick } : o) : pickOpts(g, s);
+        const res = mp ? grade(mp) : null;
+        const sc = g.legs.find((c) => c.market === 'Spread');
+        const others = lock ? rows.filter((r) => r.id !== ACCT.id && r.pe[wk] && r.pe[wk][g.id]).map((r) => r.pe[wk][g.id].side) : [];
+        const ko = (C.kickoff || {})[g.id];
+        card.append(h('div', { class: 'pe' },
+          h('div', { class: 'ph' }, h('span', null, ko ? at(ko) : fmtDate(g.date)), res ? h('span', { class: 'res ' + res }, res) : h('span', null, lock ? 'Locked' : '')),
+          h('div', { class: 'opts' }, opts.map((o) => h('button', { 'aria-pressed': mp && mp.side === o.side ? 'true' : 'false', disabled: lock || !mine, onclick: () => setPickem(g, o) },
+            h('span', { class: 'dot', style: `background:${col(o.side)}` }), o.pick))),
+          h('div', { class: 'tp' }, sc && sc.call !== 'PASS' ? [h('span', { class: 'tag ' + sc.call, style: 'font-size:10px;padding:1px 5px' }, LABEL[sc.call]), ` Trap Picks likes ${sc.pick}`] : 'Trap Picks: no edge on this spread',
+            lock && others.length ? ` · Friends: ${[g.away, g.home].map((t) => `${others.filter((x) => x === t).length} ${t}`).join(', ')}` : '')));
+      });
+      out.push(card);
+    }
+    if (!gs.length) out.push(h('p', { class: 'muted' }, 'No games on the board right now. Pick\'em opens with the next week\'s lines.'));
+    return out;
+  }
+
   function route() {
     if (!C) return;
     const hash = location.hash.slice(1) || 'board';
