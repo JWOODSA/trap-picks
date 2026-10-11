@@ -1,0 +1,78 @@
+-- Trap Picks accounts on Supabase. Run once in the Supabase dashboard: SQL Editor, New query, paste, Run.
+--
+-- docs     every saved thing (picks, groups, pick'em, fantasy leagues), stored by path the same way the
+--          Claude version stores them, so the app code is shared. Private paths (data/users/<id>/...) are
+--          readable only by their owner; everything else is readable by signed-in users. Only the person
+--          who wrote a row can change or delete it.
+-- profiles name and picture for leaderboards, filled in at sign-up.
+-- billing  Pro status, written only by the server (Stripe webhook); each person can read their own.
+
+create table if not exists public.docs (
+  path text primary key,
+  data jsonb not null,
+  owner uuid not null default auth.uid() references auth.users on delete cascade,
+  updated_at timestamptz not null default now()
+);
+create index if not exists docs_path_prefix on public.docs (path text_pattern_ops);
+create index if not exists docs_data on public.docs using gin (data jsonb_path_ops);
+alter table public.docs enable row level security;
+
+drop policy if exists docs_read on public.docs;
+create policy docs_read on public.docs for select to authenticated
+  using (path not like 'data/users/%' or path like 'data/users/' || auth.uid()::text || '/%');
+drop policy if exists docs_insert on public.docs;
+create policy docs_insert on public.docs for insert to authenticated
+  with check (owner = auth.uid()
+    and (path not like 'data/users/%' or path like 'data/users/' || auth.uid()::text || '/%')
+    and (path not like 'members/%' or path = 'members/' || auth.uid()::text)
+    and (path not like 'diag/%' or path = 'diag/live_' || auth.uid()::text));
+drop policy if exists docs_update on public.docs;
+create policy docs_update on public.docs for update to authenticated
+  using (owner = auth.uid()) with check (owner = auth.uid());
+drop policy if exists docs_delete on public.docs;
+create policy docs_delete on public.docs for delete to authenticated using (owner = auth.uid());
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users on delete cascade,
+  name text,
+  avatar_url text,
+  created_at timestamptz not null default now()
+);
+alter table public.profiles enable row level security;
+drop policy if exists profiles_read on public.profiles;
+create policy profiles_read on public.profiles for select to authenticated using (true);
+drop policy if exists profiles_update on public.profiles;
+create policy profiles_update on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
+
+create table if not exists public.billing (
+  id uuid primary key references auth.users on delete cascade,
+  stripe_customer text,
+  subscription text,
+  status text,
+  plan text,
+  pro_until timestamptz,
+  updated_at timestamptz not null default now()
+);
+alter table public.billing enable row level security;
+drop policy if exists billing_read_own on public.billing;
+create policy billing_read_own on public.billing for select to authenticated using (id = auth.uid());
+-- No insert/update policies: only the server (service role key) writes billing.
+
+-- New sign-ups get a profile: Google gives a name and picture; email sign-ups use the part before the @.
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, name, avatar_url)
+  values (new.id,
+          coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+          new.raw_user_meta_data->>'avatar_url')
+  on conflict (id) do nothing;
+  return new;
+end $$;
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
+
+-- Live updates for leaderboards, drafts and pick'em.
+do $$ begin
+  alter publication supabase_realtime add table public.docs;
+exception when duplicate_object then null; end $$;

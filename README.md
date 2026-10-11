@@ -1,20 +1,29 @@
-# Trap Picks web host (Cloudflare Pages)
+# Trap Picks website (Cloudflare Pages)
 
-The public site. Same app page as the Claude artifact, plus a live-score relay.
-
-- `public/` is the site: index.html, core.json, players.json, fantasy.json. Rebuild it with `web/build_web.sh` after `export_app.py` and `export_fantasy.py`.
-- `functions/api/live/[league].js` is a Pages Function. `/api/live/nfl` and `/api/live/nba` return ESPN's free scoreboard, cached 15 seconds at the edge. The page sets `window.TRAP_API = "/api"` so it reads scores through the relay (Claude artifacts block direct requests to ESPN).
-- `functions/api/weather.js` relays the free Open-Meteo forecast: `/api/weather?lat=..&lon=..&at=<kickoff ISO>` returns temperature, wind, gusts and chance of rain for the kickoff hour, cached 30 minutes. Game pages for open-air stadiums show it.
-- Accounts (picks, groups, fantasy leagues) still run only inside the Claude artifact. On the web host they show "coming soon" until Supabase sign-in is added.
+- `public/index.html` is the home page (from `web/landing.html`). `public/app.html` is the app, served at `/app`. Data files sit next to them.
+- `functions/api/live/[league].js` relays ESPN live scores (`/api/live/nfl`, `/api/live/nba`), cached 15 seconds.
+- `functions/api/weather.js` relays the free Open-Meteo forecast: `/api/weather?lat=..&lon=..&at=<kickoff ISO>` returns temperature, wind, gusts, direction, rain chance, rain amount and weather code for the kickoff hour, cached 30 minutes.
+- Accounts: Supabase (Google, or a one-tap email link). `supabase/schema.sql` creates the tables and access rules.
+- Pro: Stripe subscriptions. `functions/api/checkout.js` opens Stripe Checkout, `functions/api/portal.js` opens Stripe's billing page, `functions/api/stripe-webhook.js` keeps each member's Pro status current, and `functions/pro/_middleware.js` serves `/pro/core.json` (this week's calls) only to Pro members.
+- Rebuild `public/` with `web/build_web.sh` in the project after `export_app.py` and `export_fantasy.py`. Settings that are safe to publish go in `web/config.json`: `supabase_url`, `supabase_anon_key`, and `paywall` (true removes this week's calls from the public file).
 
 ## One-time setup
 
-1. Push this `web/` folder as the root of a GitHub repo.
-2. Cloudflare dashboard: Workers & Pages, Create, Pages, Connect to Git, pick the repo.
-   Framework preset: None. Build command: leave empty. Build output directory: `public`.
-3. Deploy. The site is live at `<project>.pages.dev`; add a custom domain later under the project's Custom domains tab.
+1. **Cloudflare Pages**: Workers & Pages, Create, Pages, Connect to Git, pick this repo. Framework preset None, build command empty, build output directory `public`.
+2. **Supabase** (supabase.com, free): new project. SQL Editor: paste `supabase/schema.sql`, Run.
+   - Authentication, URL Configuration: Site URL `https://<your site>`; add `https://<your site>/app` to Redirect URLs.
+   - Authentication, Providers: Email on. Google on, with a Google OAuth client (Google Cloud console, APIs & Services, Credentials, OAuth client ID, Web; authorized redirect URI is the callback URL Supabase shows).
+3. **Stripe** (stripe.com): product "Trap Picks Pro" with a $9.99 monthly price and a $59 yearly price.
+   - Developers, Webhooks, Add endpoint: `https://<your site>/api/stripe-webhook`, events `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`.
+   - Settings, Billing, Customer portal: turn on cancel and switch plans.
+4. **Cloudflare environment variables** (Pages project, Settings, Variables and Secrets; mark the secret ones as Secret):
+   - `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (secret)
+   - `STRIPE_SECRET_KEY` (secret), `STRIPE_WEBHOOK_SECRET` (secret)
+   - `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` (the price_ IDs)
+5. Put the Supabase URL and anon key in `web/config.json`, set `paywall` to true when checkout works, rebuild and push.
 
-Every push to the repo redeploys automatically.
+Stripe rule to keep: selling sports information is allowed, but sports forecasting, fantasy sports or contests with a cash or prize payout are prohibited. Pick'em and fantasy leagues must never pay prizes.
 
 ## Local test
 
