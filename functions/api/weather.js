@@ -1,7 +1,8 @@
 // Kickoff forecast relay for the Trap Picks app (Cloudflare Pages Function).
 // GET /api/weather?lat=41.86&lon=-87.62&at=2026-10-11T17:00:00Z returns the hourly
 // forecast closest to kickoff from Open-Meteo (free, no key): temperature (F),
-// wind and gusts (mph) and chance of rain. Cached at the edge for 30 minutes.
+// wind and gusts (mph) with direction, chance of rain, rain amount (inches) and the
+// WMO weather code (clear, cloudy, rain, snow, storms). Cached at the edge for 30 minutes.
 const TTL = 1800;
 
 export async function onRequestGet({ request, waitUntil }) {
@@ -18,7 +19,8 @@ export async function onRequestGet({ request, waitUntil }) {
   if (hit) return hit;
   const q = new URLSearchParams({
     latitude: lat.toFixed(3), longitude: lon.toFixed(3), timezone: 'UTC', forecast_days: '16',
-    hourly: 'temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation_probability',
+    hourly: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,precipitation_probability,precipitation,weather_code',
+    precipitation_unit: 'inch',
     temperature_unit: 'fahrenheit', wind_speed_unit: 'mph',
   });
   let d;
@@ -34,7 +36,8 @@ export async function onRequestGet({ request, waitUntil }) {
   if (i < 0) return json({ error: 'kickoff is outside the forecast window' }, 404);
   const H = d.hourly;
   const body = { at: times[i] + 'Z', temp: H.temperature_2m[i], wind: H.wind_speed_10m[i], gust: H.wind_gusts_10m[i],
-    rain: H.precipitation_probability[i], source: 'Open-Meteo', fetched: new Date().toISOString() };
+    rain: H.precipitation_probability[i],
+    dir: H.wind_direction_10m[i], precip: H.precipitation[i], code: H.weather_code[i], source: 'Open-Meteo', fetched: new Date().toISOString() };
   const res = new Response(JSON.stringify(body), {
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': `public, max-age=${TTL}` },
   });

@@ -551,6 +551,39 @@ details.card summary { font-size: 16px; }
 .pe .opts button:disabled { opacity: .6; cursor: default; }
 .pe .opts button[aria-pressed=true]:disabled { opacity: 1; }
 .pe .tp { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+
+/* weather graphic */
+.wxart { position: relative; border-radius: 14px; overflow: hidden; }
+.wxsvg { display: block; width: 100%; height: auto; }
+.wxtemp { position: absolute; right: 12px; top: 8px; text-align: right; text-shadow: 0 2px 8px rgba(0,0,0,.35); }
+.wxtemp b { display: block; font-family: var(--disp); font-weight: 900; font-size: 46px; line-height: 1; color: #fff; }
+.wxtemp span { font-size: 13px; font-weight: 700; color: #fff; }
+.wxchips { display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 6px; margin-top: 8px; }
+.wxchips div { position: relative; padding: 8px; border-radius: 10px; background: var(--bg2); }
+.wxchips div.hot { background: rgba(255,210,63,.14); }
+.wxchips b { display: block; font-family: var(--mono); font-size: 17px; } .wxchips small { font-size: 11px; color: var(--ink3); }
+.wxchips span { font-size: 11.5px; color: var(--ink3); }
+.wxchips .hot b { color: var(--yel); }
+.wxarrow { font-style: normal; font-weight: 900; color: var(--blu); display: inline-block; }
+.wxb { display: inline-block; margin: 4px 12px 0; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #e6eefb; color: #1d3566; }
+.wxb.wet { background: #d4e6ff; color: #0b3d8c; } .wxb.wind { background: #fff1c2; color: #6b4e00; }
+.wx-sun { animation: wxspin 24s linear infinite; transform-box: fill-box; transform-origin: center; }
+.wx-drop { animation: wxfall .9s linear infinite; }
+.wx-flake { animation: wxsnow 3s linear infinite; }
+.wx-drift { animation: wxdrift 9s ease-in-out infinite alternate; }
+.wx-drift2 { animation: wxdrift 12s ease-in-out infinite alternate-reverse; }
+.wx-bolt { animation: wxflash 3.2s steps(1) infinite; }
+.wx-streak { stroke-dasharray: 60 260; animation: wxwind 2.2s linear infinite; }
+.wx-flag { transform-box: fill-box; transform-origin: left center; animation: wxflap 1.6s ease-in-out infinite; }
+.wx-flag.fast { animation-duration: .5s; }
+@keyframes wxspin { to { transform: rotate(360deg); } }
+@keyframes wxfall { from { transform: translateY(0); opacity: 1; } to { transform: translateY(62px); opacity: .2; } }
+@keyframes wxsnow { from { transform: translate(0, 0); } to { transform: translate(-10px, 72px); } }
+@keyframes wxdrift { to { transform: translateX(14px); } }
+@keyframes wxflash { 0%, 100% { opacity: 0; } 8%, 12% { opacity: 1; } }
+@keyframes wxwind { from { stroke-dashoffset: 320; } to { stroke-dashoffset: 0; } }
+@keyframes wxflap { 50% { transform: scaleY(.8) skewY(4deg); } }
+@media (prefers-reduced-motion: reduce) { .wxsvg * { animation: none !important; } }
 </style>
 
 <div class="wrap">
@@ -658,6 +691,7 @@ details.card summary { font-size: 16px; }
       h('div', { class: 'bar' }, h('i', { style: `background:${col(g.away)}` }), h('i', { style: `background:${col(g.home)}` })),
       h('div', { class: 'hd' }, h('span', null, `Week ${g.week} · ${fmtDate(g.date)}`), h('span', null, kick, mv ? h('b', { class: 'mv' }, ' · moved') : null)),
       h('div', { class: 'lbadge', 'data-live-badge': `${g.away}@${g.home}`, hidden: true }),
+      wxBadge(g),
       h('div', { class: 'mu' }, h('span', { class: 'chip', style: `background:${col(g.away)}` }), h('span', { class: 'tm' }, g.away), h('span', { class: 'at' }, '@'),
         h('span', { class: 'tm' }, g.home), h('span', { class: 'chip', style: `background:${col(g.home)}` }), h('span', { class: 'stamp', 'data-c': g.top.call }, LABEL[g.top.call])),
       h('div', { class: 'perf' }),
@@ -2046,20 +2080,110 @@ details.card summary { font-size: 16px; }
   }
 
   // ---------- kickoff forecast (website only: the relay reaches Open-Meteo) ----------
-  function weatherCard(g) {
+  // One fetch per game, shared by the board badge and the game page graphic.
+  const WX = new Map();
+  function wxFor(g) {
     const u = g.info || {}, ko = C.kickoff && C.kickoff[g.id];
     if (!HOSTED || u.lat == null || !ko) return null;
-    const box = h('div', { class: 'card' }, h('h3', null, 'Kickoff forecast'), h('p', { class: 'muted' }, 'Loading forecast…'));
-    fetch(`${window.TRAP_API}/weather?lat=${u.lat}&lon=${u.lon}&at=${encodeURIComponent(ko)}`).then((r) => r.json()).then((w) => {
+    if (!WX.has(g.id)) WX.set(g.id, fetch(`${window.TRAP_API}/weather?lat=${u.lat}&lon=${u.lon}&at=${encodeURIComponent(ko)}`)
+      .then((r) => r.json()).catch(() => ({ error: 'Forecast unavailable right now.' })));
+    return WX.get(g.id);
+  }
+  // Sort the forecast into what it will look like at kickoff. Codes are WMO weather codes.
+  function wxKind(w) {
+    const c = w.code ?? -1;
+    const sky = c >= 95 ? 'storm' : (c >= 71 && c <= 77) || c === 85 || c === 86 ? 'snow'
+      : (c >= 51 && c <= 67) || (c >= 80 && c <= 82) || w.rain >= 60 ? (w.temp <= 33 ? 'snow' : 'rain')
+      : c === 45 || c === 48 ? 'fog' : c === 0 || c === 1 ? 'clear' : 'cloudy';
+    const windy = w.wind >= 15 || w.gust >= 25;
+    const label = { storm: 'Thunderstorms', snow: 'Snow', rain: 'Rain', fog: 'Fog', clear: 'Clear', cloudy: 'Cloudy' }[sky];
+    const icon = { storm: '⛈️', snow: '🌨️', rain: '🌧️', fog: '🌫️', clear: '☀️', cloudy: '☁️' }[sky];
+    return { sky, windy, cold: w.temp <= 32, hot: w.temp >= 88, label, icon };
+  }
+  const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const fromDir = (d) => d == null ? '' : COMPASS[Math.round(((d % 360) + 360) % 360 / 45) % 8];
+  // The scene: sky, sun or clouds, falling rain or snow, wind streaks, and a goalpost flag that
+  // stretches out with the wind. Animations stop for people who ask for reduced motion.
+  function wxArt(w, k) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const s = (tag, a, txt) => { const e = document.createElementNS(NS, tag); for (const n in a) e.setAttribute(n, a[n]); if (txt != null) e.textContent = txt; return e; };
+    const SKY = { clear: ['#2f7fe0', '#6cc4ff'], cloudy: ['#4a5d80', '#8496b8'], rain: ['#24324f', '#4f6386'], snow: ['#5b6f93', '#b9c8e2'], storm: ['#1a1433', '#3c2f63'], fog: ['#6d7a90', '#a9b3c4'] }[k.sky];
+    const svg = s('svg', { viewBox: '0 0 340 150', class: 'wxsvg', role: 'img', 'aria-label': `${k.label}, ${Math.round(w.temp)} degrees, wind ${Math.round(w.wind)} mph` });
+    const id = 'wx' + Math.random().toString(36).slice(2, 7);
+    const defs = s('defs');
+    const lg = s('linearGradient', { id, x1: 0, y1: 0, x2: 0, y2: 1 }); lg.append(s('stop', { offset: 0, 'stop-color': SKY[0] }), s('stop', { offset: 1, 'stop-color': SKY[1] }));
+    defs.append(lg); svg.append(defs, s('rect', { width: 340, height: 150, fill: `url(#${id})` }));
+    if (k.sky === 'clear') {
+      const at0 = s('g', { transform: 'translate(70 52)' }), sun = s('g', { class: 'wx-sun' });
+      for (let i = 0; i < 12; i++) sun.append(s('rect', { x: -2, y: -40, width: 4, height: 12, rx: 2, fill: '#ffe680', transform: `rotate(${i * 30})` }));
+      sun.append(s('circle', { r: 24, fill: '#ffd23f' }));
+      at0.append(sun); svg.append(at0);
+    } else {
+      const cloud = (x, y, sc, fill, cls) => { const wrap = s('g', { class: cls || '' }), g = s('g', { transform: `translate(${x} ${y}) scale(${sc})` }); wrap.append(g);
+        [[0, 0, 30], [28, -12, 34], [60, 0, 28], [30, 10, 30]].forEach(([cx, cy, r]) => g.append(s('circle', { cx, cy, r, fill })));
+        return wrap; };
+      const dark = k.sky === 'storm' ? '#3a3557' : k.sky === 'rain' ? '#5d6c8a' : k.sky === 'fog' ? '#c3cad6' : '#dfe6f2';
+      svg.append(cloud(30, 40, .9, dark, 'wx-drift'), cloud(150, 30, 1.1, k.sky === 'storm' ? '#2b2645' : dark, 'wx-drift2'));
+      if (k.sky === 'storm') svg.append(s('polygon', { class: 'wx-bolt', points: '205,62 188,98 202,98 192,128 222,86 207,86 218,62', fill: '#ffd23f' }));
+      if (k.sky === 'rain' || k.sky === 'storm') for (let i = 0; i < 26; i++) {
+        const x = 20 + (i * 37) % 300, d = (i % 5) * .17;
+        svg.append(s('line', { class: 'wx-drop', x1: x, y1: 60, x2: x - 4, y2: 72, stroke: '#9fd0ff', 'stroke-width': 2, 'stroke-linecap': 'round', style: `animation-delay:${d}s` }));
+      }
+      if (k.sky === 'snow') for (let i = 0; i < 24; i++) {
+        const x = 18 + (i * 41) % 300, d = (i % 6) * .4;
+        svg.append(s('circle', { class: 'wx-flake', cx: x, cy: 58, r: 2.6, fill: '#fff', style: `animation-delay:${d}s` }));
+      }
+      if (k.sky === 'fog') [96, 110, 124].forEach((y, i) => svg.append(s('rect', { x: 10 + i * 20, y, width: 280, height: 6, rx: 3, fill: '#e6ebf2', opacity: .7 })));
+    }
+    // Field and goalpost; the flag length and the streaks scale with wind speed.
+    svg.append(s('rect', { y: 132, width: 340, height: 18, fill: '#2f8f4e' }), s('rect', { y: 132, width: 340, height: 3, fill: '#5cc27a' }));
+    const gp = s('g', { stroke: '#ffd23f', 'stroke-width': 4, 'stroke-linecap': 'round', fill: 'none' });
+    gp.append(s('path', { d: 'M232 132 V110 M210 110 H254 M210 110 V82 M254 110 V82' }));
+    svg.append(gp);
+    const len = Math.min(46, 8 + w.wind * 1.6), sag = Math.max(0, 14 - w.wind);
+    svg.append(s('path', { class: k.windy ? 'wx-flag fast' : 'wx-flag', d: `M254 82 q ${len / 2} ${sag / 2 - 4} ${len} ${sag} l 0 10 q ${-len / 2} -4 ${-len} ${-sag + 2} z`, fill: '#ff4d5e' }));
+    if (w.wind >= 8) {
+      const n = w.wind >= 20 ? 5 : w.wind >= 15 ? 4 : 2;
+      for (let i = 0; i < n; i++) svg.append(s('path', { class: 'wx-streak', d: `M${20 + i * 18} ${78 + i * 12} q 60 -10 120 0 t 110 -4`, stroke: '#ffffff', 'stroke-opacity': .55, 'stroke-width': 2.2, fill: 'none', 'stroke-linecap': 'round', style: `animation-delay:${i * .35}s` }));
+    }
+    return svg;
+  }
+  function wxBadge(g) { return HOSTED && g.info && g.info.lat != null ? h('span', { class: 'wxb', 'data-wx': g.id, hidden: true }) : null; }
+  function renderWx() {
+    document.querySelectorAll('[data-wx]').forEach((el) => {
+      const g = games().find((x) => x.id === el.dataset.wx), p = g && wxFor(g);
+      if (!p) return;
+      p.then((w) => {
+        if (!w || w.error) return;
+        const k = wxKind(w);
+        el.className = 'wxb ' + (k.sky === 'rain' || k.sky === 'storm' || k.sky === 'snow' ? 'wet' : k.windy ? 'wind' : '');
+        el.replaceChildren(`${k.icon} ${Math.round(w.temp)}°`, k.windy ? ` · 💨 ${Math.round(w.wind)} mph` : '', w.rain >= 40 && k.sky !== 'clear' ? ` · ${Math.round(w.rain)}%` : '');
+        el.hidden = false;
+      });
+    });
+  }
+  function weatherCard(g) {
+    const p = wxFor(g); if (!p) return null;
+    const u = g.info || {};
+    const box = h('div', { class: 'card wxcard' }, h('h3', null, 'Kickoff weather'), h('p', { class: 'muted' }, 'Loading forecast…'));
+    p.then((w) => {
       if (w.error) { box.lastChild.textContent = w.error.includes('window') ? 'Forecast opens about two weeks before kickoff.' : 'Forecast unavailable right now.'; return; }
-      const windy = w.wind >= 15;
-      const under = windy ? (w.wind >= 20 ? C.wind['20+ mph'] : C.wind['15-19 mph']) : null;
-      box.replaceChildren(...[h('h3', null, 'Kickoff forecast'),
-        kv([[`${Math.round(w.temp)}°`, 'Temp'], [`${Math.round(w.wind)} mph`, `Wind, gusts ${Math.round(w.gust)}`, windy ? 'hot' : null], [`${Math.round(w.rain)}%`, 'Chance of rain']]),
-        windy && under ? h('div', { class: 'flag' }, `Unders hit ${pct(under, 0)} of the time in ${w.wind >= 20 ? '20+' : '15-19'} mph wind since 1999.`) : null,
+      const k = wxKind(w);
+      const under = w.wind >= 20 ? C.wind['20+ mph'] : w.wind >= 15 ? C.wind['15-19 mph'] : null;
+      const notes = [];
+      if (under) notes.push(`Unders hit ${pct(under, 0)} of the time in ${w.wind >= 20 ? '20+' : '15-19'} mph wind since 1999.`);
+      box.replaceChildren(...[h('h3', null, 'Kickoff weather'),
+        h('div', { class: 'wxart' }, wxArt(w, k),
+          h('div', { class: 'wxtemp' }, h('b', null, `${Math.round(w.temp)}°`), h('span', null, k.label + (k.windy ? ', windy' : '')))),
+        h('div', { class: 'wxchips' },
+          h('div', { class: k.windy ? 'hot' : null }, h('b', null, `${Math.round(w.wind)}`, h('small', null, ' mph')), h('span', null, `Wind${w.dir != null ? ' from ' + fromDir(w.dir) + ' ' : ''}`, w.dir != null ? h('i', { class: 'wxarrow', 'aria-hidden': 'true', style: `transform:rotate(${(w.dir + 180) % 360}deg)` }, '↑') : null)),
+          h('div', null, h('b', null, `${Math.round(w.gust)}`, h('small', null, ' mph')), h('span', null, 'Gusts')),
+          h('div', { class: w.rain >= 50 ? 'hot' : null }, h('b', null, `${Math.round(w.rain)}%`), h('span', null, 'Chance of rain')),
+          w.precip != null ? h('div', null, h('b', null, `${w.precip.toFixed(2)}"`), h('span', null, 'Rain that hour')) : null),
+        notes.length ? h('div', { class: 'flag' }, notes.join(' ')) : null,
         /Retractable/.test(u.roof_label || '') ? h('p', { class: 'snap' }, 'Retractable roof: the team decides on game day whether it is open.') : null,
         h('p', { class: 'snap' }, `Open-Meteo forecast for ${at(w.at)}. Checked ${at(w.fetched)}.`)].filter(Boolean));
-    }).catch(() => { box.lastChild.textContent = 'Forecast unavailable right now.'; });
+    });
     return box;
   }
 
@@ -2234,6 +2358,7 @@ details.card summary { font-size: 16px; }
     view.replaceChildren(...[nodes].flat(3).filter(Boolean));
     window.scrollTo(0, 0);
     renderLive();
+    renderWx();
     if (hash !== 'me') sync();
   }
   document.getElementById('back').addEventListener('click', () => { if (history.length > 1) history.back(); else go('board'); });
