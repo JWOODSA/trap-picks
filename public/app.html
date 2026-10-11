@@ -629,6 +629,32 @@ details.card summary { font-size: 16px; }
 .lperks li::before { content: '✓'; color: var(--grn); font-weight: 900; }
 .lfine { margin: 16px 4px 0; font-size: 12px; color: var(--ink3); line-height: 1.45; }
 .res.prov { outline: 2px dashed currentColor; outline-offset: 1px; opacity: .85; }
+/* Bet tracker */
+.save.log { border-color: var(--grn); color: var(--grn); }
+.sheet { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.sheet h3 { margin: 0; font-family: var(--disp); text-transform: uppercase; font-size: 22px; }
+.sheet label { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--ink2); text-transform: uppercase; letter-spacing: .04em; }
+.sheet label .search { margin: 0; text-transform: none; letter-spacing: 0; font-weight: 500; }
+.sheet .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.up { color: var(--grn); } .dn { color: var(--red); }
+.bt-card { display: block; width: 100%; text-align: left; color: inherit; font: inherit; }
+.bt-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.bt-row > div { flex: 1 1 0; min-width: 70px; display: grid; font-size: 12px; color: var(--ink2); }
+.bt-row b { font-family: var(--mono); font-size: 18px; color: var(--ink); }
+.bt-row b.up { color: var(--grn); } .bt-row b.dn { color: var(--red); }
+.bt-hero { padding: 16px; border-radius: 16px; background: linear-gradient(150deg, #10301f, var(--card) 65%); border: 1px solid var(--line); display: grid; gap: 8px; }
+.bt-hero > span { font-family: var(--disp); text-transform: uppercase; font-weight: 800; color: var(--ink2); letter-spacing: .04em; }
+.bt-hero > b { font-family: var(--mono); font-size: 40px; line-height: 1; }
+.bt-chart { width: 100%; height: auto; display: block; }
+.bt-bet { padding: 10px 0; border-top: 1px solid var(--line); display: grid; gap: 4px; }
+.bt-bet:first-of-type { border-top: 0; }
+.bt-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.bt-sub { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink2); }
+.bt-sub span { font-family: var(--mono); font-weight: 700; }
+.bt-act { display: flex; gap: 6px; align-items: center; font-size: 12px; }
+.bt-act button { padding: 5px 10px; border-radius: 999px; background: var(--card2); color: var(--ink); font-size: 12px; font-weight: 700; }
+.bt-act button[aria-pressed="true"] { background: var(--yel); color: #08111f; }
+.bt-act .x { margin-left: auto; }
 </style>
 
 <div class="wrap">
@@ -726,7 +752,7 @@ details.card summary { font-size: 16px; }
       h('div', { class: 'score' }, h('b', null, c.meter), 'trap meter'),
       h('div', { class: 'pick', style: 'grid-column:1/-1' }, c.call === 'PASS' ? 'No trap, popular side fairly priced' : c.pick, edge(c) && c.odds != null ? h('small', null, odds(c.odds)) : null),
       meter(c.meter),
-      edge(c) ? h('div', { class: 'sides' }, saveBtn(c, 'with'), saveBtn(c, 'fade')) : null);
+      edge(c) ? h('div', { class: 'sides' }, saveBtn(c, 'with'), saveBtn(c, 'fade'), logBtn(c)) : null);
   }
   function slip(g) {
     const reasons = [...new Set(g.legs.filter((c) => edge(c) && c.reasons).flatMap((c) => c.reasons.split('; ')))].slice(0, 2);
@@ -825,7 +851,7 @@ details.card summary { font-size: 16px; }
           bt ? `Since 2016, the ${slipN}-leg slip hit ${bt.hits} of ${bt.slips} weeks (${pct(bt.hit_pct)}), ${sgn(bt.units)} units at 1 unit a slip. ` : `No ${slipN}-leg backtest: weeks rarely had this many edges. `,
           max < 15 ? `Only ${max} games left this week have an edge, so the slip tops out at ${max}. ` : '',
           'Parlays are long shots: one miss loses the slip. Play it small.'),
-        saveAllBtn(legs), shareSlipBtn(legs, d, hit));
+        saveAllBtn(legs), logSlipBtn(legs, d), shareSlipBtn(legs, d, hit));
       queueMicrotask(sync);
     };
     draw();
@@ -1103,6 +1129,7 @@ details.card summary { font-size: 16px; }
     db.doc(base + '/picks').onSnapshot((d) => { ACCT.picks = (d.exists && d.data().items) || {}; sync(); }, () => {});
     db.doc(base + '/profile').onSnapshot((d) => { ACCT.teams = (d.exists && d.data().teams) || []; sync(); }, () => {});
     db.doc('members/' + me.id).onSnapshot((d) => { ACCT.groups = (d.exists && d.data().groups) || []; ACCT.pickem = (d.exists && d.data().pickem) || {}; sync(); }, () => {});
+    db.doc(base + '/bets').onSnapshot((d) => { BETS.items = (d.exists && d.data().items) || {}; BETS.bankroll = d.exists ? d.data().bankroll ?? null : null; sync(); if (location.hash === '#bets') route(); }, () => {});
     db.doc(base + '/fantasy').onSnapshot((d) => { ACCT.leagues = (d.exists && d.data().leagues) || []; sync(); }, () => {});
     sync();
     if (SB.client) { await loadPro(); if (SB.checkoutBack) afterCheckout(); else if ((location.hash.slice(1) || 'board') === 'me') route(); }
@@ -1222,6 +1249,7 @@ details.card summary { font-size: 16px; }
       h('span', null, h('b', null, p.pick), ' ', h('span', { class: 'muted' }, `${p.away} @ ${p.home} · ${odds(p.odds)}`)),
       p.res ? h('span', { class: 'res ' + p.res }, p.res) : started(p.game_id) ? h('span', { class: 'muted mono' }, 'live') : h('button', { class: 'x', 'aria-label': 'Remove pick', onclick: (e) => { e.stopPropagation(); togglePick(p, p.side || 'with'); } }, '×'))) :
       h('p', { class: 'muted' }, 'No picks yet. Tap "Ride with us" or "Go against" on any call, or save the whole Slip of the Day.')));
+    out.push(betsCard());
     out.push(groupsCard());
     out.push(h('div', { class: 'card' }, h('h3', null, 'Teams you follow'), ACCT.teams.length ? h('div', { class: 'passes' }, ACCT.teams.map((t) => h('button', { onclick: () => go('t_' + t) }, h('span', { class: 'dot', style: `background:${col(t)}` }), name(t)))) :
       h('p', { class: 'muted' }, 'Follow a team from its page to see its games at the top of the board.')));
@@ -2579,6 +2607,134 @@ details.card summary { font-size: 16px; }
       h('button', { class: 'leave', style: 'margin-top:12px', onclick: () => SB.client.auth.signOut() }, `Sign out${SB.session ? ' of ' + SB.session.user.email : ''}`));
   }
 
+  // ---------- bet tracker: real money bets, bankroll and profit ----------
+  // Private to each person: data/users/<id>/bets = {items: {id: bet}, bankroll}. A bet logged from a call
+  // or slip carries its legs and grades itself from the final score; a hand-entered bet is marked by its owner.
+  const BOOKS = ['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'ESPN BET', 'Fanatics', 'bet365', 'BetRivers', 'Hard Rock', 'Other'];
+  const BETS = { items: {}, bankroll: null };
+  const usd = (v, sign) => (v < 0 ? '-' : sign && v > 0 ? '+' : '') + '$' + Math.abs(v).toFixed(2).replace(/\.00$/, '');
+  function betResult(b) {
+    if (b.result) return b.result;
+    if (!b.legs || !b.legs.length) return null;
+    const rs = b.legs.map(grade);
+    if (rs.includes('L')) return 'L';
+    if (rs.includes(null)) return null;
+    return rs.every((r) => r === 'P') ? 'P' : 'W';
+  }
+  // Pushed parlay legs drop out and the payout uses the remaining legs.
+  function betDec(b) {
+    if (b.legs && b.legs.length > 1 && b.legs.every((l) => l.odds != null)) {
+      const d = b.legs.filter((l) => grade(l) !== 'P').reduce((a, l) => a * dec(l.odds), 1);
+      if (betResult(b) === 'W') return d;
+    }
+    return dec(b.odds);
+  }
+  function betProfit(b) { const r = betResult(b); return r === 'W' ? b.stake * (betDec(b) - 1) : r === 'L' ? -b.stake : r === 'P' ? 0 : null; }
+  function saveBets() { return write('bets', { items: BETS.items, bankroll: BETS.bankroll }); }
+  function betSheet(pre) {
+    if (ACCT.state !== 'ready') return toast(ACCT.state === 'readonly' ? 'Saving is off for you on this link.' : signIn('track your bets'));
+    const close = () => m.remove();
+    const last = Object.values(BETS.items).sort((a, b) => b.at.localeCompare(a.at))[0];
+    const desc = h('input', { class: 'search', value: pre.desc || '', placeholder: 'e.g. Chiefs -3, or a 3-leg parlay', maxlength: 80, readonly: pre.legs ? true : null, 'aria-label': 'Bet' });
+    const stake = h('input', { class: 'search', type: 'number', inputmode: 'decimal', min: '0', step: '0.01', placeholder: '25', value: last ? last.stake : '', 'aria-label': 'Stake in dollars' });
+    const od = h('input', { class: 'search', type: 'text', inputmode: 'numeric', value: pre.odds != null ? odds(pre.odds) : '-110', 'aria-label': 'Odds' });
+    const book = h('select', { class: 'search', 'aria-label': 'Sportsbook' }, BOOKS.map((b) => h('option', { value: b, selected: last && last.book === b ? true : null }, b)));
+    const win = h('p', { class: 'muted', style: 'margin:0;font-size:13px' });
+    const calc = () => { const s = parseFloat(stake.value), o = parseFloat(od.value.replace('+', ''));
+      win.textContent = s > 0 && Math.abs(o) >= 100 ? `To win ${usd(s * (dec(o) - 1))}, returns ${usd(s * dec(o))}` : 'Odds are American, like -110 or +150.'; };
+    stake.addEventListener('input', calc); od.addEventListener('input', calc); calc();
+    const save = () => {
+      const s = parseFloat(stake.value), o = parseFloat(od.value.replace('+', ''));
+      if (!desc.value.trim()) return toast('Describe the bet first.');
+      if (!(s > 0)) return toast('Enter how much you bet.');
+      if (!(Math.abs(o) >= 100)) return toast('Enter American odds, like -110 or +150.');
+      const id = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+      BETS.items = { ...BETS.items, [id]: { id, at: new Date().toISOString(), date: pre.date || new Date().toISOString().slice(0, 10), desc: desc.value.trim().slice(0, 80),
+        stake: Math.round(s * 100) / 100, odds: o, book: book.value, kind: pre.kind || 'manual', legs: pre.legs || null, result: null } };
+      saveBets().then(() => toast(`Logged ${usd(s)} on ${desc.value.trim()}.`));
+      close(); if (location.hash === '#bets') route();
+    };
+    const m = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Log a bet', onclick: (e) => { if (e.target === m) close(); } },
+      h('div', { class: 'in sheet' }, h('h3', null, 'Log a bet'),
+        h('label', null, 'Bet', desc), h('div', { class: 'two' }, h('label', null, 'Stake ($)', stake), h('label', null, 'Odds', od)),
+        h('label', null, 'Sportsbook', book), win,
+        h('div', { class: 'row' }, h('button', { class: 'alt', onclick: close }, 'Cancel'), h('button', { onclick: save }, 'Save bet'))));
+    document.body.append(m); stake.focus();
+  }
+  const legOf = (c) => ({ game_id: c.game_id, away: c.away, home: c.home, market: c.market, pick: c.pick, odds: c.odds ?? -110, date: c.date });
+  function logBtn(c) {
+    return h('button', { class: 'save log', hidden: true, 'data-acct': '1', onclick: (e) => { e.stopPropagation();
+      betSheet({ desc: `${c.pick} (${c.away} @ ${c.home})`, odds: c.odds ?? -110, legs: [legOf(c)], date: c.date, kind: 'single' }); } }, '$ Log bet');
+  }
+  function logSlipBtn(legs, d) {
+    return h('button', { class: 'shr', hidden: true, 'data-acct': '1', onclick: () => betSheet({ desc: `${legs.length}-leg Slip of the Day`, odds: Math.round((d >= 2 ? (d - 1) * 100 : -100 / (d - 1))),
+      legs: legs.map(legOf), date: legs.map((c) => c.date).sort().pop(), kind: 'parlay' }) }, 'Log as a bet');
+  }
+  function betStats() {
+    const all = Object.values(BETS.items);
+    const done = all.filter((b) => betResult(b)), open = all.filter((b) => !betResult(b));
+    const profit = done.reduce((a, b) => a + betProfit(b), 0), risked = done.reduce((a, b) => a + b.stake, 0);
+    const w = done.filter((b) => betResult(b) === 'W').length, l = done.filter((b) => betResult(b) === 'L').length;
+    return { all, done, open, profit, risked, w, l, roi: risked ? profit / risked : null, atRisk: open.reduce((a, b) => a + b.stake, 0) };
+  }
+  function betsCard() {
+    const S = betStats();
+    return h('button', { class: 'card bt-card', onclick: () => go('bets') }, h('h3', null, 'Bet tracker', h('span', { class: 'muted', style: 'float:right;font-family:var(--body);font-size:13px;text-transform:none;letter-spacing:0' }, 'Open →')),
+      S.all.length ? h('div', { class: 'bt-row' }, h('div', null, h('b', { class: S.profit >= 0 ? 'up' : 'dn' }, usd(S.profit, true)), 'profit'),
+        h('div', null, h('b', null, `${S.w}-${S.l}`), 'record'), h('div', null, h('b', null, S.open.length), 'open bets'))
+        : h('p', { class: 'muted', style: 'margin:0' }, 'Track your real bets: stake, sportsbook, profit and bankroll. Tap "$ Log bet" on any call, or add one by hand.'));
+  }
+  function profitChart(done) {
+    const pts = []; let run = 0;
+    [...done].sort((a, b) => (a.date + a.at).localeCompare(b.date + b.at)).forEach((b) => { run += betProfit(b); pts.push(run); });
+    if (pts.length < 2) return null;
+    const W = 340, H = 120, lo = Math.min(0, ...pts), hi = Math.max(0, ...pts), span = hi - lo || 1;
+    const x = (i) => 6 + i * (W - 12) / (pts.length - 1), y = (v) => 8 + (H - 16) * (1 - (v - lo) / span);
+    const NS = 'http://www.w3.org/2000/svg', s = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+    const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, class: 'bt-chart', role: 'img', 'aria-label': `Profit over ${pts.length} settled bets, now ${usd(run, true)}` });
+    svg.append(s('line', { x1: 0, x2: W, y1: y(0), y2: y(0), stroke: '#7182a8', 'stroke-dasharray': '4 4' }));
+    const d = pts.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+    svg.append(s('path', { d: `${d} L${x(pts.length - 1)} ${y(0)} L${x(0)} ${y(0)} Z`, fill: run >= 0 ? 'rgba(61,220,151,.18)' : 'rgba(255,77,94,.18)' }),
+      s('path', { d, fill: 'none', stroke: run >= 0 ? '#3ddc97' : '#ff4d5e', 'stroke-width': 2.5, 'stroke-linejoin': 'round' }));
+    return svg;
+  }
+  function betsPage() {
+    if (ACCT.state === 'loading') return [h('div', { class: 'loading' }, 'Checking your sign-in…')];
+    if (ACCT.state === 'none') return loginPage();
+    const S = betStats();
+    const bank = BETS.bankroll;
+    const out = [h('div', { class: 'bt-hero fade' },
+      h('span', null, 'Bet tracker'), h('b', { class: S.profit >= 0 ? 'up' : 'dn' }, usd(S.profit, true)),
+      h('div', { class: 'bt-row' },
+        h('div', null, h('b', null, `${S.w}-${S.l}`), 'record'),
+        h('div', null, h('b', null, S.roi == null ? '–' : pct(S.roi)), 'ROI'),
+        h('div', null, h('b', null, usd(S.atRisk)), `in ${S.open.length} open`),
+        bank != null ? h('div', null, h('b', null, usd(bank + S.profit)), 'bankroll') : null))];
+    out.push(h('button', { class: 'save-all', onclick: () => betSheet({}) }, '+ Add a bet'));
+    const ch = profitChart(S.done);
+    if (ch) out.push(h('div', { class: 'card' }, h('h3', null, 'Profit over time'), ch));
+    const bi = h('input', { class: 'search', type: 'number', inputmode: 'decimal', min: '0', placeholder: 'Starting bankroll, e.g. 500', value: bank ?? '', style: 'margin:0', 'aria-label': 'Starting bankroll' });
+    out.push(h('div', { class: 'card' }, h('h3', null, 'Bankroll'),
+      h('p', { class: 'muted', style: 'margin:-4px 0 8px;font-size:13px' }, bank != null ? `Started at ${usd(bank)}. A common rule is to bet 1-3% of your bankroll per bet: ${usd((bank + S.profit) * 0.01)} to ${usd((bank + S.profit) * 0.03)} now.` : 'Set your starting bankroll to track what you have left and get a suggested bet size.'),
+      h('div', { class: 'gform', style: 'margin:0' }, bi, h('button', { class: 'gbtn', onclick: () => { const v = parseFloat(bi.value); BETS.bankroll = v > 0 ? v : null; saveBets(); route(); } }, 'Save'))));
+    const books = {};
+    S.done.forEach((b) => { const k = books[b.book] || (books[b.book] = { n: 0, p: 0, r: 0 }); k.n++; k.p += betProfit(b); k.r += b.stake; });
+    if (Object.keys(books).length) out.push(h('div', { class: 'card' }, h('h3', null, 'By sportsbook'),
+      Object.entries(books).sort((a, b) => b[1].p - a[1].p).map(([k, v]) => h('div', { class: 'lmv' }, h('span', null, k), h('span', { class: 'muted mono' }, `${v.n} bet${v.n === 1 ? '' : 's'} · ${pct(v.p / v.r)}`), h('span', { class: 'to ' + (v.p >= 0 ? 'up' : 'dn') }, usd(v.p, true))))));
+    const rows = [...S.all].sort((a, b) => (betResult(a) ? 1 : 0) - (betResult(b) ? 1 : 0) || (b.date + b.at).localeCompare(a.date + a.at));
+    out.push(h('div', { class: 'card' }, h('h3', null, 'Your bets'), rows.length ? rows.map((b) => {
+      const r = betResult(b), p = betProfit(b), manual = !b.legs || !b.legs.length;
+      const mark = (v) => { BETS.items = { ...BETS.items, [b.id]: { ...b, result: b.result === v ? null : v } }; saveBets(); route(); };
+      return h('div', { class: 'bt-bet' },
+        h('div', { class: 'bt-top' }, h('b', null, b.desc), r ? h('span', { class: 'res ' + r }, r) : h('span', { class: 'muted mono' }, b.legs && b.legs.some((l) => started(l.game_id)) ? 'live' : 'open')),
+        h('div', { class: 'bt-sub' }, `${b.book} · ${usd(b.stake)} at ${odds(b.odds)} · ${fmtDate(b.date, { month: 'short', day: 'numeric' })}`,
+          h('span', { class: p == null ? 'muted' : p >= 0 ? 'up' : 'dn' }, p == null ? `to win ${usd(b.stake * (dec(b.odds) - 1))}` : usd(p, true))),
+        h('div', { class: 'bt-act' }, manual ? ['W', 'L', 'P'].map((v) => h('button', { 'aria-pressed': b.result === v ? 'true' : 'false', onclick: () => mark(v) }, v === 'W' ? 'Won' : v === 'L' ? 'Lost' : 'Push')) : h('span', { class: 'muted' }, r ? 'Graded from the final score' : 'Grades itself after the game'),
+          h('button', { class: 'x', 'aria-label': 'Delete bet', onclick: () => { if (!confirm('Delete this bet?')) return; const it = { ...BETS.items }; delete it[b.id]; BETS.items = it; saveBets(); route(); } }, '×')));
+    }) : h('p', { class: 'muted' }, 'No bets yet. Tap "+ Add a bet", or "$ Log bet" on any call.')));
+    out.push(h('p', { class: 'snap', style: 'text-align:center' }, 'Only you can see your bets. Bet responsibly · 21+ · 1-800-522-4700'));
+    return out;
+  }
   function route() {
     if (!C) return;
     const hash = location.hash.slice(1) || 'board';
@@ -2588,6 +2744,7 @@ details.card summary { font-size: 16px; }
     else if (hash === 'players') { tab = 'players'; nodes = players(); }
     else if (hash === 'record') { tab = 'record'; nodes = record(); }
     else if (hash === 'me') { tab = 'me'; nodes = mePage(); }
+    else if (hash === 'bets') { tab = 'me'; nodes = betsPage(); }
     else if (hash === 'login') { tab = 'me'; nodes = loginPage(); }
     else if (hash === 'fantasy') { tab = 'fantasy'; nodes = fantasy(); }
     else if (kind === 'f') { tab = 'fantasy'; nodes = fplayer(arg); }
@@ -2600,7 +2757,7 @@ details.card summary { font-size: 16px; }
     else nodes = board();
     if (!(kind === 'fl' && arg) && FL.code) flStop();
     if (kind !== 'grp' && GROUP.unsub) { GROUP.unsub(); GROUP.unsub = null; GROUP.code = null; }
-    const detail = ['g', 't', 'p', 'grp', 'f', 'fl'].includes(kind) && arg;
+    const detail = (['g', 't', 'p', 'grp', 'f', 'fl'].includes(kind) && arg) || hash === 'bets';
     document.getElementById('back').hidden = !detail;
     document.querySelectorAll('.tabbar a').forEach((a) => { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     view.replaceChildren(...[nodes].flat(3).filter(Boolean));
