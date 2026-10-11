@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <title>Trap Picks</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b1324">
+<meta name="theme-color" content="#0c0c0e">
 <meta name="description" content="Trap Picks finds NFL games where the popular bet has lost more than the odds say. Live scores, weather, injuries, pick'em with friends. Information, not a sportsbook.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Anton&family=Permanent+Marker&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root {
   color-scheme: dark;
@@ -122,6 +122,38 @@ details.faq p { margin: 10px 0 0; color: var(--ink2); line-height: 1.45; }
 .final .cta { justify-content: center; }
 footer { padding: 30px 0 calc(30px + env(safe-area-inset-bottom)); color: var(--ink3); font-size: 13px; line-height: 1.5; }
 footer b { color: var(--ink2); }
+/* ===== Urban layer (matches the app): asphalt, concrete, spray paint, street stickers ===== */
+:root {
+  --bg: #0c0c0e; --bg2: #141416; --card: #18181b; --card2: #232327; --line: #2e2e33;
+  --ink: #f3f0e8; --ink2: #b9b4a9; --ink3: #807a70;
+  --yel: #ffe14d; --red: #ff2e50; --grn: #2bf28a; --blu: #2fd2ff; --org: #ff8a1f; --pnk: #ff3ea5;
+  --disp: 'Anton', 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+  --tag: 'Permanent Marker', 'Anton', cursive;
+}
+html { font-synthesis: none; }
+body { background:
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+  radial-gradient(700px 440px at 0% -80px, rgba(255,140,30,.22), transparent 70%),
+  radial-gradient(640px 420px at 110% 320px, rgba(255,62,165,.12), transparent 70%), var(--bg); }
+nav { background: rgba(8,8,10,.9); border-bottom: 2px solid #000; }
+.mark { font-weight: 400; letter-spacing: .03em; }
+.mark b { font-family: var(--tag); font-weight: 400; text-transform: none; display: inline-block; transform: rotate(-4deg); text-shadow: 0 0 10px rgba(255,225,77,.55), 2px 2px 0 #000; }
+.btn { border-radius: 4px; border: 2px solid #000; box-shadow: 4px 4px 0 #000; font-family: var(--disp); font-weight: 400; letter-spacing: .05em; text-transform: uppercase; }
+.btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000; }
+.hero h1 { font-weight: 400; letter-spacing: .02em; line-height: .9; text-shadow: 4px 4px 0 #000; }
+.hero h1 span { font-family: var(--tag); font-size: .74em; transform: rotate(-3deg); transform-origin: left; margin-top: 6px; text-shadow: 0 0 22px rgba(255,225,77,.45), 4px 4px 0 #000; }
+.slip { --disp: 'Big Shoulders Display', 'Arial Narrow', sans-serif; box-shadow: 8px 8px 0 #000; }
+.slip::before { content: ''; position: absolute; top: -8px; left: 50%; width: 90px; height: 22px; margin-left: -45px; background: rgba(240,232,200,.6); transform: rotate(3deg); z-index: 2; }
+.proof > div, .steps > div, .feat, .plan { border-radius: 4px; border: 2px solid #000; box-shadow: 4px 4px 0 #000, inset 0 0 0 1px #29292e; }
+.proof .hot { background: linear-gradient(150deg, #0e3a27, #121214 80%); border-color: #000; }
+h2 { font-weight: 400; letter-spacing: .02em; text-shadow: 3px 3px 0 #000; }
+h2 span { font-family: var(--tag); font-size: .8em; display: inline-block; transform: rotate(-2deg); }
+.steps .n { border-radius: 4px; transform: rotate(-4deg); box-shadow: 2px 2px 0 #000; font-weight: 400; }
+.tag { font-weight: 400; letter-spacing: .08em; border-radius: 2px; display: inline-block; transform: rotate(-2deg); box-shadow: 2px 2px 0 #000; }
+.tag.W { background: var(--yel); color: #1a1600; }
+.plan .nm { font-weight: 400; letter-spacing: .03em; }
+.plan.pro { background: repeating-linear-gradient(-45deg, rgba(255,225,77,.06) 0 14px, transparent 14px 28px), linear-gradient(150deg, #2e2400, #141210); border-color: #000; }
+.final { border-radius: 4px; border: 2px solid #000; box-shadow: 6px 6px 0 #000; background: linear-gradient(165deg, #232326, #121214 75%); }
 </style>
 </head>
 <body>

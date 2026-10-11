@@ -2,10 +2,10 @@
 <html lang="en"><head><meta charset="utf-8">
 <title>Trap Picks</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b1324">
+<meta name="theme-color" content="#0c0c0e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Anton&family=Permanent+Marker&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <meta name="description" content="Trap Picks: NFL betting information. Where the popular side loses, live scores and win chances, and fantasy basketball.">
 <script>window.TRAP_API = "/api";</script>
 </head><body>
@@ -670,6 +670,86 @@ details.card summary { font-size: 16px; }
 .hb-bar { height: 10px; border-radius: 99px; background: var(--bg2); overflow: hidden; margin: 6px 0; }
 .hb-bar span { display: block; height: 100%; background: var(--grn); }
 .hb-bar span.over { background: var(--red); }
+/* ===== Urban layer: asphalt, concrete, spray paint, street stickers. Same layout, new skin. ===== */
+:root {
+  --bg: #0c0c0e; --bg2: #141416; --card: #18181b; --card2: #232327; --line: #2e2e33;
+  --ink: #f3f0e8; --ink2: #b9b4a9; --ink3: #807a70;
+  --yel: #ffe14d; --red: #ff2e50; --grn: #2bf28a; --blu: #2fd2ff; --org: #ff8a1f; --pnk: #ff3ea5;
+  --disp: 'Anton', 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+  --tag: 'Permanent Marker', 'Anton', cursive;
+  --r: 6px;
+}
+/* Asphalt: grain + a sodium streetlight glow and a neon spill */
+body { background:
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+  radial-gradient(600px 380px at 0% -60px, rgba(255,140,30,.20), transparent 70%),
+  radial-gradient(520px 340px at 105% 30%, rgba(255,62,165,.10), transparent 70%),
+  var(--bg); background-attachment: fixed; }
+
+/* Header: black wall, spray-tag logo */
+.top { background: rgba(8,8,10,.9); border-bottom: 2px solid #000; box-shadow: 0 1px 0 #26262b; }
+.mark { font-family: var(--disp); font-weight: 400; font-size: 27px; letter-spacing: .03em; }
+.mark b { font-family: var(--tag); font-weight: 400; font-size: .92em; color: var(--yel); display: inline-block; transform: rotate(-4deg) translateY(-1px); margin-left: 2px;
+  text-shadow: 0 0 10px rgba(255,225,77,.55), 2px 2px 0 #000; text-transform: none; letter-spacing: .01em; }
+.back { border-radius: 6px; background: var(--card2); border: 1px solid #000; }
+.acct { border-radius: 6px; box-shadow: 2px 2px 0 #000; }
+.acct.on { border-radius: 6px; border: 2px solid var(--yel); }
+
+/* Hero: wheat-pasted poster with tape */
+.hero { border-radius: 4px; border: 2px solid #000; transform: rotate(-.5deg); box-shadow: 6px 6px 0 #000;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.6' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), linear-gradient(165deg, #232326, #121214 75%); overflow: visible; }
+.hero::before { content: ''; position: absolute; top: -9px; left: 22px; width: 84px; height: 22px; background: rgba(240,232,200,.55); transform: rotate(-6deg); box-shadow: 0 1px 2px rgba(0,0,0,.4); z-index: 2; }
+.hero::after { border-radius: 0 0 2px 2px; }
+.hero h1 { font-family: var(--disp); font-weight: 400; letter-spacing: .02em; line-height: .92; text-shadow: 3px 3px 0 #000; }
+.hero h1 span { font-family: var(--tag); color: var(--yel); font-size: .78em; transform: rotate(-3deg); transform-origin: left; margin-top: 4px;
+  text-shadow: 0 0 18px rgba(255,225,77,.45), 3px 3px 0 #000; }
+.hero p { color: var(--ink2); }
+.keys div, .pill { border-radius: 4px; background: rgba(255,255,255,.04); border: 1px dashed #3a3a40; }
+.steps b { border-radius: 4px; transform: rotate(-4deg); box-shadow: 2px 2px 0 #000; }
+
+/* Section headers: stencil with a spray underline */
+.sh h2 { font-family: var(--disp); font-weight: 400; letter-spacing: .04em; position: relative; padding-bottom: 2px;
+  background: linear-gradient(transparent 72%, rgba(255,62,165,.55) 72%, rgba(255,62,165,.55) 92%, transparent 92%) no-repeat; background-size: 100% 100%; }
+.card h3, details.card summary, .recap .rh b { font-family: var(--disp); font-weight: 400; letter-spacing: .04em; }
+
+/* Concrete cards with a hard street shadow */
+.card { border-radius: 4px; border: 2px solid #000; background-color: var(--card); box-shadow: 4px 4px 0 #000, inset 0 0 0 1px #29292e; }
+.recap { border-radius: 4px; border: 2px solid #000; box-shadow: 4px 4px 0 #000; background: linear-gradient(150deg, #0e3a27, #121214 80%); }
+details.how { border-color: #000; background: repeating-linear-gradient(-45deg, rgba(255,225,77,.06) 0 14px, transparent 14px 28px), var(--card); }
+.passes button { border-radius: 4px; border: 2px solid #000; box-shadow: 3px 3px 0 #000; }
+
+/* Bet slips stay paper: a torn receipt slapped on the wall */
+.slip { border-radius: 3px; box-shadow: 5px 5px 0 #000; }
+html { font-synthesis: none; }
+.slip, .sod { --disp: 'Big Shoulders Display', 'Arial Narrow', sans-serif; }
+.save.log { border-color: var(--paper-ink); color: var(--paper-ink); background: transparent; }
+.save.log::before { content: ''; }
+
+/* Stickers */
+.tag { font-family: var(--disp); font-weight: 400; letter-spacing: .08em; border-radius: 2px; display: inline-block; transform: rotate(-2deg); box-shadow: 2px 2px 0 #000; }
+.tag.TRAP { background: var(--red); } .tag.LEAN { background: var(--yel); color: #1a1600; }
+
+/* Buttons: slapped-on, offset shadow */
+.save-all { border-radius: 4px; border: 2px solid #000; box-shadow: 4px 4px 0 #000; font-family: var(--disp); font-weight: 400; letter-spacing: .06em; background: var(--red); }
+.save-all:active, .gbtn:active, .passes button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000; }
+.save-all.alt { background: var(--card2); }
+.gbtn { border-radius: 4px; box-shadow: 3px 3px 0 #000; }
+.search { border-radius: 4px; }
+.shr { border-radius: 4px; }
+
+/* Tab bar: caution tape across the bottom */
+.tabbar { background: rgba(8,8,10,.94); border-top: 0; }
+.tabbar::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: repeating-linear-gradient(-45deg, var(--yel) 0 10px, #111 10px 20px); }
+.tabbar a { font-family: var(--disp); font-weight: 400; letter-spacing: .06em; font-size: 11.5px; }
+.tabbar a[aria-current=page] { color: var(--yel); text-shadow: 0 0 10px rgba(255,225,77,.5); }
+.tabbar a[aria-current=page] svg { filter: drop-shadow(0 0 6px rgba(255,225,77,.55)); }
+
+/* Modals */
+.sheet { border-radius: 4px; border: 2px solid #000; box-shadow: 6px 6px 0 #000; }
+.sheet h3 { font-family: var(--disp); font-weight: 400; letter-spacing: .04em; }
+.bt-hero { border-radius: 4px; border: 2px solid #000; box-shadow: 4px 4px 0 #000; background: linear-gradient(150deg, #0e3a27, #121214 70%); }
+.bt-hero > span { font-family: var(--disp); font-weight: 400; }
+
 </style>
 
 <div class="wrap">
