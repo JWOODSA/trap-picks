@@ -593,6 +593,41 @@ details.card summary { font-size: 16px; }
 .wxlab span { font-size: 13px; font-weight: 700; }
 .wxlab small { font-size: 12px; color: var(--yel); font-weight: 700; }
 .wxtag { justify-self: start; font-family: var(--disp); font-size: 12px !important; letter-spacing: .08em; text-transform: uppercase; padding: 1px 7px; border-radius: 5px; background: var(--yel); color: #1a1600; text-shadow: none; }
+
+/* accounts and Pro */
+.tag.LOCK { background: var(--yel); color: #1a1600; }
+.pro { margin: 12px 0 4px; padding: 14px; border-radius: 16px; background: linear-gradient(150deg, #3b2a00, #17120a); border: 1px solid #6b5100; display: grid; gap: 6px; }
+.protag { justify-self: start; font-family: var(--disp); font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; padding: 2px 8px; border-radius: 5px; background: var(--yel); color: #1a1600; }
+.pro > b { font-family: var(--disp); font-weight: 900; font-size: 26px; line-height: 1; text-transform: uppercase; }
+.pro p { margin: 0; font-size: 14px; color: var(--ink2); }
+.pro small { font-size: 12px; color: var(--ink3); }
+.probtn { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.probtn button { padding: 10px 8px; border-radius: 12px; background: var(--card2); border: 2px solid var(--line); display: grid; gap: 1px; }
+.probtn button b { font-family: var(--mono); font-size: 20px; } .probtn button span { font-size: 12px; color: var(--ink2); }
+.probtn button.best { background: var(--yel); border-color: var(--yel); color: #1a1600; } .probtn .best span { color: #4a3b00; }
+.gsign { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; border-radius: 12px; background: #fff; color: #1f1f1f; font-weight: 700; font-size: 16px; }
+.gsign .g { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; color: #fff; background: conic-gradient(#ea4335 0 25%, #fbbc05 0 50%, #34a853 0 75%, #4285f4 0); font-size: 13px; }
+.or { display: flex; align-items: center; gap: 10px; margin: 12px 0; color: var(--ink3); font-size: 12px; }
+.or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+/* account button and login page */
+.acct { flex: none; height: 34px; padding: 0 12px; border-radius: 999px; background: var(--yel); color: #1a1600; font-weight: 800; font-size: 13px; }
+.acct.on { width: 34px; padding: 0; background: var(--card2); overflow: hidden; display: grid; place-items: center; }
+.acct img { width: 100%; height: 100%; object-fit: cover; }
+.ini { font-family: var(--disp); font-weight: 900; font-size: 18px; color: var(--yel); text-transform: uppercase; }
+.top .sub { margin-left: auto; }
+.login { max-width: 440px; margin: 0 auto; padding: 22px 0 8px; }
+.lmark { font-family: var(--disp); font-weight: 900; font-size: 54px; line-height: .9; text-transform: uppercase; text-align: center; }
+.lmark b { color: var(--yel); }
+.ltag { text-align: center; color: var(--ink2); margin: 6px 0 4px; }
+.login .card { border-top: 4px solid var(--yel); }
+.lin { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; margin-top: 14px; padding: 10px 12px; border-radius: 14px; background: rgba(61,220,151,.1); border: 1px solid #1f5a45; }
+.lin img, .lin .ini { width: 40px; height: 40px; border-radius: 50%; background: var(--card2); display: grid; place-items: center; }
+.lin b { display: block; font-size: 15px; } .lin span { font-size: 12.5px; color: var(--ink2); }
+.lperks { list-style: none; padding: 0; margin: 16px 4px 0; display: grid; gap: 8px; }
+.lperks li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; font-size: 14.5px; color: var(--ink2); }
+.lperks li::before { content: '✓'; color: var(--grn); font-weight: 900; }
+.lfine { margin: 16px 4px 0; font-size: 12px; color: var(--ink3); line-height: 1.45; }
 </style>
 
 <div class="wrap">
@@ -600,6 +635,7 @@ details.card summary { font-size: 16px; }
     <button class="back" id="back" hidden aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <div class="mark">Trap <b>Picks</b></div>
     <div class="sub" id="upd"></div>
+    <button class="acct" id="acct" aria-label="Sign in">Sign in</button>
   </header>
   <main id="view"><div class="loading">Loading this week's board…</div></main>
 </div>
@@ -625,8 +661,9 @@ details.card summary { font-size: 16px; }
     MIA: 'Miami Dolphins', MIN: 'Minnesota Vikings', NE: 'New England Patriots', NO: 'New Orleans Saints', NYG: 'New York Giants', NYJ: 'New York Jets',
     PHI: 'Philadelphia Eagles', PIT: 'Pittsburgh Steelers', SF: 'San Francisco 49ers', SEA: 'Seattle Seahawks', TB: 'Tampa Bay Buccaneers', TEN: 'Tennessee Titans',
     WAS: 'Washington Commanders' };
-  const LABEL = { TRAP: 'TRAP', LEAN: 'WATCH', PASS: 'PASS' };
-  const RANK = { TRAP: 2, LEAN: 1, PASS: 0 };
+  const LABEL = { TRAP: 'TRAP', LEAN: 'WATCH', PASS: 'PASS', LOCK: 'PRO' };
+  const edge = (c) => c.call === 'TRAP' || c.call === 'LEAN';
+  const RANK = { TRAP: 2, LEAN: 1, PASS: 0, LOCK: 0 };
   const STAT = { 'Passing yards': 'passing_yards', 'Passing TDs': 'passing_tds', 'Completions': 'completions', 'Rushing yards': 'rushing_yards',
     'Carries': 'carries', 'Receptions': 'receptions', 'Receiving yards': 'receiving_yards', 'Rush + rec yards': 'rush_rec_yards', 'Touchdowns': 'total_tds' };
 
@@ -686,15 +723,15 @@ details.card summary { font-size: 16px; }
     return h('div', { class: 'leg', 'data-c': c.call },
       h('div', null, h('div', { class: 'mk' }, `${c.market} · public on`), h('div', { class: 'pub' }, c.popular)),
       h('div', { class: 'score' }, h('b', null, c.meter), 'trap meter'),
-      h('div', { class: 'pick', style: 'grid-column:1/-1' }, c.call === 'PASS' ? 'No trap, popular side fairly priced' : c.pick, c.call !== 'PASS' && c.odds != null ? h('small', null, odds(c.odds)) : null),
+      h('div', { class: 'pick', style: 'grid-column:1/-1' }, c.call === 'PASS' ? 'No trap, popular side fairly priced' : c.pick, edge(c) && c.odds != null ? h('small', null, odds(c.odds)) : null),
       meter(c.meter),
-      c.call !== 'PASS' ? h('div', { class: 'sides' }, saveBtn(c, 'with'), saveBtn(c, 'fade')) : null);
+      edge(c) ? h('div', { class: 'sides' }, saveBtn(c, 'with'), saveBtn(c, 'fade')) : null);
   }
   function slip(g) {
-    const reasons = [...new Set(g.legs.filter((c) => c.call !== 'PASS' && c.reasons).flatMap((c) => c.reasons.split('; ')))].slice(0, 2);
+    const reasons = [...new Set(g.legs.filter((c) => edge(c) && c.reasons).flatMap((c) => c.reasons.split('; ')))].slice(0, 2);
     const kick = g.info ? `${g.info.spread} · O/U ${g.info.total}` : '';
     const mv = lineMoves(g).moved;
-    const legs = g.legs.filter((c) => c.call !== 'PASS');
+    const legs = g.legs.filter((c) => edge(c));
     const open = () => go('g_' + g.id);
     return h('article', { class: 'slip fade', role: 'link', tabindex: 0, onclick: open, onkeydown: (e) => { if (e.key === 'Enter') open(); } },
       h('div', { class: 'bar' }, h('i', { style: `background:${col(g.away)}` }), h('i', { style: `background:${col(g.home)}` })),
@@ -714,7 +751,8 @@ details.card summary { font-size: 16px; }
     const gs = games();
     const all = recRow('All', 'Both'), live = recRow('Live', 'Both');
     const plays = gs.filter((g) => g.top.call !== 'PASS'), passes = gs.filter((g) => g.top.call === 'PASS');
-    const traps = gs.filter((g) => g.top.call === 'TRAP').length;
+    const lockd = !!C.meta.locked;
+    const traps = lockd ? (C.meta.counts || {}).trap_games || 0 : gs.filter((g) => g.top.call === 'TRAP').length;
     return [
       h('section', { class: 'hero fade' },
         h('h1', null, 'Trap ', h('span', null, 'or die.')),
@@ -729,12 +767,13 @@ details.card summary { font-size: 16px; }
           all ? h('div', null, h('b', null, pct(all.win_pct)), h('span', null, `${recText(all)} since 2016`)) : null),
         h('p', { class: 'meter-key' }, h('b', null, 'Trap meter 0-100:'), ' higher means the popular side is more likely to lose.')),
       liveCard(),
-      slipOfDay(),
+      lockd ? proCard() : slipOfDay(),
       recapCard(),
       yourTeams(),
       sh('This week', `${gs.length} games`),
+      lockd ? h('div', { class: 'passes' }, gs.map((g) => h('button', { onclick: () => go('g_' + g.id) }, h('span', { class: 'dot', style: `background:${col(g.away)}` }), `${g.away} @ ${g.home}`, wxBadge(g)))) :
       plays.length ? plays.map(slip) : h('p', { class: 'muted' }, 'No traps this week. The popular side looks fairly priced everywhere.'),
-      passes.length ? [sh('Passes', 'no edge either way'), h('div', { class: 'passes' }, passes.map((g) => h('button', { onclick: () => go('g_' + g.id) }, h('span', { class: 'dot', style: `background:${col(g.away)}` }), `${g.away} @ ${g.home}`)))] : null,
+      !lockd && passes.length ? [sh('Passes', 'no edge either way'), h('div', { class: 'passes' }, passes.map((g) => h('button', { onclick: () => go('g_' + g.id) }, h('span', { class: 'dot', style: `background:${col(g.away)}` }), `${g.away} @ ${g.home}`)))] : null,
     ];
   }
   // ---------- slip of the day ----------
@@ -744,7 +783,7 @@ details.card summary { font-size: 16px; }
   let slipN = 4;
   function slipPool() {
     const now = Date.now();
-    const open = C.calls.filter((c) => c.call !== 'PASS' && !(C.kickoff && C.kickoff[c.game_id] && Date.parse(C.kickoff[c.game_id]) <= now));
+    const open = C.calls.filter((c) => edge(c) && !(C.kickoff && C.kickoff[c.game_id] && Date.parse(C.kickoff[c.game_id]) <= now));
     if (!open.length) return [];
     const wk = Math.min(...open.map((c) => c.week));
     const seen = new Set();
@@ -814,9 +853,10 @@ details.card summary { font-size: 16px; }
       h('div', { class: 'lines' }, h('div', null, h('b', null, u.spread || '–'), h('span', null, 'Spread')), h('div', null, h('b', null, u.total ?? '–'), h('span', null, 'Total')),
         h('div', null, h('b', null, `${odds(u.away_ml)} / ${odds(u.home_ml)}`), h('span', null, 'Moneyline')))));
     out.push(h('div', { class: 'card lcard', 'data-live-game': `${g.away}@${g.home}`, hidden: true }));
-    out.push(h('div', { class: 'card' }, h('h3', null, 'The calls', shareGameBtn(g)), h('div', { class: 'slip', style: 'margin:0;box-shadow:none' }, g.legs.map(leg),
+    if (C.meta.locked) out.push(proCard('See the calls for this game'));
+    else out.push(h('div', { class: 'card' }, h('h3', null, 'The calls', shareGameBtn(g)), h('div', { class: 'slip', style: 'margin:0;box-shadow:none' }, g.legs.map(leg),
       (() => { const r = [...new Set(g.legs.filter((c) => c.reasons).flatMap((c) => c.reasons.split('; ')))]; return r.length ? h('ul', { class: 'why', style: 'padding-top:10px' }, r.map((x) => h('li', null, x))) : null; })())));
-    out.push(movesCard(g), injuryCard(g), weatherCard(g));
+    out.push(C.meta.locked ? null : movesCard(g), injuryCard(g), weatherCard(g));
     if (u.away_fair_pct != null) out.push(h('div', { class: 'card' }, h('h3', null, 'Win chance, vig removed'),
       h('div', { class: 'fair' }, h('i', { style: `flex:${u.away_fair_pct};background:${col(g.away)}` }, `${g.away} ${pct(u.away_fair_pct, 0)}`), h('i', { style: `flex:${u.home_fair_pct};background:${col(g.home)}` }, `${pct(u.home_fair_pct, 0)} ${g.home}`)),
       h('p', { class: 'muted', style: 'margin:8px 0 0' }, `Book hold on the moneyline is ${pct(u.hold)}.`)));
@@ -1046,12 +1086,13 @@ details.card summary { font-size: 16px; }
   // Each person's picks and teams live in their own private db subtree.
   // On the public web host (Cloudflare) there is no Claude sign-in yet; accounts arrive with Supabase.
   const HOSTED = !!window.TRAP_API;
-  const signIn = (what) => HOSTED ? `Accounts are coming soon. Then you can ${what}.` : `Sign in to claude.ai to ${what}.`;
+  const signIn = (what) => HOSTED ? (window.TRAP_SUPABASE ? `Sign in on the My Picks tab to ${what}.` : `Accounts are coming soon. Then you can ${what}.`) : `Sign in to claude.ai to ${what}.`;
   const ACCT = { state: 'loading', id: null, name: '', avatar: '', picks: {}, teams: [], groups: [], leagues: [], pickem: {}, db: null, user: null, writing: Promise.resolve() };
   const pk = (c) => `${c.game_id}|${c.market}`;
   const started = (gid) => !!(C.kickoff && C.kickoff[gid] && Date.parse(C.kickoff[gid]) <= Date.now());
   async function initAccount() {
-    const use = window.claude && window.claude.use;
+    const hosted = HOSTED ? await hostedClaude().catch(() => null) : null;
+    const use = hosted ? hosted.use : !HOSTED && window.claude && window.claude.use;
     if (!use) { ACCT.state = 'none'; return sync(); }
     const [user, db] = await Promise.all([use('user'), use('db')]);
     const me = user ? await user.me() : null;
@@ -1063,6 +1104,7 @@ details.card summary { font-size: 16px; }
     db.doc('members/' + me.id).onSnapshot((d) => { ACCT.groups = (d.exists && d.data().groups) || []; ACCT.pickem = (d.exists && d.data().pickem) || {}; sync(); }, () => {});
     db.doc(base + '/fantasy').onSnapshot((d) => { ACCT.leagues = (d.exists && d.data().leagues) || []; sync(); }, () => {});
     sync();
+    if (SB.client) { await loadPro(); if (SB.checkoutBack) afterCheckout(); else if ((location.hash.slice(1) || 'board') === 'me') route(); }
   }
   // One write at a time per document; a refused write means this viewer can only view.
   function write(path, body) {
@@ -1108,6 +1150,7 @@ details.card summary { font-size: 16px; }
   }
   // Keep every save/follow control in step with the account, without re-rendering the screen.
   function sync() {
+    acctBtn();
     const on = ACCT.state === 'ready';
     document.querySelectorAll('[data-pk]').forEach((b) => {
       const it = ACCT.picks[b.dataset.pk], side = b.dataset.side || 'with';
@@ -1157,6 +1200,7 @@ details.card summary { font-size: 16px; }
   }
   function mePage() {
     if (ACCT.state === 'loading') return [h('div', { class: 'loading' }, 'Checking your sign-in…')];
+    if (ACCT.state === 'none' && SB.client) return loginPage();
     if (ACCT.state === 'none') return [h('div', { class: 'card', style: 'margin-top:16px' }, h('h3', null, 'Sign in to save picks'),
       h('p', { class: 'explain' }, HOSTED ? 'Accounts are coming soon: save picks, follow teams, join groups and track your own record. Everything else works now.' : 'Open Trap Picks on claude.ai while signed in to save picks, follow teams and track your own record. Everything else works without signing in.'))];
     const items = Object.values(ACCT.picks).map((p) => ({ ...p, res: grade(p) })).sort((a, b) => (a.res ? 1 : 0) - (b.res ? 1 : 0) || b.date.localeCompare(a.date));
@@ -1165,7 +1209,8 @@ details.card summary { font-size: 16px; }
     const split = (side) => { const d = done.filter((p) => (p.side || 'with') === side); const ww = d.filter((p) => p.res === 'W').length, ll = d.filter((p) => p.res === 'L').length;
       return { n: items.filter((p) => (p.side || 'with') === side).length, rec: `${ww}-${ll}`, u: d.reduce((a, p) => a + (p.res === 'W' ? dec(p.odds) - 1 : p.res === 'L' ? -1 : 0), 0), d: d.length }; };
     const sw = split('with'), sf = split('fade');
-    const out = [h('div', { class: 'meh fade' }, h('img', { src: ACCT.avatar, alt: '' }), h('div', null, h('b', null, ACCT.name || 'You'), h('span', null, ACCT.state === 'readonly' ? 'View only on this link' : 'Signed in with Claude')))];
+    const out = [h('div', { class: 'meh fade' }, h('img', { src: ACCT.avatar, alt: '' }), h('div', null, h('b', null, ACCT.name || 'You'), h('span', null, ACCT.state === 'readonly' ? 'View only on this link' : SB.client ? (SB.pro ? 'Pro member' : 'Free plan') : 'Signed in with Claude')))];
+    if (SB.client) out.push(planCard());
     out.push(h('div', { class: 'bigrec' },
       h('div', { class: 'b hot' }, h('b', null, `${w}-${l}`), h('span', null, 'Your record'), h('small', null, done.length ? `${sgn(units)} units · ${pct(w / Math.max(1, w + l))}` : 'Graded after games finish')),
       h('div', { class: 'b' }, h('b', null, items.length - done.length), h('span', null, 'Open picks'), h('small', null, 'Locked at kickoff')),
@@ -1965,12 +2010,12 @@ details.card summary { font-size: 16px; }
       const byGame = games();
       card.replaceChildren(...(gs.length ? [sh('Live', `${gs.filter((g) => g.state === 'in').length} playing · swipe`),
         h('div', { class: 'lstrip' }, gs.map((g) => { const bg = byGame.find((x) => x.away === g.away.abbr && x.home === g.home.abbr);
-          return liveTile(g, bg ? bg.legs.filter((c) => c.call !== 'PASS') : [], bg ? () => go('g_' + bg.id) : null); }))] : []));
+          return liveTile(g, bg ? bg.legs.filter((c) => edge(c)) : [], bg ? () => go('g_' + bg.id) : null); }))] : []));
     }
     document.querySelectorAll('[data-live-game]').forEach((el) => {
       const [away, home] = el.dataset.liveGame.split('@'); const g = liveFor('nfl', away, home);
       const bg = games().find((x) => x.away === away && x.home === home);
-      el.replaceChildren(...(g && g.state !== 'pre' ? [h('h3', null, g.state === 'in' ? 'Live' : 'Final'), liveRow(g, { col, calls: bg ? bg.legs.filter((c) => c.call !== 'PASS') : [] })] : []));
+      el.replaceChildren(...(g && g.state !== 'pre' ? [h('h3', null, g.state === 'in' ? 'Live' : 'Final'), liveRow(g, { col, calls: bg ? bg.legs.filter((c) => edge(c)) : [] })] : []));
       el.hidden = !(g && g.state !== 'pre');
     });
     document.querySelectorAll('[data-live-badge]').forEach((el) => {
@@ -2280,7 +2325,7 @@ details.card summary { font-size: 16px; }
     }, `trap-picks-slip-week-${legs[0].week}.png`) }, 'Share as image');
   }
   function shareGameBtn(g) {
-    const legs = g.legs.filter((c) => c.call !== 'PASS');
+    const legs = g.legs.filter((c) => edge(c));
     if (!legs.length) return null;
     const u = g.info || {};
     return h('button', { class: 'shr', onclick: () => shareImage({
@@ -2347,13 +2392,168 @@ details.card summary { font-size: 16px; }
           h('div', { class: 'ph' }, h('span', null, ko ? at(ko) : fmtDate(g.date)), res ? h('span', { class: 'res ' + res }, res) : h('span', null, lock ? 'Locked' : '')),
           h('div', { class: 'opts' }, opts.map((o) => h('button', { 'aria-pressed': mp && mp.side === o.side ? 'true' : 'false', disabled: lock || !mine, onclick: () => setPickem(g, o) },
             h('span', { class: 'dot', style: `background:${col(o.side)}` }), o.pick))),
-          h('div', { class: 'tp' }, sc && sc.call !== 'PASS' ? [h('span', { class: 'tag ' + sc.call, style: 'font-size:10px;padding:1px 5px' }, LABEL[sc.call]), ` Trap Picks likes ${sc.pick}`] : 'Trap Picks: no edge on this spread',
+          h('div', { class: 'tp' }, sc && sc.call === 'LOCK' ? 'Trap Picks call: Pro members' : sc && edge(sc) ? [h('span', { class: 'tag ' + sc.call, style: 'font-size:10px;padding:1px 5px' }, LABEL[sc.call]), ` Trap Picks likes ${sc.pick}`] : 'Trap Picks: no edge on this spread',
             lock && others.length ? ` · Friends: ${[g.away, g.home].map((t) => `${others.filter((x) => x === t).length} ${t}`).join(', ')}` : '')));
       });
       out.push(card);
     }
     if (!gs.length) out.push(h('p', { class: 'muted' }, 'No games on the board right now. Pick\'em opens with the next week\'s lines.'));
     return out;
+  }
+
+  // ---------- website accounts (Supabase) and Pro ----------
+  // On the web host, sign-in is Supabase (Google, or a one-tap email link). Saved data lives in one
+  // `docs` table keyed by the same paths the Claude version uses, so the rest of the app is unchanged.
+  const SB = { client: null, session: null, pro: false, until: null, plan: null, status: null };
+  const SB_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
+  const loadScript = (src) => new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.append(s); });
+  const likeEsc = (s) => s.replace(/[\\%_]/g, (c) => '\\' + c);
+  function sbDb(sb) {
+    const subs = new Set();
+    sb.channel('docs').on('postgres_changes', { event: '*', schema: 'public', table: 'docs' }, (p) => {
+      const path = (p.new && p.new.path) || (p.old && p.old.path);
+      if (path) subs.forEach((f) => f(path));
+    }).subscribe();
+    const fail = (e) => { const x = new Error(e.message || 'failed'); x.code = e.code === '42501' || /row-level security|permission/i.test(e.message || '') ? 'invalid_argument' : 'unavailable'; return x; };
+    const snap = (path, row) => ({ exists: !!row, id: path.split('/').pop(), data: () => (row ? row.data : undefined), metadata: {} });
+    const getDoc = async (path) => { const { data, error } = await sb.from('docs').select('path,data').eq('path', path).maybeSingle(); if (error) throw fail(error); return snap(path, data); };
+    const list = async (c, filt) => {
+      let q = sb.from('docs').select('path,data').like('path', likeEsc(c) + '/%').not('path', 'like', likeEsc(c) + '/%/%');
+      if (filt) q = q.contains('data', { [filt[0]]: [filt[2]] });
+      const { data, error } = await q.order('path'); if (error) throw fail(error);
+      const docs = data.map((r) => snap(r.path, r)); return { docs, size: docs.length, empty: !docs.length };
+    };
+    const watch = (match, load, fn, err) => {
+      let live = true;
+      const run = () => load().then((s) => { if (live) fn(s); }, (e) => { if (live && err) err(e); });
+      const f = (path) => { if (match(path)) run(); };
+      subs.add(f); run();
+      return () => { live = false; subs.delete(f); };
+    };
+    const docRef = (p) => ({ path: p, id: p.split('/').pop(),
+      get: () => getDoc(p),
+      set: async (body) => { const { error } = await sb.from('docs').upsert({ path: p, data: body, updated_at: new Date().toISOString() }); if (error) throw fail(error); subs.forEach((f) => f(p)); },
+      update: async (body) => { const cur = await getDoc(p); if (!cur.exists) throw Object.assign(new Error('missing'), { code: 'invalid_argument' });
+        const { error } = await sb.from('docs').update({ data: { ...cur.data(), ...body }, updated_at: new Date().toISOString() }).eq('path', p); if (error) throw fail(error); subs.forEach((f) => f(p)); },
+      delete: async () => { const { error } = await sb.from('docs').delete().eq('path', p); if (error) throw fail(error); subs.forEach((f) => f(p)); },
+      acquire: async () => ({ acquired: true }),
+      onSnapshot: (fn, err) => watch((x) => x === p, () => getDoc(p), fn, err) });
+    const colRef = (c, filt) => ({ path: c, doc: (id) => docRef(c + '/' + (id || crypto.randomUUID())), get: () => list(c, filt),
+      where: (f, op, v) => colRef(c, [f, op, v]),
+      onSnapshot: (fn, err) => watch((x) => x.startsWith(c + '/') && !x.slice(c.length + 1).includes('/'), () => list(c, filt), fn, err) });
+    return { doc: docRef, collection: (c) => colRef(c) };
+  }
+  async function hostedClaude() {
+    const cfg = window.TRAP_SUPABASE;
+    if (!HOSTED || !cfg) return null;
+    await loadScript(SB_JS);
+    const sb = SB.client = window.supabase.createClient(cfg.url, cfg.anon, { auth: { flowType: 'pkce', persistSession: true, detectSessionInUrl: true } });
+    const { data } = await sb.auth.getSession();
+    SB.session = data.session;
+    if (/[?&]code=/.test(location.search) || /[?&]checkout=/.test(location.search)) {
+      const back = /checkout=done/.test(location.search);
+      history.replaceState(null, '', location.pathname + (location.hash || '#me'));
+      if (back) SB.checkoutBack = true;
+    }
+    sb.auth.onAuthStateChange((ev, s) => { const had = !!SB.session; SB.session = s; if ((ev === 'SIGNED_IN' && !had) || ev === 'SIGNED_OUT') location.reload(); });
+    const db = sbDb(sb);
+    const user = {
+      me: async () => { const u = SB.session && SB.session.user; if (!u) return null; const m = u.user_metadata || {};
+        return { id: u.id, name: m.full_name || m.name || (u.email || '').split('@')[0], avatarUrl: m.avatar_url || m.picture || '', email: u.email }; },
+      profiles: async (ids) => { const { data } = await sb.from('profiles').select('id,name,avatar_url').in('id', ids);
+        return Object.fromEntries((data || []).map((r) => [r.id, { id: r.id, name: r.name, avatarUrl: r.avatar_url || '' }])); },
+    };
+    return { use: async (n) => (n === 'db' ? db : n === 'user' ? user : null) };
+  }
+  const authHdr = () => ({ authorization: 'Bearer ' + (SB.session && SB.session.access_token) });
+  // Pro status comes from the billing row the Stripe webhook writes. Pro members swap in the full board.
+  async function loadPro() {
+    if (!SB.client || !SB.session) return;
+    const { data } = await SB.client.from('billing').select('pro_until,plan,status').eq('id', SB.session.user.id).maybeSingle();
+    SB.until = data && data.pro_until; SB.plan = data && data.plan; SB.status = data && data.status;
+    SB.pro = !!(SB.until && Date.parse(SB.until) > Date.now());
+    if (SB.pro && C.meta.locked) {
+      const r = await fetch('/pro/core.json', { headers: authHdr(), cache: 'no-store' });
+      if (r.ok) { C = await r.json(); route(); }
+    }
+  }
+  // After paying, Stripe sends people back before the webhook may have landed; check a few times.
+  async function afterCheckout() {
+    for (let i = 0; i < 10 && !SB.pro; i++) { await loadPro(); if (SB.pro) break; await new Promise((r) => setTimeout(r, 3000)); }
+    toast(SB.pro ? 'Welcome to Pro. This week\'s calls are unlocked.' : 'Payment received. Pro unlocks as soon as Stripe confirms, usually within a minute.');
+    if ((location.hash.slice(1) || 'board') === 'me') route();
+  }
+  async function startCheckout(plan) {
+    if (!SB.session) { go('me'); return toast('Sign in first, then pick a plan.'); }
+    toast('Opening secure checkout…');
+    const r = await fetch(`${window.TRAP_API}/checkout`, { method: 'POST', headers: { ...authHdr(), 'content-type': 'application/json' }, body: JSON.stringify({ plan }) }).catch(() => null);
+    const d = r && await r.json().catch(() => null);
+    if (d && d.url) location.href = d.url; else toast('Checkout is not available right now. Try again soon.');
+  }
+  async function openPortal() {
+    const r = await fetch(`${window.TRAP_API}/portal`, { method: 'POST', headers: authHdr() }).catch(() => null);
+    const d = r && await r.json().catch(() => null);
+    if (d && d.url) location.href = d.url; else toast('Could not open billing. Try again soon.');
+  }
+  const PRICE = { monthly: '$9.99/month', yearly: '$59/year' };
+  function proCard(what) {
+    const n = C.meta.counts || {};
+    return h('section', { class: 'pro fade' },
+      h('span', { class: 'protag' }, 'Trap Picks Pro'),
+      h('b', null, what || `${n.trap_games || 0} game${n.trap_games === 1 ? '' : 's'} with a TRAP this week`),
+      h('p', null, 'Pro unlocks every TRAP and WATCH call with its trap meter and reasons, the Slip of the Day, share cards and line movement.'),
+      h('div', { class: 'probtn' },
+        h('button', { onclick: () => startCheckout('monthly') }, h('b', null, '$9.99'), h('span', null, 'per month')),
+        h('button', { class: 'best', onclick: () => startCheckout('yearly') }, h('b', null, '$59'), h('span', null, 'per year · save 51%'))),
+      h('small', null, 'Cancel anytime. Secure checkout by Stripe.'));
+  }
+  function signInCard() {
+    const em = h('input', { class: 'search', type: 'email', placeholder: 'you@gmail.com', autocomplete: 'email', 'aria-label': 'Email', style: 'margin:0' });
+    const note = h('p', { class: 'muted', style: 'margin:8px 0 0;font-size:13px' }, 'We email you a link. Tap it and you are in, no password needed.');
+    const live = !!SB.client;
+    const off = () => toast(ACCT.state === 'ready' ? `You are already signed in with your Claude account${ACCT.name ? ' as ' + ACCT.name : ''}. Google and email sign-in work on the Trap Picks website.` : 'Google and email sign-in work on the Trap Picks website. Here, sign in to claude.ai.');
+    const send = async () => {
+      const email = em.value.trim();
+      if (!/^\S+@\S+\.\S+$/.test(email)) return toast('Enter your email address.');
+      if (!live) return off();
+      const { error } = await SB.client.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname + '#me' } });
+      note.textContent = error ? 'Could not send the link. Check the address and try again.' : `Check ${email} for your sign-in link. You can close this tab.`;
+    };
+    return h('div', { class: 'card signin', style: 'margin-top:16px' }, h('h3', null, 'Sign in or create an account'),
+      h('p', { class: 'explain', style: 'margin:0 0 12px' }, 'Save picks, play pick\'em with friends, run fantasy leagues and unlock Pro.'),
+      h('button', { class: 'gsign', onclick: () => !live ? off() : SB.client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname + '#me' } }) },
+        h('span', { class: 'g' }, 'G'), 'Continue with Google'),
+      h('div', { class: 'or' }, h('span', null, 'or use any email')),
+      h('div', { class: 'gform' }, em, h('button', { class: 'gbtn', onclick: send }, 'Email me a link')), note);
+  }
+  // Full-screen login page (#login), reached from the Sign in button in the top bar.
+  function loginPage() {
+    const mine = ACCT.state === 'ready' || ACCT.state === 'readonly';
+    return [h('div', { class: 'login fade' },
+      h('div', { class: 'lmark' }, 'Trap ', h('b', null, 'Picks')),
+      h('p', { class: 'ltag' }, 'Know where the public gets trapped.'),
+      mine ? h('div', { class: 'lin' }, ACCT.avatar ? h('img', { src: ACCT.avatar, alt: '' }) : h('span', { class: 'ini' }, (ACCT.name || '?').slice(0, 1)),
+        h('div', null, h('b', null, `Signed in as ${ACCT.name || 'you'}`), h('span', null, SB.client ? (SB.session ? SB.session.user.email : '') : 'with your Claude account')),
+        h('button', { class: 'gbtn', onclick: () => go('me') }, 'My Picks')) : null,
+      signInCard(),
+      h('ul', { class: 'lperks' }, ['Save picks and track your record', 'Pick\'em with friends all season', 'Fantasy leagues and drafts', 'Pro: every TRAP call, the trap meter and the Slip of the Day'].map((t) => h('li', null, t))),
+      h('p', { class: 'lfine' }, 'By continuing you agree to the Terms and Privacy Policy. You must be 21 or older to bet where it is legal. Trap Picks sells information and does not take bets.'))];
+  }
+  function acctBtn() {
+    const b = document.getElementById('acct'); if (!b) return;
+    const on = ACCT.state === 'ready' || ACCT.state === 'readonly';
+    b.classList.toggle('on', on);
+    b.replaceChildren(on ? (ACCT.avatar ? h('img', { src: ACCT.avatar, alt: '' }) : h('span', { class: 'ini' }, (ACCT.name || '?').slice(0, 1))) : 'Sign in');
+    b.setAttribute('aria-label', on ? 'My account' : 'Sign in');
+  }
+  function planCard() {
+    const until = SB.until ? new Date(SB.until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    return h('div', { class: 'card plan' }, h('h3', null, 'Your plan'),
+      SB.pro ? [h('p', { class: 'explain', style: 'margin:0 0 10px' }, h('b', null, 'Pro'), SB.plan ? ` · ${PRICE[SB.plan] || SB.plan}` : '', SB.status === 'canceled' ? ` · ends ${until}` : ` · renews ${until}`),
+        h('button', { class: 'gbtn alt', onclick: openPortal }, 'Manage subscription')]
+        : [h('p', { class: 'explain', style: 'margin:0 0 10px' }, 'Free plan. Upgrade to see this week\'s calls.'), proCard('Unlock this week\'s calls'),
+          SB.status ? h('button', { class: 'gbtn alt', style: 'margin-top:8px', onclick: openPortal }, 'Billing history') : null],
+      h('button', { class: 'leave', style: 'margin-top:12px', onclick: () => SB.client.auth.signOut() }, `Sign out${SB.session ? ' of ' + SB.session.user.email : ''}`));
   }
 
   function route() {
@@ -2365,6 +2565,7 @@ details.card summary { font-size: 16px; }
     else if (hash === 'players') { tab = 'players'; nodes = players(); }
     else if (hash === 'record') { tab = 'record'; nodes = record(); }
     else if (hash === 'me') { tab = 'me'; nodes = mePage(); }
+    else if (hash === 'login') { tab = 'me'; nodes = loginPage(); }
     else if (hash === 'fantasy') { tab = 'fantasy'; nodes = fantasy(); }
     else if (kind === 'f') { tab = 'fantasy'; nodes = fplayer(arg); }
     else if (hash === 'fl') { tab = 'fantasy'; nodes = leaguesHome(); }
@@ -2385,6 +2586,7 @@ details.card summary { font-size: 16px; }
     renderWx();
     if (hash !== 'me') sync();
   }
+  document.getElementById('acct').addEventListener('click', () => go(HOSTED && (ACCT.state === 'ready' || ACCT.state === 'readonly') ? 'me' : 'login'));
   document.getElementById('back').addEventListener('click', () => { if (history.length > 1) history.back(); else go('board'); });
   window.addEventListener('hashchange', route);
 
