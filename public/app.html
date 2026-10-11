@@ -670,6 +670,10 @@ details.card summary { font-size: 16px; }
 .hb-bar { height: 10px; border-radius: 99px; background: var(--bg2); overflow: hidden; margin: 6px 0; }
 .hb-bar span { display: block; height: 100%; background: var(--grn); }
 .hb-bar span.over { background: var(--red); }
+.clv .kv { grid-template-columns: repeat(4, 1fr); margin-bottom: 10px; }
+.clvrow { grid-template-columns: auto 1fr; row-gap: 2px; padding: 8px 10px; }
+.clvrow .cv { grid-column: 2; font-size: 12.5px; font-weight: 700; }
+.cv.beat { color: var(--grn); } .cv.worse { color: var(--red); } .cv.same { color: var(--ink3); }
 </style>
 
 <div class="wrap">
@@ -1070,6 +1074,30 @@ details.card summary { font-size: 16px; }
     return svg;
   }
 
+  // Closing line value: did our number beat the last line before kickoff? Points first, then price at the same number.
+  function clvOf(r) {
+    if (r.clv == null) return null;
+    if (r.clv > 0) return { k: 'beat', t: `Beat by ${r.clv} pt${r.clv === 1 ? '' : 's'}` };
+    if (r.clv < 0) return { k: 'worse', t: `Worse by ${-r.clv} pt${r.clv === -1 ? '' : 's'}` };
+    if (r.close_odds != null && r.odds != null && Math.abs(dec(r.odds) - dec(r.close_odds)) > 0.005)
+      return dec(r.odds) > dec(r.close_odds) ? { k: 'beat', t: `Better price (${odds(r.odds)} vs ${odds(r.close_odds)})` } : { k: 'worse', t: `Worse price (${odds(r.odds)} vs ${odds(r.close_odds)})` };
+    return { k: 'same', t: 'Matched the close' };
+  }
+  function closeLine(r) { return r.market === 'Total' ? `${r.pick.split(' ')[0]} ${r.close}` : `${r.pick.split(' ')[0]} ${r.close > 0 ? '+' : ''}${r.close}`; }
+  function clvCard() {
+    const rows = C.ledger.filter((r) => r.clv != null).map((r) => ({ r, c: clvOf(r) }));
+    const n = (k) => rows.filter((x) => x.c.k === k).length;
+    const pts = rows.length ? rows.reduce((a, x) => a + x.r.clv, 0) / rows.length : 0;
+    return h('div', { class: 'card clv' }, h('h3', null, 'Beat the closing line'),
+      h('p', { class: 'muted', style: 'margin:-4px 0 10px;font-size:13.5px' }, 'The closing line is the last line before kickoff, the market\'s sharpest guess. Getting a better number than the close is the best long-run sign of a real edge, win or lose.'),
+      rows.length ? [h('div', { class: 'kv' }, h('div', { class: 'good' }, h('b', null, n('beat')), h('span', null, 'Beat the close')), h('div', null, h('b', null, n('same')), h('span', null, 'Matched')),
+          h('div', { class: n('worse') ? 'bad' : null }, h('b', null, n('worse')), h('span', null, 'Worse')), h('div', { class: pts > 0 ? 'good' : pts < 0 ? 'bad' : null }, h('b', null, (pts > 0 ? '+' : '') + pts.toFixed(1)), h('span', null, 'Avg points'))),
+        ...rows.sort((a, b) => b.r.date.localeCompare(a.r.date) || b.r.clv - a.r.clv).map(({ r, c }) => h('div', { class: 'lg clvrow' }, h('span', { class: 'tag ' + r.call }, LABEL[r.call]),
+          h('span', null, h('b', null, r.pick), ' ', h('span', { class: 'muted' }, `${odds(r.odds)} · closed ${closeLine(r)}${r.close_odds != null ? ' ' + odds(r.close_odds) : ''}`)),
+          h('span', { class: 'cv ' + c.k }, c.t)))]
+        : h('p', { class: 'muted' }, 'Shows once this week\'s first locked call kicks off.'),
+      h('p', { class: 'snap', style: 'margin:8px 0 0' }, 'Calls lock at the line when they were made; the close comes from nflverse after kickoff.'));
+  }
   function record() {
     const all = recRow('All', 'Both'), sp = recRow('All', 'Spread'), tt = recRow('All', 'Total'), live = recRow('Live', 'Both');
     const out = [h('div', { class: 'bigrec fade' },
@@ -1079,6 +1107,7 @@ details.card summary { font-size: 16px; }
       h('div', { class: 'b' }, h('b', null, tt ? pct(tt.win_pct) : '–'), h('span', null, 'Total traps'), h('small', null, tt ? `${recText(tt)} · ${sgn(tt.units)}u` : '')))];
     out.push(h('p', { class: 'muted', style: 'margin:10px 2px 0' }, 'Breakeven at standard -110 juice is 52.4%. Units assume one unit risked per call at the recorded odds.'));
     out.push(recapFull());
+    out.push(clvCard());
     out.push(h('div', { class: 'card', style: 'margin-top:14px' }, h('h3', null, 'Units by season'), seasonChart(),
       h('div', { class: 'legend', style: 'margin:8px 0 0' }, h('span', null, h('i', { style: 'background:var(--blu)' }), 'Spread traps'), h('span', null, h('i', { style: 'background:var(--yel)' }), 'Total traps'))));
     const led = [...C.ledger].sort((a, b) => RANK[b.call] - RANK[a.call] || b.meter - a.meter);
