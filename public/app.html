@@ -1646,7 +1646,21 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
   // each week everyone picks 8 players under a $50,000 cap; lineups lock at the week's first tip-off.
   const ROUNDS = 13, BEST = 10, CAP = 50000, SLOTS = 8, NEED = { G: 2, F: 2, C: 1 };
   const FL = { code: null, unsubs: [], league: null, teams: [], picks: [], entries: [], names: {}, q: '', pos: 'All', wk: null, draft: [], det: {} };
-  const flKinds = { draft: 'Draft league', weekly: 'Weekly lineups' };
+  const flKinds = { draft: 'Draft league', late: 'Late to the Party', weekly: 'Weekly lineups' };
+  const drafty = (L) => L && (L.kind === 'draft' || L.kind === 'late');
+  // Late to the Party: a league that starts mid-season. Draft by this season's form, play everyone in the league each week
+  // (all-play record), and friends who show up after the draft can still join and pick from who's left.
+  const LATE_MAX = 16;
+  function curForm() {
+    if (F.form) return F.form;
+    const m = new Map();
+    for (const wk of Object.keys(F.live)) for (const [pid, [p, g]] of Object.entries(F.live[wk])) { const x = m.get(pid) || { p: 0, g: 0 }; x.p += p; x.g += g; m.set(pid, x); }
+    return (F.form = m);
+  }
+  const formOf = (p) => { const x = curForm().get(String(p.id)); return x && x.g >= 3 ? { avg: x.p / x.g, g: x.g } : null; };
+  const lateVal = (p) => { const f = formOf(p); return f ? f.avg : p.fpts == null ? -1 : p.fpts; };
+  const draftSort = (L) => L && L.kind === 'late' ? (a, b) => lateVal(b) - lateVal(a) : (a, b) => a.rank_pts - b.rank_pts;
+  const valText = (L, p) => { const f = L && L.kind === 'late' && formOf(p); return f ? `${f1(f.avg)} pts/g this season (${f.g} games)` : p.fpts == null ? (p.exp === 0 ? 'rookie' : 'no stats last year') : f1(p.fpts) + ' pts/g last season'; };
   const pad3 = (n) => String(n).padStart(3, '0');
   const pool = () => F.pool || (F.pool = [...F.players, ...F.extra.map((e) => ({ ...e, fpts: null, rank_pts: 9000 + e.id % 997, rookie: true }))]);
   const pById = (id) => F.all.get(String(id));
@@ -1709,7 +1723,7 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
       if (!(await ACCT.db.doc('leagues/' + code).get()).exists) break;
     }
     try {
-      await flWrite(() => ACCT.db.doc('leagues/' + code).set({ name: nm, kind, size: kind === 'draft' ? size : 50, status: kind === 'draft' ? 'lobby' : 'season',
+      await flWrite(() => ACCT.db.doc('leagues/' + code).set({ name: nm, kind, size: kind === 'weekly' ? 50 : size, status: kind === 'weekly' ? 'season' : 'lobby', ...(kind === 'late' ? { start_wk: openWeek() } : {}),
         order: [], created_by: ACCT.id, created_at: new Date().toISOString(), season: F.meta.season }));
       await flWrite(() => ACCT.db.doc(`leagues/${code}/teams/${ACCT.id}`).set({ name: ACCT.name || 'My team', joined_at: new Date().toISOString() }));
       await setMyLeagues([...ACCT.leagues, code]);
@@ -1724,17 +1738,21 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
     if (!d.exists) return toast('No league with that code. Check it and try again.');
     const L = d.data();
     if (L.kind === 'draft' && L.status !== 'lobby' && !(L.order || []).includes(ACCT.id)) return toast('That league has already drafted, so it is closed to new teams.');
+    if (L.kind === 'late' && L.status === 'draft' && !(L.order || []).includes(ACCT.id)) return toast('The draft is on right now. Join as soon as it ends and pick from who is left.');
     const teams = await ACCT.db.collection(`leagues/${code}/teams`).get();
-    if (L.kind === 'draft' && !teams.docs.some((t) => t.id === ACCT.id) && teams.size >= L.size) return toast('That league is full.');
+    const isIn = teams.docs.some((t) => t.id === ACCT.id);
+    if (L.kind === 'draft' && !isIn && teams.size >= L.size) return toast('That league is full.');
+    if (L.kind === 'late' && !isIn && teams.size >= (L.status === 'lobby' ? L.size : LATE_MAX)) return toast('That league is full.');
     try {
-      if (!teams.docs.some((t) => t.id === ACCT.id)) await flWrite(() => ACCT.db.doc(`leagues/${code}/teams/${ACCT.id}`).set({ name: ACCT.name || 'My team', joined_at: new Date().toISOString() }));
+      // Joining a Late to the Party league after its draft: your team counts from the next week that has not locked.
+      if (!isIn) await flWrite(() => ACCT.db.doc(`leagues/${code}/teams/${ACCT.id}`).set({ name: ACCT.name || 'My team', joined_at: new Date().toISOString(), ...(L.kind === 'late' && L.status === 'season' ? { start_wk: openWeek() } : {}) }));
       if (!ACCT.leagues.includes(code)) await setMyLeagues([...ACCT.leagues, code]);
       go('fl_' + code);
     } catch (e) { /* toast already shown */ }
   }
   async function leaveLeague(code) {
     const L = FL.league;
-    const drafted = L && L.kind === 'draft' && L.status !== 'lobby';
+    const drafted = drafty(L) && L.status !== 'lobby';
     if (!confirm(drafted ? 'Hide this league from your list? Your drafted team stays in the league.' : 'Leave this league?')) return;
     try {
       if (!drafted) await flWrite(() => ACCT.db.doc(`leagues/${code}/teams/${ACCT.id}`).delete());
@@ -1771,9 +1789,11 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
       const explain = h('p', { class: 'muted', style: 'margin:8px 2px 0;font-size:13px' });
       const drawKind = () => {
         [...kinds.children].forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.k === kind)));
-        sizes.hidden = kind !== 'draft';
+        sizes.hidden = kind === 'weekly';
         explain.textContent = kind === 'draft'
           ? `Everyone drafts a ${ROUNDS}-player team, live, in snake order. Then you play a friend each week. Your best ${BEST} players' fantasy points that week count, so there are no lineups to set.`
+          : kind === 'late'
+          ? `Missed your league's draft? Start fresh mid-season. It begins ${wkLabel(openWeek())} and runs to the end of the regular season. The draft ranks players by how they are playing this season. Each week you play everyone in the league, so a late start never leaves you behind. Friends who show up after the draft can still join and pick from who's left.`
           : `No draft. Each week everyone picks ${SLOTS} players (at least 2 guards, 2 forwards, 1 center) under a ${money(CAP)} salary cap. Lineups lock at the week's first tip-off, and the top score wins the week.`;
       };
       Object.entries(flKinds).forEach(([k, t]) => kinds.append(h('button', { 'data-k': k, onclick: () => { kind = k; drawKind(); } }, t)));
@@ -1833,15 +1853,16 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
         else navigator.clipboard.writeText(invite).then(() => toast('Invite copied. Send it to your friends.'), () => toast('Code: ' + code));
       } }, 'Share invite')));
     const out = [head];
-    const canJoin = !member && (L.kind === 'weekly' || (L.status === 'lobby' && FL.teams.length < L.size));
+    const canJoin = !member && (L.kind === 'weekly' || (L.status === 'lobby' && FL.teams.length < L.size) || (L.kind === 'late' && L.status === 'season' && FL.teams.length < LATE_MAX));
     if (canJoin) out.push(h('button', { class: 'save-all', onclick: () => joinLeague(code) }, 'Join this league'));
     if (member) out.push(myTeamName());
-    if (L.kind === 'draft') {
+    if (drafty(L)) {
       if (L.status === 'lobby') out.push(...lobbyView(L, boss));
       else if (L.status === 'draft') out.push(...draftView(L, boss, member));
+      else if (L.kind === 'late') out.push(...lateView(L, member));
       else out.push(...seasonView(L));
     } else out.push(...weeklyView(L, member));
-    if (ACCT.leagues.includes(code)) out.push(h('button', { class: 'leave', onclick: () => leaveLeague(code) }, L.kind === 'draft' && L.status !== 'lobby' ? 'Hide from my leagues' : 'Leave league'));
+    if (ACCT.leagues.includes(code)) out.push(h('button', { class: 'leave', onclick: () => leaveLeague(code) }, drafty(L) && L.status !== 'lobby' ? 'Hide from my leagues' : 'Leave league'));
     // Keep the draft search box alive across live updates so typing is not interrupted.
     const keep = document.activeElement && box.contains(document.activeElement) ? document.activeElement : null;
     box.replaceChildren(...out.filter(Boolean));
@@ -1874,6 +1895,7 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
       ? `Share the code. When everyone is in, start the draft. Draft order is random. ${ROUNDS} rounds.`
       : 'Waiting for the league creator to start the draft. Keep this page open, or come back when it starts.');
     card.append(note);
+    if (L.kind === 'late') card.append(h('p', { class: 'muted', style: 'margin:8px 0 0' }, `Late to the Party: scoring starts ${wkLabel(lateStart(L))}${lateStart(L) < openWeek() ? ' (moves to ' + wkLabel(openWeek()) + ' when the draft starts)' : ''} and runs to the end of the regular season. Players are ranked by this season's form.`));
     if (boss) card.append(h('button', { class: 'save-all', onclick: startDraft }, FL.teams.length < 2 ? 'Need at least 2 teams' : `Start the draft with ${FL.teams.length} teams`));
     return [card];
   }
@@ -1882,13 +1904,14 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
     if (!confirm(`Start the draft now with ${FL.teams.length} teams? Nobody else can join after this.`)) return;
     const order = FL.teams.map((t) => t.id);
     for (let i = order.length - 1; i > 0; i--) { const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1); [order[i], order[j]] = [order[j], order[i]]; }
-    await flWrite(() => ACCT.db.doc('leagues/' + FL.code).update({ status: 'draft', order, size: order.length, draft_started_at: new Date().toISOString() })).catch(() => {});
+    const extra = FL.league.kind === 'late' && lateStart(FL.league) < openWeek() ? { start_wk: openWeek() } : {};
+    await flWrite(() => ACCT.db.doc('leagues/' + FL.code).update({ status: 'draft', order, size: order.length, draft_started_at: new Date().toISOString(), ...extra })).catch(() => {});
   }
 
   const taken = () => new Set(FL.picks.map((p) => String(p.pid)));
   function bestAvailable() {
     const t = taken();
-    return pool().filter((p) => !t.has(String(p.id))).sort((a, b) => a.rank_pts - b.rank_pts)[0];
+    return pool().filter((p) => !t.has(String(p.id))).sort(draftSort(FL.league))[0];
   }
   async function makePick(pid, auto = false) {
     const L = FL.league, n = FL.picks.length, uid = onClock(n, L.order);
@@ -1922,10 +1945,10 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
     ['All', 'G', 'F', 'C'].forEach((k) => chips.append(h('button', { 'aria-pressed': String(FL.pos === k), onclick: () => { FL.pos = k; flDraw(); } }, k === 'All' ? 'All' : POSN[k] + 's')));
     const t = taken(), q = FL.q.trim().toLowerCase();
     const avail = pool().filter((p) => !t.has(String(p.id)) && (FL.pos === 'All' || p.pos === FL.pos) && (!q || p.name.toLowerCase().includes(q) || p.team.toLowerCase() === q || tname(p.team).toLowerCase().includes(q)))
-      .sort((a, b) => a.rank_pts - b.rank_pts).slice(0, 60);
-    const list = h('div', { class: 'plist' }, avail.map((p) => h('div', { class: 'frow', style: `--tc:${tcol(p.team)};grid-template-columns:30px auto 1fr auto` },
-      h('span', { class: 'rk' }, p.rookie ? '–' : p.rank_pts), h('span', { class: 'pos' }, p.pos),
-      h('span', { class: 'nm' }, p.name, h('small', null, `${tname(p.team)} · ${p.fpts == null ? (p.exp === 0 ? 'rookie' : 'no stats last year') : f1(p.fpts) + ' pts/g'}`)),
+      .sort(draftSort(L)).slice(0, 60);
+    const list = h('div', { class: 'plist' }, avail.map((p, i) => h('div', { class: 'frow', style: `--tc:${tcol(p.team)};grid-template-columns:30px auto 1fr auto` },
+      h('span', { class: 'rk' }, L.kind === 'late' ? i + 1 : p.rookie ? '–' : p.rank_pts), h('span', { class: 'pos' }, p.pos),
+      h('span', { class: 'nm' }, p.name, h('small', null, `${tname(p.team)} · ${valText(L, p)}`)),
       mine ? h('button', { class: 'gbtn', style: 'padding:8px 12px', onclick: () => { if (confirm(`Draft ${p.name}?`)) makePick(p.id); } }, 'Draft') : h('span', { class: 'vl' }, p.fpts == null ? '' : f1(p.fpts)))));
     const board = h('details', { class: 'card', 'data-k': 'board' }, h('summary', null, `Draft board (${n} picks)`),
       h('div', { class: 'plist' }, [...FL.picks].reverse().slice(0, 40).map((pk) => { const p = pById(pk.pid); return h('div', { class: 'prow' },
@@ -1979,6 +2002,76 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
           h('span', { class: 'nm' }, p.name, h('small', null, `${tname(p.team)} · ${gamesIn(p, FL.wk)} games${i >= BEST ? ' · not counting' : ''}`)), h('span', { class: 'pr' }, f1(v), h('small', null, live ? 'pts' : 'proj'))))));
     });
     return [weekPicker(flDraw), matchups, standings, ...rosters];
+  }
+
+
+  // ---------- late to the party ----------
+  const lateStart = (L) => L.start_wk || openWeek();
+  const teamStart = (L, uid) => { const t = FL.teams.find((x) => x.id === uid); return t && t.start_wk && t.start_wk > lateStart(L) ? t.start_wk : lateStart(L); };
+  async function catchPick(pid) {
+    if (rosterOf(ACCT.id).length >= ROUNDS) return toast(`Your team is full at ${ROUNDS} players.`);
+    const ref = ACCT.db.doc(`leagues/${FL.code}/picks/x_${pid}`);
+    if (taken().has(String(pid))) return toast('That player is already taken.');
+    try {
+      const lease = await ref.acquire({ holder: ACCT.id, ttlMs: 8000 });
+      if (!lease.acquired || (await ref.get()).exists) return toast('Someone just took that player.');
+      await flWrite(() => ref.set({ n: 100000 + FL.picks.length, uid: ACCT.id, pid: Number(pid), at: new Date().toISOString(), by: ACCT.id, catchup: true }));
+    } catch (e) { /* toast already shown */ }
+  }
+  function lateView(L, member) {
+    const ks = weekKeys(), first = lateStart(L);
+    FL.wk = FL.wk && FL.wk >= first ? FL.wk : (thisWeek() >= first ? thisWeek() : first);
+    const live = hasLive(FL.wk);
+    const ids = FL.teams.map((t) => t.id).filter((u) => rosterOf(u).length);
+    const out = [];
+    // Catch-up draft for anyone who joined after the draft (or still has open roster spots).
+    const mine = rosterOf(ACCT.id);
+    if (member && mine.length < ROUNDS) {
+      const t = taken();
+      const inp = FL.search || (FL.search = h('input', { class: 'search', type: 'search', placeholder: 'Search available players', 'aria-label': 'Search available players', style: 'margin:0 0 10px' }));
+      if (!inp.dataset.wired) { inp.dataset.wired = 1; inp.addEventListener('input', () => { FL.q = inp.value; flDraw(); }); }
+      const q = FL.q.trim().toLowerCase();
+      const avail = pool().filter((p) => !t.has(String(p.id)) && (!q || p.name.toLowerCase().includes(q) || tname(p.team).toLowerCase().includes(q))).sort(draftSort(L)).slice(0, 40);
+      out.push(h('div', { class: 'card', style: 'margin-top:12px;border-color:var(--yel)' },
+        h('h3', null, `Catch-up draft · ${mine.length} of ${ROUNDS}`),
+        h('p', { class: 'muted', style: 'margin:-4px 0 10px' }, `You made it. Pick ${ROUNDS - mine.length} more from who's left, no waiting on a clock. Your team counts from ${wkLabel(teamStart(L, ACCT.id))}.`),
+        inp, h('div', { class: 'plist' }, avail.map((p, i) => h('div', { class: 'frow', style: `--tc:${tcol(p.team)};grid-template-columns:30px auto 1fr auto` },
+          h('span', { class: 'rk' }, i + 1), h('span', { class: 'pos' }, p.pos), h('span', { class: 'nm' }, p.name, h('small', null, `${tname(p.team)} · ${valText(L, p)}`)),
+          h('button', { class: 'gbtn', style: 'padding:8px 12px', onclick: () => { if (confirm(`Add ${p.name}?`)) catchPick(p.id); } }, 'Add'))))));
+    }
+    // Projections for a late league use this season's form when a player has it.
+    const proj = (uid, wk) => rosterOf(uid).map((id) => { const p = pById(id); return p ? (formOf(p)?.avg ?? p.fpts ?? 0) * gamesIn(p, wk) : 0; }).sort((a, b) => b - a).slice(0, BEST).reduce((a, b) => a + b, 0);
+    const score = (uid, wk) => live || hasLive(wk) ? bestScore(rosterOf(uid), wk) : proj(uid, wk);
+    const active = (wk) => ids.filter((u) => teamStart(L, u) <= wk);
+    // This week: everyone against everyone.
+    const now = active(FL.wk).map((u) => ({ u, s: score(u, FL.wk) })).sort((a, b) => b.s - a.s);
+    const week = h('div', { class: 'card' }, h('h3', null, live ? 'This week' : 'This week (projected)'),
+      FL.wk < first ? h('p', { class: 'muted' }, `This league starts ${wkLabel(first)}.`) :
+      now.length ? h('div', { class: 'plist' }, now.map((x, i) => h('div', { class: 'prow' }, h('span', { class: 'pos' }, String(i + 1)),
+        h('span', { class: 'nm' }, teamName(x.u) + (x.u === ACCT.id ? ' (you)' : ''), h('small', null, now.length > 1 ? `beats ${now.length - 1 - i} of ${now.length - 1}` : '')),
+        h('span', { class: 'pr' }, f1(x.s), h('small', null, live ? 'pts' : 'proj'))))) : h('p', { class: 'muted' }, 'No teams yet.'),
+      h('p', { class: 'muted', style: 'margin:10px 0 0;font-size:12.5px' }, `You play every team each week: one win for each team you outscore. Best ${BEST} players count.`));
+    // Standings: all-play record over finished weeks since each team's start, ranked by win rate.
+    const rec = Object.fromEntries(ids.map((u) => [u, { w: 0, l: 0, t: 0, pf: 0, wks: 0 }]));
+    ks.forEach((wk) => {
+      if (wk < first || !hasLive(wk) || wk >= thisWeek()) return;
+      const xs = active(wk).map((u) => ({ u, s: bestScore(rosterOf(u), wk) }));
+      xs.forEach((a) => { rec[a.u].pf += a.s; rec[a.u].wks++; xs.forEach((b) => { if (a.u === b.u) return; if (a.s > b.s) rec[a.u].w++; else if (a.s < b.s) rec[a.u].l++; else rec[a.u].t++; }); });
+    });
+    const wp = (r) => r.w + r.l + r.t ? (r.w + r.t / 2) / (r.w + r.l + r.t) : 0;
+    const order = [...ids].sort((a, b) => wp(rec[b]) - wp(rec[a]) || (rec[b].pf / (rec[b].wks || 1)) - (rec[a].pf / (rec[a].wks || 1)));
+    const standings = h('div', { class: 'card' }, h('h3', null, 'Standings'), h('table', { class: 'tbl' },
+      h('tr', null, h('th', null, 'Team'), h('th', null, 'W-L'), h('th', null, 'Win %'), h('th', null, 'Pts/wk')),
+      order.map((u) => h('tr', null, h('td', { style: 'font-family:var(--body)' }, teamName(u) + (u === ACCT.id ? ' (you)' : '')),
+        h('td', null, `${rec[u].w}-${rec[u].l}${rec[u].t ? '-' + rec[u].t : ''}`), h('td', null, rec[u].w + rec[u].l ? pct(wp(rec[u]), 0) : '–'), h('td', null, rec[u].wks ? f1(rec[u].pf / rec[u].wks) : '–')))),
+      h('p', { class: 'muted', style: 'margin:10px 0 0;font-size:12.5px' }, `Ranked by win rate, so teams that joined later are on equal footing. Season: ${wkLabel(first)} to the end of the regular season.`));
+    const rosters = ids.map((u) => {
+      const ps = rosterOf(u).map(pById).filter(Boolean).map((p) => ({ p, v: live ? pts(p.id, FL.wk) : (formOf(p)?.avg ?? p.fpts ?? 0) * gamesIn(p, FL.wk) })).sort((a, b) => b.v - a.v);
+      return h('details', { class: 'card', 'data-k': 'r_' + u, open: u === ACCT.id ? true : null }, h('summary', null, teamName(u) + (u === ACCT.id ? ' (you)' : '') + (teamStart(L, u) > first ? ' · joined late' : '')),
+        h('div', { class: 'plist' }, ps.map(({ p, v }, i) => h('div', { class: 'prow', style: i >= BEST ? 'opacity:.55' : null }, h('span', { class: 'pos' }, p.pos),
+          h('span', { class: 'nm' }, p.name, h('small', null, `${tname(p.team)} · ${gamesIn(p, FL.wk)} games${i >= BEST ? ' · not counting' : ''}`)), h('span', { class: 'pr' }, f1(v), h('small', null, live ? 'pts' : 'proj'))))));
+    });
+    return [...out, weekPicker(flDraw), week, standings, ...rosters];
   }
 
   // ---------- weekly lineups ----------
