@@ -674,6 +674,28 @@ details.card summary { font-size: 16px; }
 .clvrow { grid-template-columns: auto 1fr; row-gap: 2px; padding: 8px 10px; }
 .clvrow .cv { grid-column: 2; font-size: 12.5px; font-weight: 700; }
 .cv.beat { color: var(--grn); } .cv.worse { color: var(--red); } .cv.same { color: var(--ink3); }
+
+/* board: upcoming game stats and pass cards; record: pick archive */
+.gst { margin: 4px 14px 12px; padding: 10px 0 2px; border-top: 1px solid var(--paper-line); font-size: 13px; }
+.gst-t, .gst-r { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; gap: 8px; padding: 3px 0; }
+.gst-t b, .gst-r b { font-family: var(--mono); font-weight: 700; }
+.gst-t b:last-child, .gst-r b:last-child { text-align: right; }
+.gst-t span, .gst-r span { text-align: center; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.gst-t b { font-family: var(--disp); font-size: 16px; letter-spacing: .03em; }
+.gst-c { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.gst-c span { font-size: 11.5px; padding: 4px 8px; border-radius: 999px; background: rgba(0,0,0,.06); }
+.gcard { cursor: pointer; }
+.gcard .gst { margin: 6px 0 4px; border-top-color: var(--line); }
+.gcard .gst-c span { background: var(--bg2); color: var(--ink2); }
+.gc-hd { display: flex; align-items: center; gap: 8px; }
+.gc-hd b { font-family: var(--disp); font-size: 20px; letter-spacing: .03em; }
+.gc-hd .tag { margin-left: auto; }
+.gc-hd .chip { width: 10px; height: 18px; border-radius: 3px; display: inline-block; }
+.gc-ft { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink3); padding-top: 8px; border-top: 1px solid var(--line); margin-top: 6px; }
+.arch-link { display: flex; justify-content: space-between; align-items: center; width: 100%; margin: 18px 0 6px; padding: 14px; border-radius: var(--r); background: var(--card); border: 1px solid var(--line); color: var(--ink); text-align: left; }
+.arch-link span { color: var(--ink3); font-size: 13px; }
+details.arch { border-top: 1px solid var(--line); padding: 4px 0; }
+details.arch summary { display: flex; justify-content: space-between; padding: 8px 0; cursor: pointer; font-family: var(--mono); }
 </style>
 
 <div class="wrap">
@@ -789,7 +811,48 @@ details.card summary { font-size: 16px; }
       h('div', { class: 'perf' }),
       (legs.length ? legs : [g.top]).map(leg),
       reasons.length ? h('ul', { class: 'why' }, reasons.map((r) => h('li', null, r))) : null,
+      gameStats(g),
       h('div', { class: 'ft' }, h('span', null, g.info ? `${g.info.away_coach} vs ${g.info.home_coach}` : ''), h('span', null, 'Matchup →')));
+  }
+
+  // ---------- upcoming game stats (board) ----------
+  const teamRow = (t) => C.teams.find((r) => r.team === t && r.season === C.meta.current_season);
+  const outCount = (t, wk) => { const I = C.injuries; if (!I || I.week !== wk) return null; return (I.teams[t] || []).filter((p) => p.status === 'Out' || p.status === 'Doubtful').length; };
+  function gameStats(g) {
+    const u = g.info || {}, A = teamRow(g.away) || {}, Hm = teamRow(g.home) || {};
+    const f1 = (v) => v == null ? '–' : Number(v).toFixed(1);
+    const rows = [
+      ['Record', A.su, Hm.su],
+      ['Against the spread', A.ats, Hm.ats],
+      ['Points scored / game', f1(A.pf_pg), f1(Hm.pf_pg)],
+      ['Points allowed / game', f1(A.pa_pg), f1(Hm.pa_pg)],
+      ['Win chance (fair odds)', pct(u.away_fair_pct, 0), pct(u.home_fair_pct, 0)],
+    ];
+    if (A.ats_last5 !== A.ats || Hm.ats_last5 !== Hm.ats) rows.splice(2, 0, ['ATS last 5', A.ats_last5, Hm.ats_last5]);
+    const oa = outCount(g.away, g.week), oh = outCount(g.home, g.week);
+    if (oa != null || oh != null) rows.push(['Out or doubtful', oa ?? '–', oh ?? '–']);
+    const lm = lineMoves(g), chips = [];
+    // "Opened" only when our first tracked number differs from the line shown now.
+    const spNow = u.spread ? Math.abs(parseFloat(u.spread.split(' ').pop())) : null, spOpen = lm.sp.length ? Math.abs(lm.sp[0].v) : null;
+    if (u.spread) chips.push(spOpen != null && spNow != null && spOpen !== spNow ? `${u.spread} (opened ${spOpen})` : u.spread);
+    const ttOpen = lm.tt.length ? lm.tt[0].v : null;
+    if (u.total != null) chips.push(ttOpen != null && ttOpen !== u.total ? `O/U ${u.total} (opened ${ttOpen})` : `O/U ${u.total}`);
+    if (u.roof_label) chips.push(u.roof_label + (u.stadium ? ` · ${u.stadium}` : ''));
+    if (u.st_games >= 20 && u.st_under_pct != null) chips.push(`Unders ${pct(u.st_under_pct, 0)} here (${u.st_games} games)`);
+    if (A.streak && Hm.streak) chips.push(`${g.away} ${A.streak.toLowerCase()} · ${g.home} ${Hm.streak.toLowerCase()}`);
+    return h('div', { class: 'gst' },
+      h('div', { class: 'gst-t' }, h('b', null, g.away), h('span', null, 'Matchup'), h('b', null, g.home)),
+      rows.map(([k, a, b]) => h('div', { class: 'gst-r' }, h('b', null, a ?? '–'), h('span', null, k), h('b', null, b ?? '–'))),
+      chips.length ? h('div', { class: 'gst-c' }, chips.map((c) => h('span', null, c))) : null);
+  }
+  function gcard(g) {
+    const open = () => go('g_' + g.id);
+    return h('article', { class: 'card gcard fade', role: 'link', tabindex: 0, onclick: open, onkeydown: (e) => { if (e.key === 'Enter') open(); } },
+      h('div', { class: 'gc-hd' }, h('span', { class: 'chip', style: `background:${col(g.away)}` }), h('b', null, `${g.away} @ ${g.home}`), h('span', { class: 'chip', style: `background:${col(g.home)}` }),
+        h('span', { class: 'tag PASS' }, 'PASS'), wxBadge(g)),
+      h('div', { class: 'lbadge', 'data-live-badge': `${g.away}@${g.home}`, hidden: true }),
+      gameStats(g),
+      h('div', { class: 'gc-ft' }, h('span', null, g.info ? `${g.info.away_coach} vs ${g.info.home_coach}` : ''), h('span', null, 'Matchup →')));
   }
 
   // ---------- screens ----------
@@ -819,7 +882,7 @@ details.card summary { font-size: 16px; }
   }
   function board() {
     const all_ = games();
-    const gs = all_.filter((g) => !started(g.id)), gone = all_.filter((g) => started(g.id));
+    const gs = all_.filter((g) => !started(g.id));
     const all = recRow('All', 'Both'), live = recRow('Live', 'Both');
     const lockd = !!C.meta.locked;
     const traps = lockd ? (C.meta.counts || {}).trap_games || 0 : gs.filter((g) => g.top.call === 'TRAP').length;
@@ -831,8 +894,8 @@ details.card summary { font-size: 16px; }
       if (lockd) return [sh(title, aside), passRow(s.games)];
       return [sh(title, aside),
         plays.map(slip),
-        passes.length ? [plays.length ? h('p', { class: 'muted', style: 'margin:10px 2px 6px;font-size:13px' }, 'Passes, no edge either way') :
-          h('p', { class: 'muted', style: 'margin:0 2px 8px;font-size:13px' }, s.games.length === 1 ? 'No edge in this one. The popular side looks fairly priced.' : 'No edges here. The popular side looks fairly priced.'), passRow(passes)] : null];
+        passes.length && !plays.length ? h('p', { class: 'muted', style: 'margin:0 2px 8px;font-size:13px' }, s.games.length === 1 ? 'No edge in this one. The popular side looks fairly priced.' : 'No edges here. The popular side looks fairly priced.') : null,
+        passes.map(gcard)];
     };
     return [
       h('section', { class: 'hero fade' },
@@ -849,10 +912,9 @@ details.card summary { font-size: 16px; }
         h('p', { class: 'meter-key' }, h('b', null, 'Trap meter 0-100:'), ' higher means the popular side is more likely to lose.')),
       liveCard(),
       lockd ? proCard() : slipOfDay(),
-      recapCard(),
       yourTeams(),
       ss.length ? ss.flatMap(slotView).flat(3) : [sh('Up next', ''), h('p', { class: 'muted' }, 'No more games on the board yet. The next lines post with the next refresh.')],
-      gone.length ? [sh('Already kicked off', `${gone.length} game${gone.length === 1 ? '' : 's'}`), passRow(gone)] : null,
+      h('button', { class: 'arch-link', onclick: () => { go('record'); setTimeout(() => document.getElementById('archive')?.scrollIntoView({ block: 'start' }), 60); } }, h('b', null, 'Past picks'), h('span', null, `${C.ledger.filter((r) => r.result).length} graded · see the archive →`)),
     ];
   }
   // Re-draw the board at the next kickoff and at midnight ET, so a game moves off "Up next" when it starts
@@ -1161,10 +1223,18 @@ details.card summary { font-size: 16px; }
     out.push(clvCard());
     out.push(h('div', { class: 'card', style: 'margin-top:14px' }, h('h3', null, 'Units by season'), seasonChart(),
       h('div', { class: 'legend', style: 'margin:8px 0 0' }, h('span', null, h('i', { style: 'background:var(--blu)' }), 'Spread traps'), h('span', null, h('i', { style: 'background:var(--yel)' }), 'Total traps'))));
-    const led = [...C.ledger].sort((a, b) => RANK[b.call] - RANK[a.call] || b.meter - a.meter);
-    out.push(h('div', { class: 'card' }, h('h3', null, 'Locked this week'), led.length ? led.map((r) => h('div', { class: 'lg' }, h('span', { class: 'tag ' + r.call }, LABEL[r.call]),
-      h('span', null, h('b', null, r.pick), ' ', h('span', { class: 'muted' }, `${r.away} @ ${r.home} · ${odds(r.odds)}`)),
-      r.result ? h('span', { class: 'res ' + r.result }, r.result) : h('span', { class: 'muted mono', 'data-prov': JSON.stringify([r.away, r.home, r.market, r.pick]) }, fmtDate(r.date, { month: 'short', day: 'numeric' })))) : h('p', { class: 'muted' }, 'No live calls yet.')));
+    const ledRow = (r) => h('div', { class: 'lg' }, h('span', { class: 'tag ' + r.call }, LABEL[r.call]),
+      h('span', null, h('b', null, r.pick), ' ', h('span', { class: 'muted' }, `${r.away} @ ${r.home} · ${odds(r.odds)}${r.clv != null && r.result ? ` · CLV ${sgn(r.clv)}` : ''}`)),
+      r.result ? h('span', { class: 'res ' + r.result }, r.result) : h('span', { class: 'muted mono', 'data-prov': JSON.stringify([r.away, r.home, r.market, r.pick]) }, fmtDate(r.date, { month: 'short', day: 'numeric' })));
+    const pending = C.ledger.filter((r) => !r.result).sort((a, b) => a.date.localeCompare(b.date) || RANK[b.call] - RANK[a.call] || b.meter - a.meter);
+    out.push(h('div', { class: 'card' }, h('h3', null, 'Locked, not graded yet'), pending.length ? pending.map(ledRow) : h('p', { class: 'muted' }, 'Nothing waiting. New calls lock in at kickoff.')));
+    // Archive: every graded live call, newest week first.
+    const graded = C.ledger.filter((r) => r.result), wks = [...new Set(graded.map((r) => r.season * 100 + r.week))].sort((a, b) => b - a);
+    out.push(h('div', { class: 'card', id: 'archive' }, h('h3', null, 'Pick archive'), wks.length ? wks.map((k, i) => {
+      const rows = graded.filter((r) => r.season * 100 + r.week === k).sort((a, b) => a.date.localeCompare(b.date) || RANK[b.call] - RANK[a.call]);
+      const w = rows.filter((r) => r.result === 'W').length, l = rows.filter((r) => r.result === 'L').length, pu = rows.filter((r) => r.result === 'P').length;
+      return h('details', { class: 'arch', open: i === 0 }, h('summary', null, h('b', null, `Week ${k % 100}`), h('span', null, `${w}-${l}${pu ? '-' + pu : ''}`)), rows.map(ledRow));
+    }) : h('p', { class: 'muted' }, 'No graded live calls yet.')));
     const recent = C.recent.filter((r) => r.call === 'TRAP').sort((a, b) => b.date.localeCompare(a.date));
     const w = recent.filter((r) => r.result === 'W').length, l = recent.filter((r) => r.result === 'L').length;
     out.push(h('div', { class: 'card' }, h('h3', null, `${C.meta.current_season} TRAP calls · ${w}-${l}`), recent.length ? recent.map((r) => h('div', { class: 'lg' },
@@ -2150,7 +2220,7 @@ details.card summary { font-size: 16px; }
   function renderLive() {
     const card = document.getElementById('liveCard');
     if (card && C) {
-      const gs = LIVE.nfl ? LIVE.nfl.games.filter((g) => g.state !== 'pre' && C.calls.some((c) => c.away === g.away.abbr && c.home === g.home.abbr)) : [];
+      const gs = LIVE.nfl ? LIVE.nfl.games.filter((g) => g.state === 'in' && C.calls.some((c) => c.away === g.away.abbr && c.home === g.home.abbr)) : [];
       gs.sort((a, b) => (a.state === 'in' ? 0 : 1) - (b.state === 'in' ? 0 : 1));
       const byGame = games();
       card.replaceChildren(...(gs.length ? [sh('Live', `${gs.filter((g) => g.state === 'in').length} playing · swipe`),
