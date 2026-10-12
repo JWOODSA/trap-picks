@@ -793,12 +793,47 @@ details.card summary { font-size: 16px; }
   }
 
   // ---------- screens ----------
+  // Game slots in US Eastern time, so the board rolls from Sunday to Monday night, then Thursday night, then the weekend.
+  const ET = 'America/New_York';
+  const etDayOf = (d) => d.toLocaleDateString('en-CA', { timeZone: ET });
+  const kickOf = (g) => C.kickoff && C.kickoff[g.id] ? new Date(C.kickoff[g.id]) : new Date(g.date + 'T17:00:00Z');
+  function slotOf(g) {
+    const k = kickOf(g), day = etDayOf(k);
+    const wd = k.toLocaleDateString('en-US', { weekday: 'long', timeZone: ET });
+    const hr = +k.toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: ET }) % 24;
+    const night = hr >= 19;
+    const name = wd === 'Monday' ? 'Monday Night Football' : wd === 'Thursday' ? 'Thursday Night Football' :
+      wd === 'Sunday' && night ? 'Sunday Night Football' : wd === 'Sunday' ? 'Sunday games' : wd + (night ? ' night' : ' games');
+    const now = new Date(), tom = new Date(now.getTime() + 864e5);
+    const when = day === etDayOf(now) ? (hr >= 17 ? 'Tonight' : 'Today') : day === etDayOf(tom) ? 'Tomorrow' : null;
+    return { key: day + (wd === 'Sunday' && night ? 'n' : ''), name, when, day, at: k };
+  }
+  const kickText = (d) => d.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: ET }) + ' ET';
+  const passRow = (list) => h('div', { class: 'passes' }, list.map((g) => h('button', { onclick: () => go('g_' + g.id) }, h('span', { class: 'dot', style: `background:${col(g.away)}` }), `${g.away} @ ${g.home}`, wxBadge(g))));
+  function slots(gs) {
+    const by = new Map();
+    for (const g of gs) { const s = slotOf(g); (by.get(s.key) || by.set(s.key, { ...s, games: [] }).get(s.key)).games.push(g); }
+    const out = [...by.values()].sort((a, b) => a.at - b.at);
+    for (const s of out) { s.games.sort((a, b) => kickOf(a) - kickOf(b) || RANK[b.top.call] - RANK[a.top.call] || b.top.meter - a.top.meter); s.at = kickOf(s.games[0]); }
+    return out;
+  }
   function board() {
-    const gs = games();
+    const all_ = games();
+    const gs = all_.filter((g) => !started(g.id)), gone = all_.filter((g) => started(g.id));
     const all = recRow('All', 'Both'), live = recRow('Live', 'Both');
-    const plays = gs.filter((g) => g.top.call !== 'PASS'), passes = gs.filter((g) => g.top.call === 'PASS');
     const lockd = !!C.meta.locked;
     const traps = lockd ? (C.meta.counts || {}).trap_games || 0 : gs.filter((g) => g.top.call === 'TRAP').length;
+    const ss = slots(gs);
+    const slotView = (s, i) => {
+      const plays = s.games.filter((g) => g.top.call !== 'PASS'), passes = s.games.filter((g) => g.top.call === 'PASS');
+      const title = (i === 0 ? 'Up next: ' : '') + (s.when ? `${s.when} · ` : '') + s.name;
+      const aside = s.games.length === 1 ? kickText(s.at) : `${fmtDate(s.day)} · ${s.games.length} games`;
+      if (lockd) return [sh(title, aside), passRow(s.games)];
+      return [sh(title, aside),
+        plays.map(slip),
+        passes.length ? [plays.length ? h('p', { class: 'muted', style: 'margin:10px 2px 6px;font-size:13px' }, 'Passes, no edge either way') :
+          h('p', { class: 'muted', style: 'margin:0 2px 8px;font-size:13px' }, s.games.length === 1 ? 'No edge in this one. The popular side looks fairly priced.' : 'No edges here. The popular side looks fairly priced.'), passRow(passes)] : null];
+    };
     return [
       h('section', { class: 'hero fade' },
         h('h1', null, 'Trap ', h('span', null, 'or die.')),
@@ -808,7 +843,7 @@ details.card summary { font-size: 16px; }
           h('div', null, h('span', { class: 'tag LEAN' }, 'WATCH'), 'Close'),
           h('div', null, h('span', { class: 'tag PASS' }, 'PASS'), 'Skip')),
         h('div', { class: 'stats' },
-          h('div', { class: 'hot' }, h('b', null, traps), h('span', null, `trap${traps === 1 ? '' : 's'} this week`)),
+          h('div', { class: 'hot' }, h('b', null, traps), h('span', null, `trap${traps === 1 ? '' : 's'} still to play`)),
           h('div', { id: 'liveRec' }, h('b', null, recText(live)), h('span', null, live ? `live · ${sgn(live.units)}u` : 'live, grades after Sunday')),
           all ? h('div', null, h('b', null, pct(all.win_pct)), h('span', null, `${recText(all)} since 2016`)) : null),
         h('p', { class: 'meter-key' }, h('b', null, 'Trap meter 0-100:'), ' higher means the popular side is more likely to lose.')),
@@ -816,11 +851,27 @@ details.card summary { font-size: 16px; }
       lockd ? proCard() : slipOfDay(),
       recapCard(),
       yourTeams(),
-      sh('This week', `${gs.length} games`),
-      lockd ? h('div', { class: 'passes' }, gs.map((g) => h('button', { onclick: () => go('g_' + g.id) }, h('span', { class: 'dot', style: `background:${col(g.away)}` }), `${g.away} @ ${g.home}`, wxBadge(g)))) :
-      plays.length ? plays.map(slip) : h('p', { class: 'muted' }, 'No traps this week. The popular side looks fairly priced everywhere.'),
-      !lockd && passes.length ? [sh('Passes', 'no edge either way'), h('div', { class: 'passes' }, passes.map((g) => h('button', { onclick: () => go('g_' + g.id) }, h('span', { class: 'dot', style: `background:${col(g.away)}` }), `${g.away} @ ${g.home}`)))] : null,
+      ss.length ? ss.flatMap(slotView).flat(3) : [sh('Up next', ''), h('p', { class: 'muted' }, 'No more games on the board yet. The next lines post with the next refresh.')],
+      gone.length ? [sh('Already kicked off', `${gone.length} game${gone.length === 1 ? '' : 's'}`), passRow(gone)] : null,
     ];
+  }
+  // Re-draw the board at the next kickoff and at midnight ET, so a game moves off "Up next" when it starts
+  // and "Tonight" / "Tomorrow" labels stay right without a reload.
+  let boardTimer = null;
+  function boardTick() {
+    clearTimeout(boardTimer);
+    if (!C || (location.hash.slice(1) || 'board') !== 'board') return;
+    const now = Date.now();
+    const next = Object.values(C.kickoff || {}).map(Date.parse).filter((t) => t > now).sort((a, b) => a - b)[0];
+    const mid = new Date(new Date().toLocaleString('en-US', { timeZone: ET })); mid.setHours(24, 0, 5, 0);
+    const toMid = mid - new Date(new Date().toLocaleString('en-US', { timeZone: ET }));
+    const wait = Math.min(next ? next - now + 5000 : Infinity, toMid, 6 * 3600e3);
+    boardTimer = setTimeout(() => {
+      if ((location.hash.slice(1) || 'board') !== 'board') return;
+      const y = window.scrollY;
+      view.replaceChildren(...[board()].flat(3).filter(Boolean));
+      renderLive(); renderWx(); window.scrollTo(0, y); boardTick();
+    }, Math.max(wait, 1000));
   }
   // ---------- slip of the day ----------
   const TIER = (c) => c.call === 'TRAP' ? 0 : c.market === 'Total' ? 1 : 2;
@@ -831,11 +882,11 @@ details.card summary { font-size: 16px; }
     const now = Date.now();
     const open = C.calls.filter((c) => edge(c) && !(C.kickoff && C.kickoff[c.game_id] && Date.parse(C.kickoff[c.game_id]) <= now));
     if (!open.length) return [];
-    const wk = Math.min(...open.map((c) => c.week));
     const seen = new Set();
-    return open.filter((c) => c.week === wk).sort((a, b) => TIER(a) - TIER(b) || b.meter - a.meter)
+    return open.sort((a, b) => TIER(a) - TIER(b) || b.meter - a.meter)
       .filter((c) => !seen.has(c.game_id) && seen.add(c.game_id)).slice(0, 15);
   }
+  const weeksText = (legs) => { const w = [...new Set(legs.map((c) => c.week))].sort((a, b) => a - b); return w.length > 1 ? `Weeks ${w[0]}-${w[w.length - 1]}` : `Week ${w[0]}`; };
   function slipOfDay() {
     const pool = slipPool();
     const box = h('section', { class: 'sod fade' });
@@ -843,7 +894,7 @@ details.card summary { font-size: 16px; }
       const max = pool.length;
       if (max < 4) {
         box.replaceChildren(h('div', { class: 'sod-hd' }, h('b', null, 'Slip of the day'), h('span', null, 'Off today')),
-          h('p', { class: 'sod-note' }, `Only ${max} game${max === 1 ? '' : 's'} left this week with an edge, not enough for a 4-leg slip. A new slip posts with the next week's lines.`));
+          h('p', { class: 'sod-note' }, `Only ${max} game${max === 1 ? '' : 's'} on the board with an edge, not enough for a 4-leg slip. A new slip posts when more lines come out.`));
         return;
       }
       slipN = Math.max(4, Math.min(slipN, max));
@@ -853,7 +904,7 @@ details.card summary { font-size: 16px; }
       const bt = (C.parlay || []).find((r) => r.legs === slipN);
       const first = legs.map((c) => C.kickoff?.[c.game_id]).filter(Boolean).sort()[0];
       box.replaceChildren(
-        h('div', { class: 'sod-hd' }, h('b', null, 'Slip of the day'), h('span', null, `Week ${legs[0].week}${first ? ' · first leg ' + new Date(first).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : ''}`)),
+        h('div', { class: 'sod-hd' }, h('b', null, 'Slip of the day'), h('span', null, `${weeksText(legs)}${first ? ' · first leg ' + new Date(first).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : ''}`)),
         h('div', { class: 'sod-n' },
           h('button', { 'aria-label': 'Fewer legs', disabled: slipN <= 4, onclick: () => { slipN--; draw(); } }, '−'),
           h('div', null, h('b', null, slipN), h('span', null, 'legs')),
@@ -868,7 +919,7 @@ details.card summary { font-size: 16px; }
           h('div', null, h('span', null, 'Model hit chance'), h('b', { class: 'mono' }, hit >= 0.01 ? pct(hit) : '<1%'))),
         h('p', { class: 'sod-note' },
           bt ? `Since 2016, the ${slipN}-leg slip hit ${bt.hits} of ${bt.slips} weeks (${pct(bt.hit_pct)}), ${sgn(bt.units)} units at 1 unit a slip. ` : `No ${slipN}-leg backtest: weeks rarely had this many edges. `,
-          max < 15 ? `Only ${max} games left this week have an edge, so the slip tops out at ${max}. ` : '',
+          max < 15 ? `Only ${max} games still to play have an edge, so the slip tops out at ${max}. ` : '',
           'Parlays are long shots: one miss loses the slip. Play it small.'),
         saveAllBtn(legs), logSlipBtn(legs, d), shareSlipBtn(legs, d, hit));
       queueMicrotask(sync);
@@ -2942,6 +2993,7 @@ details.card summary { font-size: 16px; }
     window.scrollTo(0, 0);
     renderLive();
     renderWx();
+    boardTick();
     if (hash !== 'me') sync();
   }
   document.getElementById('acct').addEventListener('click', () => go(HOSTED && (ACCT.state === 'ready' || ACCT.state === 'readonly') ? 'me' : 'login'));
