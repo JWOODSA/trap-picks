@@ -10,5 +10,7 @@
     "html_handling": "auto-trailing-slash",
     "run_worker_first": ["/api/*", "/pro/*", "/alerts/*"]
   },
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // Keep the variables set in the Cloudflare dashboard (alert keys, Supabase, Stripe) on each deploy.
+  "keep_vars": true
 }
