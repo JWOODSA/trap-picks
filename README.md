@@ -25,7 +25,7 @@
    - `STRIPE_SECRET_KEY` (secret), `STRIPE_WEBHOOK_SECRET` (secret)
    - `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` (the price_ IDs)
    - `ANTHROPIC_API_KEY` (secret, from console.anthropic.com): turns on bet slip screenshot upload (`/api/slip`). Optional `SLIP_MODEL` overrides the model. Without it the app says upload is coming soon.
-5. **Push alerts**: open `https://<your site>/setup-alerts.html` once. It makes the keys in your browser. Add `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (secret) and `VAPID_SUBJECT` (mailto: your email) to the Cloudflare variables. In GitHub (Settings, Secrets and variables, Actions, Variables) add `SITE_URL`, for example `https://trappicks.pages.dev`. The first send records the current alerts without sending them, so nobody gets a backlog.
+5. **Push alerts**: open `https://<your site>/setup-alerts.html` once. It makes the keys in your browser. Add `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (secret) and `VAPID_SUBJECT` (mailto: your email) to the Cloudflare variables. The site address is already in `.github/workflows/push-alerts.yml`; if the site moves, set a GitHub repository variable `SITE_URL` (Settings, Secrets and variables, Actions, Variables) to override it. The first send records the current alerts without sending them, so nobody gets a backlog.
 6. Put the Supabase URL and anon key in `web/config.json`, set `paywall` to true when checkout works, rebuild and push.
 
 Stripe rule to keep: selling sports information is allowed, but sports forecasting, fantasy sports or contests with a cash or prize payout are prohibited. Pick'em and fantasy leagues must never pay prizes.

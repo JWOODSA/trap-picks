@@ -1,7 +1,8 @@
 # Sends push alerts. After each data push it waits for Cloudflare to publish the new files, then
 # asks the site to send anything new; every hour it checks again in case a run was missed.
-# Needs the repository variable SITE_URL (Settings, Secrets and variables, Actions, Variables),
-# for example https://trappicks.pages.dev. No secrets: the site only ever sends each alert once.
+# The site address is below; a repository variable SITE_URL overrides it if the site moves.
+# No secrets: the site only ever sends each alert once. A 503 means the alert keys or Supabase
+# are not set up yet, which is not a failure.
 name: push alerts
 on:
   push:
@@ -14,10 +15,14 @@ concurrency: push-alerts
 jobs:
   send:
     runs-on: ubuntu-latest
-    if: vars.SITE_URL != ''
+    env:
+      SITE_URL: ${{ vars.SITE_URL || 'https://trap-picks.johnglenwoods99.workers.dev' }}
     steps:
       - name: Wait for the Cloudflare deploy
         if: github.event_name == 'push'
         run: sleep 150
       - name: Send new alerts
-        run: curl -fsS -X POST "${{ vars.SITE_URL }}/api/push-run" --max-time 60
+        run: |
+          code=$(curl -sS -o out.json -w '%{http_code}' -X POST "$SITE_URL/api/push-run" --max-time 60)
+          cat out.json; echo; echo "HTTP $code"
+          [ "$code" = 200 ] || [ "$code" = 503 ]
