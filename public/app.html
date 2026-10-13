@@ -611,6 +611,18 @@ details.card summary { font-size: 16px; }
 .probtn button { padding: 10px 8px; border-radius: 12px; background: var(--card2); border: 2px solid var(--line); display: grid; gap: 1px; }
 .probtn button b { font-family: var(--mono); font-size: 20px; } .probtn button span { font-size: 12px; color: var(--ink2); }
 .probtn button.best { background: var(--yel); border-color: var(--yel); color: #1a1600; } .probtn .best span { color: #4a3b00; }
+.tiers { display: grid; gap: 10px; margin: 12px 0 4px; }
+.tier { padding: 14px; border-radius: 16px; background: var(--card2); border: 1px solid var(--line); display: grid; gap: 6px; }
+.tier.t-pro { background: linear-gradient(150deg, #3b2a00, #17120a); border-color: #6b5100; }
+.tier.t-elite { background: linear-gradient(150deg, #3d0d16, #140a12); border-color: #7a2233; }
+.tier .tierh { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.tier .tierh b { font-family: var(--disp); font-weight: 900; font-size: 24px; text-transform: uppercase; line-height: 1; }
+.tier .tierh span { font-family: var(--mono); font-size: 15px; color: var(--ink2); white-space: nowrap; }
+.tier ul { margin: 0; padding-left: 18px; font-size: 14px; color: var(--ink2); display: grid; gap: 3px; }
+.tier .soon { justify-self: start; font-family: var(--disp); font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; padding: 2px 8px; border-radius: 5px; background: var(--red); color: #fff; }
+.tier .mine { justify-self: start; font-size: 13px; font-weight: 700; color: var(--grn); }
+.tier .wait { padding: 11px; border-radius: 12px; background: var(--red); color: #fff; font-weight: 800; font-size: 15px; }
+.tier .wait[disabled] { background: var(--card2); color: var(--ink2); }
 .gsign { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; border-radius: 12px; background: #fff; color: #1f1f1f; font-weight: 700; font-size: 16px; }
 .gsign .g { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; color: #fff; background: conic-gradient(#ea4335 0 25%, #fbbc05 0 50%, #34a853 0 75%, #4285f4 0); font-size: 13px; }
 .or { display: flex; align-items: center; gap: 10px; margin: 12px 0; color: var(--ink3); font-size: 12px; }
@@ -1313,6 +1325,7 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
     db.doc('members/' + me.id).onSnapshot((d) => { ACCT.groups = (d.exists && d.data().groups) || []; ACCT.pickem = (d.exists && d.data().pickem) || {}; sync(); }, () => {});
     db.doc(base + '/bets').onSnapshot((d) => { BETS.items = (d.exists && d.data().items) || {}; BETS.bankroll = d.exists ? d.data().bankroll ?? null : null; BETS.budget = d.exists ? d.data().budget ?? null : null; sync(); if (location.hash === '#bets') route(); }, () => {});
     db.doc(base + '/fantasy').onSnapshot((d) => { ACCT.leagues = (d.exists && d.data().leagues) || []; sync(); }, () => {});
+    db.doc(base + '/waitlist').get().then((d) => { ACCT.waitlist = !!(d.exists && d.data().elite); }).catch(() => {});
     sync();
     if (SB.client) { await loadPro(); if (SB.checkoutBack) afterCheckout(); else if ((location.hash.slice(1) || 'board') === 'me') route(); }
   }
@@ -1420,7 +1433,7 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
     const split = (side) => { const d = done.filter((p) => (p.side || 'with') === side); const ww = d.filter((p) => p.res === 'W').length, ll = d.filter((p) => p.res === 'L').length;
       return { n: items.filter((p) => (p.side || 'with') === side).length, rec: `${ww}-${ll}`, u: d.reduce((a, p) => a + (p.res === 'W' ? dec(p.odds) - 1 : p.res === 'L' ? -1 : 0), 0), d: d.length }; };
     const sw = split('with'), sf = split('fade');
-    const out = [h('div', { class: 'meh fade' }, h('img', { src: ACCT.avatar, alt: '' }), h('div', null, h('b', null, ACCT.name || 'You'), h('span', null, ACCT.state === 'readonly' ? 'View only on this link' : SB.client ? (SB.pro ? 'Pro member' : 'Free plan') : 'Signed in with Claude')))];
+    const out = [h('div', { class: 'meh fade' }, h('img', { src: ACCT.avatar, alt: '' }), h('div', null, h('b', null, ACCT.name || 'You'), h('span', null, ACCT.state === 'readonly' ? 'View only on this link' : SB.client ? ({ elite: 'Elite member', pro: 'Pro member' }[SB.tier] || 'Free plan') : 'Signed in with Claude')))];
     if (SB.client) out.push(planCard());
     out.push(h('div', { class: 'bigrec' },
       h('div', { class: 'b hot' }, h('b', null, `${w}-${l}`), h('span', null, 'Your record'), h('small', null, done.length ? `${sgn(units)} units · ${pct(w / Math.max(1, w + l))}` : 'Graded after games finish')),
@@ -2799,6 +2812,7 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
     const { data } = await SB.client.from('billing').select('pro_until,plan,status').eq('id', SB.session.user.id).maybeSingle();
     SB.until = data && data.pro_until; SB.plan = data && data.plan; SB.status = data && data.status;
     SB.pro = !!(SB.until && Date.parse(SB.until) > Date.now());
+    SB.tier = !SB.pro ? 'free' : String(SB.plan || '').startsWith('elite') ? 'elite' : 'pro';   // Elite includes Pro
     if (SB.pro && C.meta.locked) {
       const r = await fetch('/pro/core.json', { headers: authHdr(), cache: 'no-store' });
       if (r.ok) { C = await r.json(); route(); }
@@ -2810,19 +2824,48 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
     toast(SB.pro ? 'Welcome to Pro. This week\'s calls are unlocked.' : 'Payment received. Pro unlocks as soon as Stripe confirms, usually within a minute.');
     if ((location.hash.slice(1) || 'board') === 'me') route();
   }
-  async function startCheckout(plan) {
+  async function startCheckout(plan, tier = 'pro') {
     if (!SB.session) { go('me'); return toast('Sign in first, then pick a plan.'); }
     toast('Opening secure checkout…');
-    const r = await fetch(`${window.TRAP_API}/checkout`, { method: 'POST', headers: { ...authHdr(), 'content-type': 'application/json' }, body: JSON.stringify({ plan }) }).catch(() => null);
+    const r = await fetch(`${window.TRAP_API}/checkout`, { method: 'POST', headers: { ...authHdr(), 'content-type': 'application/json' }, body: JSON.stringify({ tier, plan }) }).catch(() => null);
     const d = r && await r.json().catch(() => null);
-    if (d && d.url) location.href = d.url; else toast('Checkout is not available right now. Try again soon.');
+    if (d && d.url) location.href = d.url; else toast(r && r.status === 409 ? 'Elite is coming soon. Join the waitlist to hear first.' : 'Checkout is not available right now. Try again soon.');
   }
   async function openPortal() {
     const r = await fetch(`${window.TRAP_API}/portal`, { method: 'POST', headers: authHdr() }).catch(() => null);
     const d = r && await r.json().catch(() => null);
     if (d && d.url) location.href = d.url; else toast('Could not open billing. Try again soon.');
   }
-  const PRICE = { monthly: '$9.99/month', yearly: '$59/year' };
+  const PRICE = { monthly: '$9.99/month', yearly: '$59/year', pro_monthly: '$9.99/month', pro_yearly: '$59/year', elite_monthly: '$19.99/month', elite_yearly: '$149/year' };
+  // Three tiers. Free and Pro are live; Elite (live odds from every book, NBA, props, report card,
+  // custom alerts) takes a waitlist until those are built. The waitlist is a private doc per person.
+  const TIERS = {
+    free: ['Live scores and win chances', 'Team and player stats', 'The graded public record', 'Injuries and kickoff weather', 'Pick\'em, fantasy and the bet tracker'],
+    pro: ['Everything in Free', 'This week\'s TRAP and WATCH calls', 'Trap meter and the reasons behind it', 'Slip of the Day and line movement', 'Alerts on new calls, line moves and results'],
+    elite: ['Everything in Pro', 'Live odds from every major sportsbook, with the best number', 'NBA lines and calls', 'Player prop analytics', 'Your report card: closing-line value and what makes or loses you money', 'Custom alerts you set'],
+  };
+  function tierBlock(t) {
+    const mine = SB.tier === t;
+    const head = { free: ['Free', '$0'], pro: ['Pro', '$9.99/mo'], elite: ['Elite', '$19.99/mo'] }[t];
+    const body = [h('div', { class: 'tierh' }, h('b', null, head[0]), h('span', null, head[1])),
+      t === 'elite' && !mine ? h('span', { class: 'soon' }, 'Coming soon') : null,
+      mine ? h('span', { class: 'mine' }, '✓ Your plan') : null,
+      h('ul', null, TIERS[t].map((x) => h('li', null, x)))];
+    if (t === 'pro' && SB.tier === 'free') body.push(h('div', { class: 'probtn' },
+      h('button', { onclick: () => startCheckout('monthly') }, h('b', null, '$9.99'), h('span', null, 'per month')),
+      h('button', { class: 'best', onclick: () => startCheckout('yearly') }, h('b', null, '$59'), h('span', null, 'per year · save 51%'))));
+    if (t === 'elite' && !mine) body.push(ACCT.waitlist
+      ? h('button', { class: 'wait', disabled: true }, 'You\'re on the Elite waitlist')
+      : h('button', { class: 'wait', onclick: joinWaitlist }, 'Join the Elite waitlist'),
+      h('small', { class: 'muted' }, '$19.99/month or $149/year when it opens.'));
+    return h('div', { class: 'tier t-' + t }, body);
+  }
+  function tiersCard() { return h('div', { class: 'tiers fade' }, ['free', 'pro', 'elite'].map(tierBlock)); }
+  async function joinWaitlist() {
+    if (ACCT.state !== 'ready') { go('login'); return toast('Sign in first, then join the waitlist.'); }
+    await write('waitlist', { elite: true, at: new Date().toISOString() });
+    ACCT.waitlist = true; toast('You\'re on the list. We\'ll tell you when Elite opens.'); route();
+  }
   function proCard(what) {
     const n = C.meta.counts || {};
     return h('section', { class: 'pro fade' },
@@ -2864,7 +2907,7 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
         h('div', null, h('b', null, `Signed in as ${ACCT.name || 'you'}`), h('span', null, SB.client ? (SB.session ? SB.session.user.email : '') : 'with your Claude account')),
         h('button', { class: 'gbtn', onclick: () => go('me') }, 'My Picks')) : null,
       signInCard(),
-      h('ul', { class: 'lperks' }, ['Save picks and track your record', 'Pick\'em with friends all season', 'Fantasy leagues and drafts', 'Pro: every TRAP call, the trap meter and the Slip of the Day'].map((t) => h('li', null, t))),
+      h('ul', { class: 'lperks' }, ['Save picks and track your record', 'Pick\'em with friends all season', 'Fantasy leagues and drafts', 'Pro: every TRAP call, the trap meter and the Slip of the Day', 'Elite, coming soon: live odds from every book, NBA and player props'].map((t) => h('li', null, t))),
       h('p', { class: 'lfine' }, 'By continuing you agree to the Terms and Privacy Policy. You must be 21 or older to bet where it is legal. Trap Picks sells information and does not take bets.'))];
   }
   function acctBtn() {
@@ -2877,9 +2920,9 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
   function planCard() {
     const until = SB.until ? new Date(SB.until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
     return h('div', { class: 'card plan' }, h('h3', null, 'Your plan'),
-      SB.pro ? [h('p', { class: 'explain', style: 'margin:0 0 10px' }, h('b', null, 'Pro'), SB.plan ? ` · ${PRICE[SB.plan] || SB.plan}` : '', SB.status === 'canceled' ? ` · ends ${until}` : ` · renews ${until}`),
-        h('button', { class: 'gbtn alt', onclick: openPortal }, 'Manage subscription')]
-        : [h('p', { class: 'explain', style: 'margin:0 0 10px' }, 'Free plan. Upgrade to see this week\'s calls.'), proCard('Unlock this week\'s calls'),
+      SB.pro ? [h('p', { class: 'explain', style: 'margin:0 0 10px' }, h('b', null, SB.tier === 'elite' ? 'Elite' : 'Pro'), SB.plan ? ` · ${PRICE[SB.plan] || SB.plan}` : '', SB.status === 'canceled' ? ` · ends ${until}` : ` · renews ${until}`),
+        h('button', { class: 'gbtn alt', onclick: openPortal }, 'Manage subscription'), SB.tier === 'pro' ? tierBlock('elite') : null]
+        : [h('p', { class: 'explain', style: 'margin:0 0 10px' }, 'Free plan. Upgrade to see this week\'s calls.'), tiersCard(),
           SB.status ? h('button', { class: 'gbtn alt', style: 'margin-top:8px', onclick: openPortal }, 'Billing history') : null],
       h('button', { class: 'leave', style: 'margin-top:12px', onclick: () => SB.client.auth.signOut() }, `Sign out${SB.session ? ' of ' + SB.session.user.email : ''}`));
   }

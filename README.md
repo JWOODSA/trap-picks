@@ -6,6 +6,7 @@
 - `functions/api/live/[league].js` relays ESPN live scores (`/api/live/nfl`, `/api/live/nba`), cached 15 seconds.
 - `functions/api/weather.js` relays the free Open-Meteo forecast: `/api/weather?lat=..&lon=..&at=<kickoff ISO>` returns temperature, wind, gusts, direction, rain chance, rain amount and weather code for the kickoff hour, cached 30 minutes.
 - Accounts: Supabase (Google, or a one-tap email link). `supabase/schema.sql` creates the tables and access rules.
+- Tiers: Free, Pro ($9.99/mo, $59/yr) and Elite ($19.99/mo, $149/yr, waitlist for now; Elite includes Pro). `billing.plan` is pro_monthly, pro_yearly, elite_monthly or elite_yearly, worked out from the Stripe price so plan switches count. Waitlist sign-ups are private docs at `data/users/<id>/waitlist`.
 - Pro: Stripe subscriptions. `functions/api/checkout.js` opens Stripe Checkout, `functions/api/portal.js` opens Stripe's billing page, `functions/api/stripe-webhook.js` keeps each member's Pro status current, and `functions/pro/_middleware.js` serves `/pro/core.json` (this week's calls) only to Pro members.
 - Install and alerts: `public/manifest.webmanifest`, `public/icons/` and `public/sw.js` make the app installable (iPhone: Share, Add to Home Screen). The Alerts card on My Picks turns on push alerts: new TRAP calls, line moves on them (a point, or onto, off or across 3 or 7), calls pulled before kickoff, and results. `functions/api/push.js` saves each phone, `functions/api/push-run.js` sends from `public/alerts/alerts.json` (never served; Pro-only alerts go only to Pro members when the paywall is on), and `.github/workflows/push-alerts.yml` calls it after each data push and every hour. `lib/webpush.js` does the Web Push encryption and signing with no packages.
 - Rebuild `public/` with `web/build_web.sh` in the project after `export_app.py` and `export_fantasy.py`. Settings that are safe to publish go in `web/config.json`: `supabase_url`, `supabase_anon_key`, and `paywall` (true removes this week's calls from the public file).
@@ -16,14 +17,15 @@
 2. **Supabase** (supabase.com, free): new project. SQL Editor: paste `supabase/schema.sql`, Run.
    - Authentication, URL Configuration: Site URL `https://<your site>`; add `https://<your site>/app` to Redirect URLs.
    - Authentication, Providers: Email on. Google on, with a Google OAuth client (Google Cloud console, APIs & Services, Credentials, OAuth client ID, Web; authorized redirect URI is the callback URL Supabase shows).
-3. **Stripe** (stripe.com): product "Trap Picks Pro" with a $9.99 monthly price and a $59 yearly price.
+3. **Stripe** (stripe.com): product "Trap Picks Pro" with a $9.99 monthly price and a $59 yearly price. Later, product "Trap Picks Elite" with $19.99 monthly and $149 yearly prices (until those are set, Elite shows a waitlist and checkout answers "coming soon").
    - Developers, Webhooks, Add endpoint: `https://<your site>/api/stripe-webhook`, events `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`.
    - Settings, Billing, Customer portal: turn on cancel and switch plans.
 4. **Cloudflare environment variables** (the trap-picks Worker, Settings, Variables and Secrets; mark the secret ones as Secret):
    - `SUPABASE_URL`, `SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY` (secret)
    - `STRIPE_SECRET_KEY` (secret), `STRIPE_WEBHOOK_SECRET` (secret)
-   - `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` (the price_ IDs)
+   - `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` (the Pro price_ IDs)
+   - `STRIPE_PRICE_ELITE_MONTHLY`, `STRIPE_PRICE_ELITE_YEARLY` (the Elite price_ IDs, once Elite opens)
    - `ANTHROPIC_API_KEY` (secret, from console.anthropic.com): turns on bet slip screenshot upload (`/api/slip`). Optional `SLIP_MODEL` overrides the model. Without it the app says upload is coming soon.
 5. **Push alerts**: open `https://<your site>/setup-alerts.html` once. It makes the keys in your browser. Add `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (secret) and `VAPID_SUBJECT` (mailto: your email) to the Cloudflare variables. The site address is already in `.github/workflows/push-alerts.yml`; if the site moves, set a GitHub repository variable `SITE_URL` (Settings, Secrets and variables, Actions, Variables) to override it. The first send records the current alerts without sending them, so nobody gets a backlog.
 6. Put the Supabase URL and anon key in `web/config.json`, set `paywall` to true when checkout works, rebuild and push.

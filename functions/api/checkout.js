@@ -1,13 +1,16 @@
-// POST /api/checkout {plan: "monthly" | "yearly"} with the user's Supabase token.
-// Returns {url} of a Stripe Checkout page for the Pro subscription; the browser goes there to pay.
-import { json, userFrom, billingGet, stripe } from '../../lib/server.js';
+// POST /api/checkout {tier: "pro" | "elite", plan: "monthly" | "yearly"} with the user's Supabase token.
+// Returns {url} of a Stripe Checkout page for that subscription; the browser goes there to pay.
+// Elite answers 409 "coming soon" until its Stripe prices are set in Cloudflare.
+import { json, userFrom, billingGet, stripe, prices } from '../../lib/server.js';
 
 export async function onRequestPost({ request, env }) {
   const user = await userFrom(request, env).catch(() => null);
   if (!user) return json({ error: 'sign in required' }, 401);
-  const { plan } = await request.json().catch(() => ({}));
-  const price = plan === 'yearly' ? env.STRIPE_PRICE_YEARLY : plan === 'monthly' ? env.STRIPE_PRICE_MONTHLY : null;
-  if (!price) return json({ error: 'unknown plan' }, 400);
+  const { tier = 'pro', plan: period } = await request.json().catch(() => ({}));
+  const plan = `${tier}_${period}`;
+  if (!['pro', 'elite'].includes(tier) || !['monthly', 'yearly'].includes(period)) return json({ error: 'unknown plan' }, 400);
+  const price = prices(env)[plan];
+  if (!price) return json({ error: tier === 'elite' ? 'coming soon' : 'unknown plan' }, tier === 'elite' ? 409 : 400);
   const origin = new URL(request.url).origin;
   const b = await billingGet(env, user.id).catch(() => null);
   try {
