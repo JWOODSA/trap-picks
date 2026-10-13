@@ -1,0 +1,14 @@
+// Cloudflare Workers config. Workers Builds runs `npx wrangler deploy` on every push to main.
+// Static files come from public/; /api, /pro and /alerts go through worker.js first.
+{
+  "name": "trap-picks",
+  "main": "worker.js",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "run_worker_first": ["/api/*", "/pro/*", "/alerts/*"]
+  },
+  "observability": { "enabled": true }
+}

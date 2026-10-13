@@ -1,4 +1,6 @@
-# Trap Picks website (Cloudflare Pages)
+# Trap Picks website (Cloudflare Workers)
+
+`worker.js` serves `public/` as static files and sends `/api/*`, `/pro/*` and `/alerts/*` to the handlers in `functions/` (Pages Functions style, so the site also runs on Cloudflare Pages unchanged). `wrangler.jsonc` is the Worker config; Workers Builds deploys every push to main with `npx wrangler deploy`.
 
 - `public/index.html` is the home page (from `web/landing.html`). `public/app.html` is the app, served at `/app`. Data files sit next to them.
 - `functions/api/live/[league].js` relays ESPN live scores (`/api/live/nfl`, `/api/live/nba`), cached 15 seconds.
@@ -10,14 +12,14 @@
 
 ## One-time setup
 
-1. **Cloudflare Pages**: Workers & Pages, Create, Pages, Connect to Git, pick this repo. Framework preset None, build command empty, build output directory `public`.
+1. **Cloudflare**: Workers & Pages, Create, Import a repository, pick this repo. Build command empty, deploy command `npx wrangler deploy` (the default). The Worker must be named `trap-picks` to match `wrangler.jsonc`.
 2. **Supabase** (supabase.com, free): new project. SQL Editor: paste `supabase/schema.sql`, Run.
    - Authentication, URL Configuration: Site URL `https://<your site>`; add `https://<your site>/app` to Redirect URLs.
    - Authentication, Providers: Email on. Google on, with a Google OAuth client (Google Cloud console, APIs & Services, Credentials, OAuth client ID, Web; authorized redirect URI is the callback URL Supabase shows).
 3. **Stripe** (stripe.com): product "Trap Picks Pro" with a $9.99 monthly price and a $59 yearly price.
    - Developers, Webhooks, Add endpoint: `https://<your site>/api/stripe-webhook`, events `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`.
    - Settings, Billing, Customer portal: turn on cancel and switch plans.
-4. **Cloudflare environment variables** (Pages project, Settings, Variables and Secrets; mark the secret ones as Secret):
+4. **Cloudflare environment variables** (the trap-picks Worker, Settings, Variables and Secrets; mark the secret ones as Secret):
    - `SUPABASE_URL`, `SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY` (secret)
    - `STRIPE_SECRET_KEY` (secret), `STRIPE_WEBHOOK_SECRET` (secret)
@@ -30,4 +32,4 @@ Stripe rule to keep: selling sports information is allowed, but sports forecasti
 
 ## Local test
 
-    npx wrangler pages dev public --compatibility-date=2024-09-23
+    npx wrangler dev
