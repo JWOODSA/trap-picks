@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Alert keys</title>
+<style>
+:root { color-scheme: dark; --bg: #0b1324; --card: #15223f; --line: #27385f; --ink: #eef2fb; --ink2: #a9b6d3; --yel: #ffd23f; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 22px; margin: 0 0 8px; } p { color: var(--ink2); }
+.k { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin: 12px 0; }
+.k b { display: block; margin-bottom: 6px; } .k code { display: block; word-break: break-all; font-size: 14px; margin-bottom: 10px; }
+button { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 10px 16px; min-height: 44px; background: var(--yel); color: #1a1600; cursor: pointer; }
+</style></head>
+<body><main>
+<h1>Push alert keys</h1>
+<p>These keys are made here in your browser and are never sent anywhere. Copy each one into Cloudflare (your Pages project, Settings, Variables and Secrets), then close this page. Do this once: new keys would turn off alerts for everyone already signed up.</p>
+<div id="out"></div>
+<script>
+(async () => {
+  const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const kp = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign']);
+  const pub = b64u(await crypto.subtle.exportKey('raw', kp.publicKey));
+  const priv = (await crypto.subtle.exportKey('jwk', kp.privateKey)).d;
+  const out = document.getElementById('out');
+  for (const [name, val, note] of [['VAPID_PUBLIC_KEY', pub, 'Plain text.'], ['VAPID_PRIVATE_KEY', priv, 'Choose Secret (encrypted).'], ['VAPID_SUBJECT', 'mailto:you@example.com', 'Plain text. Put your own email after mailto:.']]) {
+    const box = document.createElement('div'); box.className = 'k';
+    const b = document.createElement('b'); b.textContent = `${name} (${note})`;
+    const c = document.createElement('code'); c.textContent = val;
+    const btn = document.createElement('button'); btn.textContent = 'Copy';
+    btn.onclick = () => navigator.clipboard.writeText(val).then(() => { btn.textContent = 'Copied'; });
+    box.append(b, c, btn); out.append(box);
+  }
+})();
+</script>
+</main></body></html>

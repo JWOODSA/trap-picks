@@ -76,3 +76,25 @@ create trigger on_auth_user_created after insert on auth.users for each row exec
 do $$ begin
   alter publication supabase_realtime add table public.docs;
 exception when duplicate_object then null; end $$;
+
+-- Push alerts. Both tables are server only (service role key): no policies, so the browser can't read them.
+-- push_subs  one row per phone or browser that turned alerts on; user_id is set when signed in (for Pro alerts).
+-- push_sent  every alert that went out, so each one is sent once.
+create table if not exists public.push_subs (
+  endpoint text primary key,
+  p256dh text not null,
+  auth text not null,
+  user_id uuid references auth.users on delete cascade,
+  prefs jsonb not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.push_subs enable row level security;
+create table if not exists public.push_sent (
+  id text primary key,
+  kind text not null,
+  data jsonb,
+  delivered int not null default 0,
+  sent_at timestamptz not null default now()
+);
+alter table public.push_sent enable row level security;

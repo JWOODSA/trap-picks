@@ -1,0 +1,23 @@
+# Sends push alerts. After each data push it waits for Cloudflare to publish the new files, then
+# asks the site to send anything new; every hour it checks again in case a run was missed.
+# Needs the repository variable SITE_URL (Settings, Secrets and variables, Actions, Variables),
+# for example https://trappicks.pages.dev. No secrets: the site only ever sends each alert once.
+name: push alerts
+on:
+  push:
+    branches: [main]
+    paths: ['public/**']
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+concurrency: push-alerts
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    if: vars.SITE_URL != ''
+    steps:
+      - name: Wait for the Cloudflare deploy
+        if: github.event_name == 'push'
+        run: sleep 150
+      - name: Send new alerts
+        run: curl -fsS -X POST "${{ vars.SITE_URL }}/api/push-run" --max-time 60

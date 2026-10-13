@@ -7,6 +7,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <meta name="description" content="Trap Picks: NFL betting information. Where the popular side loses, live scores and win chances, and fantasy basketball.">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Trap Picks">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>window.TRAP_API = "/api";</script>
 </head><body>
 <style>
@@ -696,6 +702,17 @@ details.card summary { font-size: 16px; }
 .arch-link span { color: var(--ink3); font-size: 13px; }
 details.arch { border-top: 1px solid var(--line); padding: 4px 0; }
 details.arch summary { display: flex; justify-content: space-between; padding: 8px 0; cursor: pointer; font-family: var(--mono); }
+.alrt .explain { margin: 0 0 12px; }
+.alrt-on { width: 100%; min-height: 48px; }
+.alrt-note { margin: 10px 0 0; font-size: 13px; }
+.alrt-steps { margin: 0; padding-left: 20px; color: var(--ink2); line-height: 1.6; }
+.alrt-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 8px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.alrt-row:first-of-type { border-top: 0; }
+.alrt-row span { display: flex; flex-direction: column; } .alrt-row small { color: var(--ink3); font-size: 13px; }
+.alrt-row input { appearance: none; -webkit-appearance: none; flex: none; width: 50px; height: 30px; border-radius: 15px; background: var(--card2); border: 1px solid var(--line); position: relative; transition: background .15s; }
+.alrt-row input::after { content: ''; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%; background: var(--ink2); transition: transform .15s; }
+.alrt-row input:checked { background: var(--grn); border-color: var(--grn); } .alrt-row input:checked::after { transform: translateX(20px); background: #fff; }
+.alrt-btns { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; } .alrt-btns .gbtn { min-height: 44px; }
 </style>
 
 <div class="wrap">
@@ -1391,7 +1408,8 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
     else return null;
     return Math.round(d * 10) / 10;
   }
-  function mePage() {
+  function mePage() { return [mePageBody(), alertsCard()].flat(3).filter(Boolean); }
+  function mePageBody() {
     if (ACCT.state === 'loading') return [h('div', { class: 'loading' }, 'Checking your sign-in…')];
     if (ACCT.state === 'none' && SB.client) return loginPage();
     if (ACCT.state === 'none') return [h('div', { class: 'card', style: 'margin-top:16px' }, h('h3', null, 'Sign in to save picks'),
@@ -2836,7 +2854,8 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
       h('div', { class: 'gform' }, em, h('button', { class: 'gbtn', onclick: send }, 'Email me a link')), note);
   }
   // Full-screen login page (#login), reached from the Sign in button in the top bar.
-  function loginPage() {
+  function loginPage() { return [loginPageBody(), alertsCard()].flat(3).filter(Boolean); }
+  function loginPageBody() {
     const mine = ACCT.state === 'ready' || ACCT.state === 'readonly';
     return [h('div', { class: 'login fade' },
       h('div', { class: 'lmark' }, 'Trap ', h('b', null, 'Picks')),
@@ -2863,6 +2882,75 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
         : [h('p', { class: 'explain', style: 'margin:0 0 10px' }, 'Free plan. Upgrade to see this week\'s calls.'), proCard('Unlock this week\'s calls'),
           SB.status ? h('button', { class: 'gbtn alt', style: 'margin-top:8px', onclick: openPortal }, 'Billing history') : null],
       h('button', { class: 'leave', style: 'margin-top:12px', onclick: () => SB.client.auth.signOut() }, `Sign out${SB.session ? ' of ' + SB.session.user.email : ''}`));
+  }
+
+  // ---------- push alerts (website only) ----------
+  // The phone subscribes with the site's public key; /api/push saves it, and /api/push-run sends
+  // new TRAP calls, line moves on them, pulled calls and results. iPhones need the app on the Home Screen.
+  const PUSH = { sub: null, prefs: { calls: true, moves: true, results: true } };
+  const pushOk = () => HOSTED && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const iosTab = () => /iP(hone|ad|od)/.test(navigator.userAgent) && !navigator.standalone;
+  async function pushInit() {
+    if (!HOSTED || !('serviceWorker' in navigator)) return;
+    try { PUSH.prefs = { ...PUSH.prefs, ...JSON.parse(localStorage.getItem('tp_alerts') || '{}') }; } catch (e) {}
+    try { const reg = await navigator.serviceWorker.register('/sw.js'); if ('PushManager' in window) PUSH.sub = await reg.pushManager.getSubscription(); } catch (e) {}
+    redrawAlerts();
+  }
+  async function pushSave(quiet) {
+    const r = await fetch(`${window.TRAP_API}/push`, { method: 'POST', headers: { ...(SB.session ? authHdr() : {}), 'content-type': 'application/json' },
+      body: JSON.stringify({ subscription: PUSH.sub.toJSON(), prefs: PUSH.prefs }) }).catch(() => null);
+    if (!r || !r.ok) { if (!quiet) toast('Could not save your alerts. Try again.'); return false; }
+    try { localStorage.setItem('tp_alerts', JSON.stringify(PUSH.prefs)); } catch (e) {}
+    return true;
+  }
+  const pushSync = () => { if (PUSH.sub && SB.session) pushSave(true); };   // ties this phone to the account once signed in
+  async function pushOn() {
+    const perm = await Notification.requestPermission();   // first, while the tap still counts on iPhone
+    if (perm !== 'granted') { redrawAlerts(); return toast('Alerts stay off. You can turn them on here any time.'); }
+    const k = await fetch(`${window.TRAP_API}/push`).then((r) => r.json()).catch(() => ({}));
+    if (!k.key) return toast('Alerts are almost ready. Check back soon.');
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const raw = atob(k.key.replace(/-/g, '+').replace(/_/g, '/'));
+      PUSH.sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: Uint8Array.from(raw, (c) => c.charCodeAt(0)) });
+    } catch (e) { return toast('This phone could not turn on alerts. Try again.'); }
+    if (await pushSave()) toast('Alerts are on.');
+    redrawAlerts();
+  }
+  async function pushOff() {
+    const sub = PUSH.sub; PUSH.sub = null; redrawAlerts();
+    if (!sub) return;
+    fetch(`${window.TRAP_API}/push`, { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+    sub.unsubscribe().catch(() => {});
+    toast('Alerts are off.');
+  }
+  async function pushTest() {
+    const r = await fetch(`${window.TRAP_API}/push?test=1`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ subscription: PUSH.sub.toJSON() }) })
+      .then((x) => x.json()).catch(() => ({}));
+    toast(r.ok ? 'Test alert sent. It should show up in a few seconds.' : 'The test did not go through. Try turning alerts off and on.');
+  }
+  function redrawAlerts() { const c = document.getElementById('alerts-card'); if (c) c.replaceWith(alertsCard()); }
+  function alertsCard() {
+    if (!HOSTED) return null;
+    const card = (...kids) => h('div', { class: 'card alrt', id: 'alerts-card' }, h('h3', null, 'Alerts'), ...kids);
+    if (iosTab() && !('PushManager' in window)) return card(
+      h('p', { class: 'explain' }, 'Get a buzz when a TRAP call drops, when its line moves and when it wins or loses. On iPhone, add Trap Picks to your Home Screen first:'),
+      h('ol', { class: 'alrt-steps' }, h('li', null, 'Tap the Share button at the bottom of Safari.'), h('li', null, 'Tap ', h('b', null, 'Add to Home Screen'), ', then Add.'),
+        h('li', null, 'Open Trap Picks from your Home Screen and turn on alerts here.')));
+    if (!pushOk()) return card(h('p', { class: 'explain' }, 'This browser cannot get alerts. Try Safari on iPhone (from the Home Screen) or Chrome on Android.'));
+    if (Notification.permission === 'denied') return card(h('p', { class: 'explain' }, 'Alerts are blocked for Trap Picks. Turn on notifications for it in your phone\'s Settings, then come back here.'));
+    const locked = C && C.meta.locked && !SB.pro;
+    if (!PUSH.sub) return card(
+      h('p', { class: 'explain' }, 'Get a buzz when a TRAP call drops, when its line moves and when it wins or loses.'),
+      h('button', { class: 'gbtn alrt-on', onclick: pushOn }, 'Turn on alerts'),
+      locked ? h('p', { class: 'muted alrt-note' }, 'Call and line alerts are part of Pro. Results alerts are free.') : null);
+    const row = (k, t, sub, pro) => h('label', { class: 'alrt-row' }, h('span', null, h('b', null, t), h('small', null, pro && locked ? sub + ' Pro only.' : sub)),
+      h('input', { type: 'checkbox', role: 'switch', checked: PUSH.prefs[k] !== false, onchange: (e) => { PUSH.prefs[k] = e.target.checked; pushSave(); } }));
+    return card(
+      row('calls', 'New TRAP calls', 'When a call drops, or gets pulled before kickoff.', true),
+      row('moves', 'Line moves', 'When a called line moves a point or crosses 3 or 7.', true),
+      row('results', 'Results', 'When a TRAP call wins or loses.', false),
+      h('div', { class: 'alrt-btns' }, h('button', { class: 'gbtn alt', onclick: pushTest }, 'Send a test'), h('button', { class: 'leave', style: 'margin:0', onclick: pushOff }, 'Turn off alerts')));
   }
 
   // ---------- bet tracker: real money bets, bankroll and profit ----------
@@ -3168,7 +3256,8 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
     const g = new Date(C.meta.generated);
     document.getElementById('upd').append(`NFL · ${C.meta.current_season}`, h('br'), `Updated ${g.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${g.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`);
     route();
-    initAccount();
+    pushInit();
+    Promise.resolve(initAccount()).then(pushSync, () => {});
     Promise.all(['nfl', 'nba'].map(pollLive)).then(liveLoop);
   }).catch(() => { view.replaceChildren(h('p', { class: 'muted', style: 'padding:40px 0;text-align:center' }, 'The board failed to load. Pull to refresh.')); });
 })();
