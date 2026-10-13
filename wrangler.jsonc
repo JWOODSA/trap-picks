@@ -10,6 +10,11 @@
     "html_handling": "auto-trailing-slash",
     "run_worker_first": ["/api/*", "/pro/*", "/alerts/*"]
   },
+  // Public Supabase settings (safe to publish). The service role key is a Secret set in the dashboard.
+  "vars": {
+    "SUPABASE_URL": "https://eioikpqtmervibvxzmmf.supabase.co",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0"
+  },
   "observability": { "enabled": true },
   // Keep the variables set in the Cloudflare dashboard (alert keys, Supabase, Stripe) on each deploy.
   "keep_vars": true
