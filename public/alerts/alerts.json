@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-13T19:05+00:00",
+ "generated": "2026-10-14T10:56+00:00",
  "paywall": false,
  "alerts": [
   {
@@ -63,15 +63,15 @@
    "key": "2026_06_ARI_LA:Spread",
    "gid": "2026_06_ARI_LA",
    "game": "ARI @ LA",
-   "pick": "ARI +13.5",
+   "pick": "ARI +12.5",
    "label": "TRAP",
    "url": "/app#g_2026_06_ARI_LA",
    "id": "call:2026_06_ARI_LA:Spread:ARI",
    "kind": "call",
    "pro": false,
-   "line": 13.5,
+   "line": 12.5,
    "expires": "2026-10-18T20:05+00:00",
-   "title": "TRAP: ARI +13.5",
+   "title": "TRAP: ARI +12.5",
    "body": "ARI @ LA, Sun 4:05 PM ET. Trap meter 48. Division games are tighter than the line says."
   },
   {
@@ -118,6 +118,21 @@
    "expires": "2026-10-18T13:30+00:00",
    "title": "TRAP: HOU +3",
    "body": "HOU @ JAX, Sun 9:30 AM ET. Trap meter 66. Division games are tighter than the line says."
+  },
+  {
+   "key": "2026_07_TB_CAR:Spread",
+   "gid": "2026_07_TB_CAR",
+   "game": "TB @ CAR",
+   "pick": "TB +3",
+   "label": "TRAP",
+   "url": "/app#g_2026_07_TB_CAR",
+   "id": "call:2026_07_TB_CAR:Spread:TB",
+   "kind": "call",
+   "pro": false,
+   "line": 3.0,
+   "expires": "2026-10-25T17:00+00:00",
+   "title": "TRAP: TB +3",
+   "body": "TB @ CAR, Sun 1 PM ET. Trap meter 51."
   },
   {
    "key": "2026_06_CHI_ATL:Total",
