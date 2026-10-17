@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-16T10:56+00:00",
+ "generated": "2026-10-17T10:56+00:00",
  "paywall": false,
  "alerts": [
   {
@@ -81,16 +81,16 @@
    "key": "2026_06_CHI_ATL:Total",
    "gid": "2026_06_CHI_ATL",
    "game": "CHI @ ATL",
-   "pick": "Under 51.5",
+   "pick": "Under 52.5",
    "label": "TRAP",
    "url": "/app#g_2026_06_CHI_ATL",
    "id": "call:2026_06_CHI_ATL:Total:Under",
    "kind": "call",
    "pro": false,
-   "line": 51.5,
+   "line": 52.5,
    "expires": "2026-10-18T17:00+00:00",
-   "title": "TRAP: Under 51.5",
-   "body": "CHI @ ATL, Sun 1 PM ET. Trap meter 53. A backup or new quarterback is starting, and those games go under more often."
+   "title": "TRAP: Under 52.5",
+   "body": "CHI @ ATL, Sun 1 PM ET. Trap meter 58. A backup or new quarterback is starting, and those games go under more often."
   }
  ]
 }
