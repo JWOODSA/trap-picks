@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-18T20:25+00:00",
+ "generated": "2026-10-18T23:25+00:00",
  "paywall": false,
  "alerts": [
   {
@@ -14,7 +14,7 @@
    "pro": false,
    "expires": "2026-10-22T17:00+00:00",
    "title": "Won: HOU +2.5",
-   "body": "HOU @ JAX is final. TRAP calls this season: 6-0."
+   "body": "HOU @ JAX is final. TRAP calls this season: 7-0."
   },
   {
    "key": "2026_06_NYJ_NE:Spread",
@@ -28,7 +28,7 @@
    "pro": false,
    "expires": "2026-10-22T17:00+00:00",
    "title": "Won: NYJ +7.5",
-   "body": "NYJ @ NE is final. TRAP calls this season: 6-0."
+   "body": "NYJ @ NE is final. TRAP calls this season: 7-0."
   },
   {
    "key": "2026_06_TEN_IND:Spread",
@@ -42,7 +42,51 @@
    "pro": false,
    "expires": "2026-10-22T17:00+00:00",
    "title": "Won: TEN +6.5",
-   "body": "TEN @ IND is final. TRAP calls this season: 6-0."
+   "body": "TEN @ IND is final. TRAP calls this season: 7-0."
+  },
+  {
+   "key": "2026_06_ARI_LA:Spread",
+   "gid": "2026_06_ARI_LA",
+   "game": "ARI @ LA",
+   "pick": "ARI +12.5",
+   "label": "TRAP",
+   "url": "/app#g_2026_06_ARI_LA",
+   "id": "result:2026_06_ARI_LA:Spread",
+   "kind": "result",
+   "pro": false,
+   "expires": "2026-10-22T17:00+00:00",
+   "title": "Won: ARI +12.5",
+   "body": "ARI @ LA is final. TRAP calls this season: 7-0."
+  },
+  {
+   "key": "2026_07_MIA_NYJ:Spread",
+   "gid": "2026_07_MIA_NYJ",
+   "game": "MIA @ NYJ",
+   "pick": "MIA +4.5",
+   "label": "TRAP",
+   "url": "/app#g_2026_07_MIA_NYJ",
+   "id": "call:2026_07_MIA_NYJ:Spread:MIA",
+   "kind": "call",
+   "pro": false,
+   "line": 4.5,
+   "expires": "2026-10-25T17:00+00:00",
+   "title": "TRAP: MIA +4.5",
+   "body": "MIA @ NYJ, Sun 1 PM ET. Trap meter 42."
+  },
+  {
+   "key": "2026_07_TB_CAR:Spread",
+   "gid": "2026_07_TB_CAR",
+   "game": "TB @ CAR",
+   "pick": "TB +3",
+   "label": "TRAP",
+   "url": "/app#g_2026_07_TB_CAR",
+   "id": "call:2026_07_TB_CAR:Spread:TB",
+   "kind": "call",
+   "pro": false,
+   "line": 3.0,
+   "expires": "2026-10-25T17:00+00:00",
+   "title": "TRAP: TB +3",
+   "body": "TB @ CAR, Sun 1 PM ET. Trap meter 58."
   }
  ]
 }
