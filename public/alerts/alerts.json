@@ -1,7 +1,36 @@
 {
- "generated": "2026-10-18T10:56+00:00",
+ "generated": "2026-10-18T17:25+00:00",
  "paywall": false,
  "alerts": [
+  {
+   "key": "2026_06_HOU_JAX:Spread",
+   "gid": "2026_06_HOU_JAX",
+   "game": "HOU @ JAX",
+   "pick": "HOU +2.5",
+   "label": "TRAP",
+   "url": "/app#g_2026_06_HOU_JAX",
+   "id": "result:2026_06_HOU_JAX:Spread",
+   "kind": "result",
+   "pro": false,
+   "expires": "2026-10-22T17:00+00:00",
+   "title": "Won: HOU +2.5",
+   "body": "HOU @ JAX is final. TRAP calls this season: 4-0."
+  },
+  {
+   "key": "2026_06_LAC_KC:Spread",
+   "gid": "2026_06_LAC_KC",
+   "game": "LAC @ KC",
+   "pick": "LAC +7.5",
+   "label": "TRAP",
+   "url": "/app#g_2026_06_LAC_KC",
+   "id": "call:2026_06_LAC_KC:Spread:LAC",
+   "kind": "call",
+   "pro": false,
+   "line": 7.5,
+   "expires": "2026-10-18T20:25+00:00",
+   "title": "TRAP: LAC +7.5",
+   "body": "LAC @ KC, Sun 4:25 PM ET. Trap meter 42. Division games are tighter than the line says."
+  },
   {
    "key": "2026_06_ARI_LA:Spread",
    "gid": "2026_06_ARI_LA",
@@ -16,66 +45,6 @@
    "expires": "2026-10-18T20:05+00:00",
    "title": "TRAP: ARI +12.5",
    "body": "ARI @ LA, Sun 4:05 PM ET. Trap meter 48. Division games are tighter than the line says."
-  },
-  {
-   "key": "2026_06_NYJ_NE:Spread",
-   "gid": "2026_06_NYJ_NE",
-   "game": "NYJ @ NE",
-   "pick": "NYJ +7.5",
-   "label": "TRAP",
-   "url": "/app#g_2026_06_NYJ_NE",
-   "id": "call:2026_06_NYJ_NE:Spread:NYJ",
-   "kind": "call",
-   "pro": false,
-   "line": 7.5,
-   "expires": "2026-10-18T17:00+00:00",
-   "title": "TRAP: NYJ +7.5",
-   "body": "NYJ @ NE, Sun 1 PM ET. Trap meter 50. Division games are tighter than the line says."
-  },
-  {
-   "key": "2026_06_TEN_IND:Spread",
-   "gid": "2026_06_TEN_IND",
-   "game": "TEN @ IND",
-   "pick": "TEN +6.5",
-   "label": "TRAP",
-   "url": "/app#g_2026_06_TEN_IND",
-   "id": "call:2026_06_TEN_IND:Spread:TEN",
-   "kind": "call",
-   "pro": false,
-   "line": 6.5,
-   "expires": "2026-10-18T17:00+00:00",
-   "title": "TRAP: TEN +6.5",
-   "body": "TEN @ IND, Sun 1 PM ET. Trap meter 43. Division games are tighter than the line says."
-  },
-  {
-   "key": "2026_06_HOU_JAX:Spread",
-   "gid": "2026_06_HOU_JAX",
-   "game": "HOU @ JAX",
-   "pick": "HOU +2.5",
-   "label": "TRAP",
-   "url": "/app#g_2026_06_HOU_JAX",
-   "id": "call:2026_06_HOU_JAX:Spread:HOU",
-   "kind": "call",
-   "pro": false,
-   "line": 2.5,
-   "expires": "2026-10-18T13:30+00:00",
-   "title": "TRAP: HOU +2.5",
-   "body": "HOU @ JAX, Sun 9:30 AM ET. Trap meter 66. Division games are tighter than the line says."
-  },
-  {
-   "key": "2026_07_TB_CAR:Spread",
-   "gid": "2026_07_TB_CAR",
-   "game": "TB @ CAR",
-   "pick": "TB +3",
-   "label": "TRAP",
-   "url": "/app#g_2026_07_TB_CAR",
-   "id": "call:2026_07_TB_CAR:Spread:TB",
-   "kind": "call",
-   "pro": false,
-   "line": 3.0,
-   "expires": "2026-10-25T17:00+00:00",
-   "title": "TRAP: TB +3",
-   "body": "TB @ CAR, Sun 1 PM ET. Trap meter 52."
   }
  ]
 }
