@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-18T17:25+00:00",
+ "generated": "2026-10-18T20:25+00:00",
  "paywall": false,
  "alerts": [
   {
@@ -14,37 +14,35 @@
    "pro": false,
    "expires": "2026-10-22T17:00+00:00",
    "title": "Won: HOU +2.5",
-   "body": "HOU @ JAX is final. TRAP calls this season: 4-0."
+   "body": "HOU @ JAX is final. TRAP calls this season: 6-0."
   },
   {
-   "key": "2026_06_LAC_KC:Spread",
-   "gid": "2026_06_LAC_KC",
-   "game": "LAC @ KC",
-   "pick": "LAC +7.5",
+   "key": "2026_06_NYJ_NE:Spread",
+   "gid": "2026_06_NYJ_NE",
+   "game": "NYJ @ NE",
+   "pick": "NYJ +7.5",
    "label": "TRAP",
-   "url": "/app#g_2026_06_LAC_KC",
-   "id": "call:2026_06_LAC_KC:Spread:LAC",
-   "kind": "call",
+   "url": "/app#g_2026_06_NYJ_NE",
+   "id": "result:2026_06_NYJ_NE:Spread",
+   "kind": "result",
    "pro": false,
-   "line": 7.5,
-   "expires": "2026-10-18T20:25+00:00",
-   "title": "TRAP: LAC +7.5",
-   "body": "LAC @ KC, Sun 4:25 PM ET. Trap meter 42. Division games are tighter than the line says."
+   "expires": "2026-10-22T17:00+00:00",
+   "title": "Won: NYJ +7.5",
+   "body": "NYJ @ NE is final. TRAP calls this season: 6-0."
   },
   {
-   "key": "2026_06_ARI_LA:Spread",
-   "gid": "2026_06_ARI_LA",
-   "game": "ARI @ LA",
-   "pick": "ARI +12.5",
+   "key": "2026_06_TEN_IND:Spread",
+   "gid": "2026_06_TEN_IND",
+   "game": "TEN @ IND",
+   "pick": "TEN +6.5",
    "label": "TRAP",
-   "url": "/app#g_2026_06_ARI_LA",
-   "id": "call:2026_06_ARI_LA:Spread:ARI",
-   "kind": "call",
+   "url": "/app#g_2026_06_TEN_IND",
+   "id": "result:2026_06_TEN_IND:Spread",
+   "kind": "result",
    "pro": false,
-   "line": 12.5,
-   "expires": "2026-10-18T20:05+00:00",
-   "title": "TRAP: ARI +12.5",
-   "body": "ARI @ LA, Sun 4:05 PM ET. Trap meter 48. Division games are tighter than the line says."
+   "expires": "2026-10-22T17:00+00:00",
+   "title": "Won: TEN +6.5",
+   "body": "TEN @ IND is final. TRAP calls this season: 6-0."
   }
  ]
 }
