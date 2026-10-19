@@ -6,14 +6,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<meta name="description" content="Trap Picks: NFL betting information. Where the popular side loses, live scores and win chances, and fantasy basketball.">
+<meta name="description" content="Trap Picks: sports betting analytics. NFL calls where the popular side loses, live scores, NBA prop check, college hoops ratings, pick'em and fantasy with friends.">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false};</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false;</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -3398,6 +3398,7 @@ body { background: transparent; }
     return h('div', { class: 'card plan' }, h('h3', null, 'Your plan'),
       SB.pro ? [h('p', { class: 'explain', style: 'margin:0 0 10px' }, h('b', null, SB.tier === 'elite' ? 'Elite' : 'Pro'), SB.plan ? ` · ${PRICE[SB.plan] || SB.plan}` : '', SB.status === 'canceled' ? ` · ends ${until}` : ` · renews ${until}`),
         h('button', { class: 'gbtn alt', onclick: openPortal }, 'Manage subscription'), SB.tier === 'pro' ? tierBlock('elite') : null]
+        : HOSTED && !window.TRAP_PAYWALL ? [h('p', { class: 'explain', style: 'margin:0 0 10px' }, 'Everything is free during launch, including every TRAP call. Pro plans open later.')]
         : [h('p', { class: 'explain', style: 'margin:0 0 10px' }, 'Free plan. Upgrade to see this week\'s calls.'), tiersCard(),
           SB.status ? h('button', { class: 'gbtn alt', style: 'margin-top:8px', onclick: openPortal }, 'Billing history') : null],
       pwSetBlock(),

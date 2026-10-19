@@ -146,6 +146,18 @@ async function taps() {
   }
   await ctx.close();
 }
+async function landing() {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = await ctx.newPage(); const errs = [];
+  p.on('pageerror', (e) => errs.push(e.message));
+  await p.route('**/*', (r) => r.request().url().startsWith(`http://localhost:${PORT}/`) ? r.continue() : r.abort());
+  await p.goto(`http://localhost:${PORT}/`); await p.waitForTimeout(1500);
+  const st = await p.evaluate(() => ({ w: document.documentElement.scrollWidth, t: document.body.innerText }));
+  if (st.w > 391) fails.push(`home page: scrolls sideways (${st.w}px)`);
+  const m = st.t.match(BAD); if (m) fails.push(`home page: shows "${m[0].trim()}"`);
+  errs.forEach((e) => fails.push('home page: script error: ' + e));
+  console.log((errs.length ? '✗ ' : '✓ ') + 'home page'); await ctx.close();
+}
+await landing();
 await run('signed out', PUBLIC, false);
 await run('signed in', SIGNED, true);
 await taps();

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-paywall="off">
 <head>
 <meta charset="utf-8">
 <title>Trap Picks</title>
@@ -123,6 +123,8 @@ details.faq p { margin: 10px 0 0; color: var(--ink2); line-height: 1.45; }
 footer { padding: 30px 0 calc(30px + env(safe-area-inset-bottom)); color: var(--ink3); font-size: 13px; line-height: 1.5; }
 footer b { color: var(--ink2); }
 body { background: linear-gradient(180deg, rgba(10,10,12,.45), rgba(10,10,12,.8) 60%, rgba(10,10,12,.92)), url('/brand/pano.jpg') center top / cover no-repeat fixed, #0a0a0c; }
+/* Before Stripe is live (paywall off in web/config.json) every Pro feature is free; build_web.sh sets data-paywall. */
+html[data-paywall=off] .pw-on, html:not([data-paywall=off]) .pw-off { display: none; }
 </style>
 </head>
 <body>
@@ -183,6 +185,8 @@ body { background: linear-gradient(180deg, rgba(10,10,12,.45), rgba(10,10,12,.8)
       <div class="feat" style="--c:#c77dff"><div class="ic">🎟️</div><h3>Slip of the Day</h3><p>A 4 to 15 leg parlay built from the week's best edges, with its real hit chance.</p></div>
       <div class="feat" style="--c:#ff7eb6"><div class="ic">📸</div><h3>Share cards</h3><p>Turn any slip into an image for the group chat.</p></div>
       <div class="feat" style="--c:#4dd4ff"><div class="ic">🏀</div><h3>Fantasy basketball</h3><p>Rankings, breakouts, drafts and weekly lineups with friends.</p></div>
+      <div class="feat" style="--c:var(--grn)"><div class="ic">🎯</div><h3>NBA prop check</h3><p>Bring any line from your book and see how often a player cleared it, and what changed.</p></div>
+      <div class="feat" style="--c:var(--org)"><div class="ic">🎓</div><h3>College hoops</h3><p>Power ratings for every Division I team, our own line, and pick'em and team drafts with friends.</p></div>
     </div>
   </section>
 
@@ -191,13 +195,13 @@ body { background: linear-gradient(180deg, rgba(10,10,12,.45), rgba(10,10,12,.8)
     <div class="plans">
       <div class="plan">
         <div class="nm">Free</div><div class="pr">$0</div><div class="alt">No card needed</div>
-        <ul><li>Live scores and win chances</li><li>Weather, injuries and team pages</li><li>The full graded record and weekly recap</li><li>Pick'em groups and fantasy basketball</li></ul>
+        <ul><li>Live scores and win chances</li><li>Weather, injuries and team pages</li><li>The full graded record and weekly recap</li><li>Pick'em groups and fantasy basketball</li><li>NBA prop check and college hoops</li></ul>
         <a class="btn g" href="/app#me">Create a free account</a>
       </div>
       <div class="plan pro">
-        <div class="nm">Pro</div><div class="pr">$9.99<small> / month</small></div><div class="alt">or $59 a year, save 51%</div>
+        <div class="nm">Pro</div><div class="pr">$9.99<small> / month</small></div><div class="alt pw-on">or $59 a year, save 51%</div><div class="alt pw-off">Free for everyone during launch</div>
         <ul><li>Every TRAP and WATCH call, each week</li><li>Trap meter and the reasons behind each call</li><li>Slip of the Day and share cards</li><li>Line movement on every game</li><li>Cancel anytime</li></ul>
-        <a class="btn y" href="/app#me">Start Pro</a>
+        <a class="btn y pw-on" href="/app#me">Start Pro</a><a class="btn y pw-off" href="/app#board">Use it free now</a>
       </div>
     </div>
   </section>
@@ -206,7 +210,7 @@ body { background: linear-gradient(180deg, rgba(10,10,12,.45), rgba(10,10,12,.8)
     <h2>Questions</h2>
     <details class="faq"><summary>Is Trap Picks a sportsbook?</summary><p>No. We sell information. We never take bets or hold money for wagers, and pick'em groups are for bragging rights only, with no prizes.</p></details>
     <details class="faq"><summary>Do the picks always win?</summary><p>No. TRAP calls have won about 54% since 2016, and the standard -110 odds need 52.4% to break even. Expect losing weeks. Bet only what you can afford to lose.</p></details>
-    <details class="faq"><summary>How do I sign up?</summary><p>Tap Continue with Google, or enter any email address (Gmail, Yahoo, Outlook or another) and we send you a one-tap sign-in link. There is no password to remember.</p></details>
+    <details class="faq"><summary>How do I sign up?</summary><p>Open the app, tap Sign in, and create an account with any email address and a password. Add Trap Picks to your Home Screen and sign in there with the same email and password.</p></details>
     <details class="faq"><summary>How does paying work?</summary><p>Checkout is run by Stripe, so we never see your card. Pay by card, Apple Pay or Google Pay. Your plan renews automatically, and you can cancel or switch plans anytime from your account.</p></details>
     <details class="faq"><summary>Where does the data come from?</summary><p>Lines and results come from the free nflverse data, injuries from the official NFL report, live scores from ESPN and forecasts from Open-Meteo. The data is checked before every update.</p></details>
   </section>
