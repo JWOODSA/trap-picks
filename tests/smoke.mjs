@@ -1,0 +1,154 @@
+// Smoke test: opens every screen of the app on an iPhone-size viewport and fails on script errors,
+// leaked "undefined"/"NaN"/"[object" text, empty pages or sideways scrolling.
+// Signed out (the public website as visitors see it) and signed in (a fake account with groups,
+// leagues and drafts, so the account pages render without touching the real database).
+//   node tests/smoke.mjs            # uses ./public
+//   PW=/path/to/playwright node tests/smoke.mjs
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const pw = require(process.env.PW || 'playwright');
+const ROOT = path.resolve(process.argv[2] || 'public');
+const HERE = path.dirname(new URL(import.meta.url).pathname);
+const PORT = 8790 + Math.floor(Math.random() * 100);
+const types = { '.html': 'text/html; charset=utf-8', '.json': 'application/json', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
+const server = http.createServer((req, res) => {
+  let p = decodeURIComponent(req.url.split('?')[0]);
+  if (p === '/__mock.js') { res.writeHead(200, { 'content-type': types['.js'] }); return res.end(fs.readFileSync(path.join(HERE, 'mock.js'))); }
+  if (p === '/' || p === '/app') p = p === '/' ? '/index.html' : '/app.html';
+  const f = path.join(ROOT, p);
+  if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
+  res.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream' });
+  res.end(fs.readFileSync(f));
+}).listen(PORT);
+
+const J = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+const core = J('core.json'), players = J('players.json'), fan = J('fantasy.json'), cb = J('ncaab.json');
+const games = [...new Set(core.calls.map((c) => c.game_id))];
+const teams = core.teams.map((t) => t.team);
+const pids = players.profiles.slice(0, 8).map((p) => p.player_id);
+const fids = fan.players.slice(0, 6).map((p) => p.id);
+const cids = cb.teams.slice().sort((a, b) => a.rank - b.rank).slice(0, 5).map((t) => t.id);
+
+const PUBLIC = ['board', 'teams', 'players', 'record', 'me', 'login', 'sports', 'nba', 'fantasy', 'fl', 'cbb', 'cbbt', 'cbbp',
+  ...games.map((g) => 'g_' + g), ...teams.map((t) => 't_' + t), ...pids.map((p) => 'p_' + p), ...fids.map((f) => 'f_' + f), ...cids.map((c) => 'c_' + c)];
+
+// Fake signed-in account: one NFL group, one NBA league, a college pick'em and a college draft in season.
+const wk = Object.keys(cb.slates || {}).sort()[0];
+const top = cb.teams.slice().sort((a, b) => a.rank - b.rank).map((t) => t.id);
+const SEED = {
+  'members/me': { groups: ['GRP001'], picks: {}, pickem: {} }, 'groups/GRP001': { name: 'Sunday Crew', created_by: 'me' },
+  'members/u2': { groups: ['GRP001'], picks: {}, pickem: {} },
+  'data/users/me/fantasy': { leagues: ['NBA001'] }, 'data/users/me/cbb': { leagues: ['CBP001', 'CBD001'] },
+  'leagues/NBA001': { name: 'Hoop Heads', kind: 'weekly', size: 50, status: 'season', order: [], created_by: 'me', season: fan.meta.season },
+  'leagues/NBA001/teams/me': { name: 'John' }, 'leagues/NBA001/teams/u2': { name: 'Marcus' },
+  'leagues/CBP001': { name: 'Hoop Heads', kind: 'cbb_pickem', size: 50, rounds: 8, status: 'season', order: [], created_by: 'me', season: cb.meta.season, family: 'NBA001' },
+  'leagues/CBP001/teams/me': { name: 'John' }, 'leagues/CBP001/teams/u2': { name: 'Marcus' },
+  'leagues/CBD001': { name: 'Draft Night', kind: 'cbb_draft', size: 2, rounds: 8, status: 'draft', order: ['me', 'u2'], created_by: 'me', season: cb.meta.season, draft_started_at: '2026-10-01T00:00:00Z' },
+  'leagues/CBD001/teams/me': { name: 'John' }, 'leagues/CBD001/teams/u2': { name: 'Marcus' },
+  'links/NBA001/games/NBA001': { code: 'NBA001', kind: 'weekly', name: 'Hoop Heads', by: 'me' },
+  'links/NBA001/games/CBP001': { code: 'CBP001', kind: 'cbb_pickem', name: 'Hoop Heads', by: 'me' },
+};
+if (wk) SEED['leagues/CBP001/entries/me_' + wk] = { uid: 'me', wk, picks: { [cb.slates[wk][0]]: cb.slate_games[String(cb.slates[wk][0])]?.home } };
+for (let n = 0; n < 16; n++) { const r = Math.floor(n / 2), i = n % 2; SEED[`leagues/CBD001/picks/p${String(n).padStart(3, '0')}`] = { n, uid: ['me', 'u2'][r % 2 ? 1 - i : i], tid: top[n] }; }
+SEED['data/users/me/cbb'].leagues.push('CBD002');
+Object.assign(SEED, { 'leagues/CBD002': { name: 'Live Draft', kind: 'cbb_draft', size: 2, rounds: 8, status: 'draft', order: ['me', 'u2'], created_by: 'me', season: cb.meta.season, draft_started_at: '2026-10-01T00:00:00Z' },
+  'leagues/CBD002/teams/me': { name: 'John' }, 'leagues/CBD002/teams/u2': { name: 'Marcus' } });
+const SIGNED = ['cbbp_CBD002', 'me', 'grp_GRP001', 'fl', 'fl_NBA001', 'cbbp', 'cbbp_CBP001', 'cbbp_CBD001', 'bets'];
+
+const BAD = /\bundefined\b|\bNaN\b|\[object |\bInfinity\b|(^|\s)null(\s|$)/;
+const fails = [];
+const browser = await pw.chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {});
+async function run(label, routes, signedIn) {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, timezoneId: 'America/New_York' });
+  const page = await ctx.newPage();
+  let errs = [];
+  page.on('pageerror', (e) => errs.push('script error: ' + e.message));
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_|net::/.test(m.text())) errs.push('console: ' + m.text()); });
+  page.on('dialog', (d) => d.dismiss());
+  await page.route('**/*', (r) => {
+    const u = r.request().url();
+    if (!u.startsWith(`http://localhost:${PORT}/`)) return r.abort();
+    if (signedIn && /\/app(\.html)?$/.test(u.split('#')[0])) {
+      const html = fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8').replace('<script>\n(() => {',
+        `<script>window.TRAP_API = undefined; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`);
+      return r.fulfill({ status: 200, contentType: types['.html'], body: html });
+    }
+    return r.continue();
+  });
+  await page.goto(`http://localhost:${PORT}/app`);
+  if (signedIn) await page.evaluate(() => localStorage.clear());
+  for (const route of routes) {
+    errs = [];
+    await page.evaluate((h) => { location.hash = h; }, route);
+    await page.waitForTimeout(1200);
+    const st = await page.evaluate(() => {
+      const v = document.getElementById('view');
+      return { text: v ? v.innerText : '', kids: v ? v.children.length : 0, loading: !!(v && v.querySelector('.loading')), w: document.documentElement.scrollWidth };
+    });
+    const where = `${label} #${route}`;
+    if (!st.kids || st.text.trim().length < 20) fails.push(`${where}: page is empty`);
+    if (st.loading) fails.push(`${where}: still loading after 1.2s`);
+    const m = st.text.match(BAD); if (m) fails.push(`${where}: shows "${m[0].trim()}" near "${st.text.slice(Math.max(0, m.index - 40), m.index + 20).replace(/\s+/g, ' ')}"`);
+    if (st.w > 391) fails.push(`${where}: page scrolls sideways (${st.w}px wide)`);
+    errs.forEach((e) => fails.push(`${where}: ${e}`));
+    console.log((errs.length ? '✗ ' : '✓ ') + where);
+  }
+  await ctx.close();
+}
+// Taps: the things people do, checked against what got saved.
+const TAPS = [
+  ['save an NFL pick', async (p) => { await p.evaluate(() => { location.hash = 'board'; }); await p.waitForTimeout(1500);
+    const b = p.locator('[data-pk]:visible'); if (!(await b.count())) return 'no open NFL calls (fine before a slate posts)';
+    await b.first().click(); await p.waitForTimeout(600);
+    const n = await p.evaluate(() => Object.keys((JSON.parse(localStorage.getItem('mockdb'))['data/users/me/picks'] || {}).items || {}).length); return n >= 1 || 'pick did not save'; }],
+  ['make an NFL group pick', async (p) => { await p.evaluate(() => { location.hash = 'grp_GRP001'; }); await p.waitForTimeout(1500);
+    const b = p.locator('.pe .opts button:not([disabled])'); if (!(await b.count())) return 'no open NFL games (fine before a slate posts)';
+    await b.first().click(); await p.waitForTimeout(600);
+    const pe = await p.evaluate(() => (JSON.parse(localStorage.getItem('mockdb'))['members/me'] || {}).pickem || {}); return Object.keys(pe).length >= 1 || 'group pick did not save'; }],
+  ['switch sport to college', async (p) => { await p.click('#sport'); await p.waitForTimeout(400); await p.getByText('NCAAB', { exact: true }).first().click(); await p.waitForTimeout(800); return (await p.evaluate(() => location.hash)) === '#cbb' || 'did not open college games'; }],
+  ['type a prop line', async (p) => { await p.evaluate((f) => { location.hash = 'f_' + f; }, fids[0]); await p.waitForTimeout(1500);
+    const inp = p.locator('#prop input[aria-label="Line"]'); if (!(await inp.count())) return 'no prop check on player page';
+    await inp.fill('20.5'); await inp.dispatchEvent('input'); await p.waitForTimeout(400); const t = await p.locator('#prop').innerText(); return /%/.test(t) || 'no hit rates shown'; }],
+  ['make a college pick', async (p) => { await p.evaluate(() => { location.hash = 'cbbp_CBP001'; }); await p.waitForTimeout(1500);
+    const b = p.locator('.pkg .pkb button:not([disabled])'); if (!(await b.count())) return 'no open games to pick (fine before a slate posts)';
+    await b.nth(2).click(); await p.waitForTimeout(500); const n = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('mockdb'))).filter((d) => d && d.picks && d.uid === 'me').reduce((a, d) => a + Object.keys(d.picks).length, 0));
+    return n >= 2 || 'pick did not save'; }],
+  ['draft a college team', async (p) => { await p.evaluate(() => { location.hash = 'cbbp_CBD002'; }); await p.waitForTimeout(1500);
+    await p.locator('.frow button.gbtn').first().click(); await p.waitForTimeout(600);
+    const ok = await p.evaluate(() => !!JSON.parse(localStorage.getItem('mockdb'))['leagues/CBD002/picks/p000']); return ok || 'draft pick did not save'; }],
+  ['start a college league', async (p) => { await p.evaluate(() => { location.hash = 'cbbp'; }); await p.waitForTimeout(1500);
+    await p.fill('input[aria-label="New league name"]', 'Test League'); await p.getByRole('button', { name: 'Create' }).click(); await p.waitForTimeout(1500);
+    return /^#cbbp_[A-Z0-9]{6}$/.test(await p.evaluate(() => location.hash)) || 'did not open the new league'; }],
+  ['leader adds a game', async (p) => { await p.evaluate(() => { location.hash = 'fl_NBA001'; }); await p.waitForTimeout(2000);
+    await p.click('.gm-add summary'); await p.waitForTimeout(300); await p.getByRole('button', { name: /College team draft/ }).click(); await p.waitForTimeout(2000);
+    const h = await p.evaluate(() => location.hash); const linked = await p.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('mockdb'))).filter((k) => k.startsWith('links/NBA001/games/')).length);
+    return (/^#cbbp_/.test(h) && linked >= 3) || `add game failed (${h}, ${linked} links)`; }],
+];
+async function taps() {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'America/New_York' });
+  const page = await ctx.newPage(); let errs = [];
+  page.on('pageerror', (e) => errs.push('script error: ' + e.message)); page.on('dialog', (d) => d.accept());
+  await page.route('**/*', (r) => { const u = r.request().url(); if (!u.startsWith(`http://localhost:${PORT}/`)) return r.abort();
+    if (/\/app(\.html)?$/.test(u.split('#')[0])) return r.fulfill({ status: 200, contentType: types['.html'], body: fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8').replace('<script>\n(() => {',
+      `<script>window.TRAP_API = undefined; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`) });
+    return r.continue(); });
+  await page.goto(`http://localhost:${PORT}/app`); await page.evaluate(() => localStorage.clear()); await page.reload(); await page.waitForTimeout(1500);
+  for (const [name, fn] of TAPS) {
+    errs = [];
+    let res; try { res = await fn(page); } catch (e) { res = e.message.split('\n')[0]; }
+    if (res !== true && !/fine before/.test(res)) fails.push(`tap: ${name}: ${res}`);
+    errs.forEach((e) => fails.push(`tap: ${name}: ${e}`));
+    console.log((res === true && !errs.length ? '✓ ' : '✗ ') + 'tap: ' + name + (res === true ? '' : ' (' + res + ')'));
+  }
+  await ctx.close();
+}
+await run('signed out', PUBLIC, false);
+await run('signed in', SIGNED, true);
+await taps();
+await browser.close(); server.close();
+if (fails.length) { console.log('\nFAILED\n' + fails.map((f) => ' - ' + f).join('\n')); process.exit(1); }
+console.log('\nAll screens passed.');

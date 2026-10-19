@@ -1,0 +1,41 @@
+# Two safety nets.
+# 1. Smoke test: every push that changes the site opens every screen on an iPhone-size page and taps
+#    through picks, pick'em, drafts and leagues (tests/smoke.mjs). A red run means something broke.
+# 2. Fresh data: every hour, check that the live site's data files were refreshed in the last 28 hours,
+#    so a stalled daily refresh is caught the same day.
+# GitHub emails the repo owner when a run fails.
+name: checks
+on:
+  push:
+    branches: [main]
+    paths: ['public/**', 'tests/**', 'worker.js', 'functions/**', 'lib/**']
+  schedule:
+    - cron: '41 * * * *'
+  workflow_dispatch:
+jobs:
+  smoke:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save playwright@1.47.2 && npx playwright install --with-deps chromium
+      - run: node tests/smoke.mjs public
+  fresh-data:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    env:
+      SITE_URL: ${{ vars.SITE_URL || 'https://trap-picks.johnglenwoods99.workers.dev' }}
+    steps:
+      - name: Data files on the live site are under 28 hours old
+        run: |
+          fail=0
+          for f in core.json ncaab.json fantasy.json; do
+            gen=$(curl -fsS --max-time 60 "$SITE_URL/$f" | jq -r '.meta.generated')
+            age=$(( ( $(date -u +%s) - $(date -u -d "$gen" +%s) ) / 3600 ))
+            echo "$f generated $gen ($age hours ago)"
+            [ "$age" -lt 28 ] || { echo "::error::$f is $age hours old. The daily refresh may have stalled."; fail=1; }
+          done
+          exit $fail
