@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "ca9efb5ada75";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "963035b12efa";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -794,6 +794,7 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
 .alrt .explain { margin: 0 0 12px; }
 .alrt-on { width: 100%; min-height: 48px; }
 .alrt-note { margin: 10px 0 0; font-size: 13px; }
+.cg-b { color: var(--ink2); } .cg-b .gap { color: var(--yel); font-weight: 700; }
 .etag { font-family: var(--disp); font-weight: 800; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; padding: 1px 7px; border-radius: 5px; background: var(--red); color: #fff; margin-left: 8px; vertical-align: 2px; }
 .rc-top { display: flex; gap: 12px; align-items: center; } .rc-top b { display: block; } .rc-top .muted { font-size: 13px; }
 .rc-grade { flex: none; width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; font-family: var(--disp); font-weight: 900; font-size: 30px; background: var(--card2); border: 1px solid var(--line); }
@@ -1974,12 +1975,46 @@ body { background: transparent; }
       h('p', { style: 'font-size:12.5px;opacity:.9' }, `Our line is our own number, not a sportsbook's. Compare it with your book. Last season it picked the winner ${pct(a.winner_pct, 0)} of the time and missed the final margin by ${a.margin_mae} points on average (${a.games.toLocaleString()} games, each week predicted from earlier games only).`)); };
   const cbLine = (g) => { const H = CB.byId.get(g.home), A = CB.byId.get(g.away); if (g.margin === 0) return 'Pick\'em';
     return g.margin > 0 ? `${H.abbr} -${g.margin}` : `${A.abbr} -${-g.margin}`; };
+  // Sportsbook lines for college games (/api/odds?sport=ncaab, one shared copy refreshed every 30 minutes).
+  // Books name teams their own way, so a game only gets book lines when both teams match ours by name on
+  // the same day; anything unsure is left without, never guessed.
+  const CBO = { games: null, at: null, p: null };
+  const loadCbOdds = () => CBO.p || (CBO.p = !HOSTED ? Promise.resolve() : fetch(`${window.TRAP_API}/odds?sport=ncaab`, { headers: SB.session ? authHdr() : {} })
+    .then((r) => (r.ok ? r.json() : null)).then((d) => { if (d && d.games) Object.assign(CBO, { games: d.games, at: d.at }); }).catch(() => {}));
+  const cbNorm = (s) => String(s || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9 ]/g, '').replace(/\bsaint\b/g, 'st').replace(/\bstate\b/g, 'st').replace(/\s+/g, ' ').trim();
+  function cbBooks(g) {
+    if (!CBO.games) return null;
+    const H = CB.byId.get(g.home), A = CB.byId.get(g.away), nh = cbNorm(H.name), na = cbNorm(A.name);
+    const day = (iso) => new Date(iso).toLocaleDateString('en-CA', { timeZone: ET });
+    for (const o of CBO.games) {
+      if (day(o.start) !== g.date) continue;
+      const oa = cbNorm(o.away), oh = cbNorm(o.home);
+      const flip = oa === nh && oh === na;           // neutral-site games can list the teams the other way round
+      if (!(oa === na && oh === nh) && !flip) continue;
+      const books = o.books.filter((b) => b.sp[0] && b.sp[1]);
+      if (!books.length) return null;
+      const hi = flip ? 0 : 1;                        // which side of the book's spread is our home team
+      const homePts = books.map((b) => b.sp[hi][0]).sort((x, y) => x - y), mid = homePts[Math.floor(homePts.length / 2)];
+      const tots = o.books.filter((b) => b.to[0]).map((b) => b.to[0][0]).sort((x, y) => x - y);
+      let best = null;                                // best number for the side our line favors
+      const side = g.margin >= -mid ? hi : 1 - hi;    // our margin vs the book's home spread: who we like more than the books do
+      for (const b of books) { const x = b.sp[side]; if (!best || x[0] > best.pt || (x[0] === best.pt && dec(x[1]) > dec(best.price))) best = { pt: x[0], price: x[1], book: b.b }; }
+      return { homeSpread: mid, total: tots.length ? tots[Math.floor(tots.length / 2)] : null, n: books.length, best, bestTeam: (side === hi) ? H : A };
+    }
+    return null;
+  }
   function cbGameCard(g) {
     const H = CB.byId.get(g.home), A = CB.byId.get(g.away);
+    const bk = cbBooks(g);
+    const bookLine = bk && (bk.homeSpread === 0 ? 'Pick\'em' : bk.homeSpread < 0 ? `${H.abbr} ${bk.homeSpread}` : `${A.abbr} -${bk.homeSpread}`);
+    const gap = bk ? Math.round((g.margin + bk.homeSpread) * 10) / 10 : 0;   // + = we like the home team more than the books do
     const row = (t) => h('div', { class: 'cg-r' }, h('i', { style: `background:${t.color}` }), h('small', null, `#${t.rank}`), h('span', { class: 'nm' }, t.short || t.name));
     return h('button', { class: 'cg', onclick: () => go('c_' + H.id) }, row(A), h('div', { class: 'cg-r', style: 'font-size:12px;color:var(--ink3);font-weight:500' }, g.neutral ? 'vs (neutral site)' : '@',
         h('span', { class: 'cg-t' }, g.tip ? new Date(g.tip).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: ET }) + ' ET' : 'Time TBA')), row(H),
-      h('div', { class: 'cg-l' }, h('span', { class: 'our' }, `Our line: ${cbLine(g)}`), h('span', null, `Total ${g.total}`), g.gp < 5 ? h('span', null, 'Early: mostly last season') : null));
+      h('div', { class: 'cg-l' }, h('span', { class: 'our' }, `Our line: ${cbLine(g)}`), h('span', null, `Total ${g.total}`), g.gp < 5 ? h('span', null, 'Early: mostly last season') : null),
+      bk ? h('div', { class: 'cg-l cg-b' }, h('span', null, `Books: ${bookLine}`), bk.total != null ? h('span', null, `Total ${bk.total}`) : null,
+        Math.abs(gap) >= 1 ? h('span', { class: 'gap' }, `We're ${Math.abs(gap)} pts higher on ${(gap > 0 ? H : A).abbr}`) : h('span', null, 'Close to ours'),
+        eliteOk() && bk.best ? h('span', null, `Best ${bk.bestTeam.abbr} ${sgnPt(bk.best.pt)} ${odds(bk.best.price)} at ${bk.best.book}`) : null) : null);
   }
   function cbbGames() {
     const box = h('div', null, h('div', { class: 'loading' }, 'Loading college games…'));
@@ -1994,7 +2029,7 @@ body { background: transparent; }
           return gs.length ? [h('div', { class: 'sh' }, h('h2', null, shortDay(d)), h('span', null, `${gs.length} games`)), ...gs.map(cbGameCard)] : []; }));
         if (!list.children.length) list.append(h('p', { class: 'muted' }, 'No games match.'));
       };
-      q.addEventListener('input', draw); draw();
+      q.addEventListener('input', draw); draw(); loadCbOdds().then(() => { if (CBO.games) draw(); });
       box.replaceChildren(cbHero(), q, list, h('p', { class: 'muted', style: 'margin:14px 2px 0;font-size:12px' }, `Games in the next week between Division I teams. Data: ESPN via the free sportsdataverse archive. Updated ${new Date(CB.meta.generated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`));
     }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'College data failed to load.')));
     return [box];
@@ -2016,7 +2051,7 @@ body { background: transparent; }
   }
   function cbbTeam(id) {
     const box = h('div', null, h('div', { class: 'loading' }, 'Loading team…'));
-    loadCbb().then(() => {
+    Promise.all([loadCbb(), loadCbOdds()]).then(() => {
       const t = CB.byId.get(+id); if (!t) { box.replaceChildren(...notFound()); return; }
       const gs = CB.games.filter((g) => g.home === t.id || g.away === t.id);
       box.replaceChildren(

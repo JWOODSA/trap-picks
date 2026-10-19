@@ -16,6 +16,8 @@
     "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0"
   },
   "observability": { "enabled": true },
+  // College lines every 30 minutes from noon ET to after midnight ET (UTC hours; covers both EDT and EST).
+  "triggers": { "crons": ["*/30 16-23 * * *", "*/30 0-5 * * *"] },
   // Keep the variables set in the Cloudflare dashboard (alert keys, Supabase, Stripe) on each deploy.
   "keep_vars": true
 }

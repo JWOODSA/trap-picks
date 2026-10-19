@@ -74,6 +74,12 @@ const ODDS = { at: new Date().toISOString(), games: Object.entries(core.kickoff 
   const bk = (b, sp, tt, p) => ({ b, t: ko, ml: [150 + p, -170 - p], sp: [[sp, -110 + p], [-sp, -110 - p]], to: [[tt, -112 + p], [tt, -108 - p]] });
   return { away, home, start: ko, books: [bk('FanDuel', 3.5, 44.5, 5), bk('DraftKings', 3, 45, 0), bk('BetMGM', 3.5, 44.5, -5)] };
 }) };
+// And a fake college answer: books on the first few college games, named the way sportsbooks name teams.
+const cbName = new Map(cb.teams.map((t) => [t.id, t.name]));
+const CBODDS = { at: new Date().toISOString(), games: (cb.games || []).slice(0, 6).map((g, i) => ({ away: cbName.get(g.away), home: cbName.get(g.home), start: g.tip || `${g.date}T23:00:00Z`,
+  books: [{ b: 'FanDuel', t: '', ml: null, sp: [[g.margin - 2.5 + i, -110], [-(g.margin - 2.5 + i), -110]], to: [[g.total - 3, -110], [g.total - 3, -110]] },
+    { b: 'DraftKings', t: '', ml: null, sp: [[g.margin - 2 + i, -105], [-(g.margin - 2 + i), -115]], to: [[g.total - 2.5, -110], [g.total - 2.5, -110]] }] })) };
+const oddsBody = (u) => JSON.stringify(u.includes('sport=ncaab') ? CBODDS : ODDS);
 const SIGNED = ['cbbp_CBD002', 'me', 'grp_GRP001', 'fl', 'fl_NBA001', 'cbbp', 'cbbp_CBP001', 'cbbp_CBD001', 'bets'];
 
 const BAD = /\bundefined\b|\bNaN\b|\[object |\bInfinity\b|(^|\s)null(\s|$)/;
@@ -89,7 +95,7 @@ async function run(label, routes, signedIn, website) {
   await page.route('**/*', (r) => {
     const u = r.request().url();
     if (!u.startsWith(`http://localhost:${PORT}/`)) return r.abort();
-    if (u.includes('/api/odds')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(ODDS) });
+    if (u.includes('/api/odds')) return r.fulfill({ status: 200, contentType: types['.json'], body: oddsBody(u) });
     if (signedIn && /\/app(\.html)?$/.test(u.split('#')[0])) {
       const html = fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8').replace('<script>\n(() => {',
         `<script>window.TRAP_API = ${website ? '"/api"; window.TRAP_SUPABASE = undefined' : 'undefined'}; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`).replace('!HOSTED && window.claude && window.claude.use', 'window.claude && window.claude.use');
@@ -170,7 +176,7 @@ async function website() {
   const p = await ctx.newPage(); const errs = [];
   p.on('pageerror', (e) => errs.push('script error: ' + e.message));
   await p.route('**/*', (r) => { const u = r.request().url(); if (!u.startsWith(`http://localhost:${PORT}/`)) return r.abort();
-    if (u.includes('/api/odds')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(ODDS) });
+    if (u.includes('/api/odds')) return r.fulfill({ status: 200, contentType: types['.json'], body: oddsBody(u) });
     if (u.includes('/api/')) return r.fulfill({ status: 404, body: '{}' });
     if (/\/app(\.html)?$/.test(u.split('#')[0])) return r.fulfill({ status: 200, contentType: types['.html'], body: fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8').replace('<script>\n(() => {',
       `<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = undefined; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`)
@@ -191,6 +197,11 @@ async function website() {
       if (!(r.length === 1 && r[0].kind === 'line' && Number.isFinite(r[0].target))) res = 'alert did not save: ' + JSON.stringify(r);
     }
   }
+  if (res === true && (cb.games || []).length) {
+    await p.evaluate(() => { location.hash = 'cbb'; }); await p.waitForTimeout(2000);
+    const t = await p.locator('#view').innerText();
+    if (!/Books: /.test(t)) res = 'college games did not show sportsbook lines';
+  }
   if (res !== true && !/fine before/.test(res)) fails.push('tap: set a line alert: ' + res);
   errs.forEach((e) => fails.push('tap: set a line alert: ' + e));
   console.log((res === true && !errs.length ? '✓ ' : '✗ ') + 'tap: line shopping + set a line alert' + (res === true ? '' : ' (' + res + ')'));
@@ -210,7 +221,7 @@ async function landing() {
 await landing();
 await run('signed out', PUBLIC, false);
 await run('signed in', SIGNED, true);
-await run('signed in, website', ['me', 'bets', ...Object.keys(core.kickoff || {}).slice(0, 3).map((g) => 'g_' + g)], true, true);
+await run('signed in, website', ['me', 'bets', 'cbb', ...Object.keys(core.kickoff || {}).slice(0, 3).map((g) => 'g_' + g)], true, true);
 await website();
 await taps();
 await browser.close(); server.close();

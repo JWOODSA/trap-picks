@@ -106,3 +106,17 @@ create table if not exists public.odds_cache (
   data jsonb not null default '{}'
 );
 alter table public.odds_cache enable row level security;
+-- Each college game's lines from every scheduled pull before tip-off (lib/odds.js scheduledOdds);
+-- the row's last version before start is the closing line. Server only.
+create table if not exists public.odds_close (
+  sport text not null,
+  gkey text not null,
+  start timestamptz not null,
+  away text not null,
+  home text not null,
+  at timestamptz not null,
+  data jsonb not null,
+  primary key (sport, gkey)
+);
+create index if not exists odds_close_start on public.odds_close (sport, start);
+alter table public.odds_close enable row level security;
