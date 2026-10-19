@@ -98,3 +98,11 @@ create table if not exists public.push_sent (
   sent_at timestamptz not null default now()
 );
 alter table public.push_sent enable row level security;
+-- One shared copy of every sportsbook's lines per sport (functions/api/odds.js), server only.
+create table if not exists public.odds_cache (
+  sport text primary key,
+  fetched_at timestamptz not null default now(),
+  remaining integer,
+  data jsonb not null default '{}'
+);
+alter table public.odds_cache enable row level security;

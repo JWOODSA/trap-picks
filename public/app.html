@@ -792,6 +792,20 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
 .alrt .explain { margin: 0 0 12px; }
 .alrt-on { width: 100%; min-height: 48px; }
 .alrt-note { margin: 10px 0 0; font-size: 13px; }
+.etag { font-family: var(--disp); font-weight: 800; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; padding: 1px 7px; border-radius: 5px; background: var(--red); color: #fff; margin-left: 8px; vertical-align: 2px; }
+.rc-top { display: flex; gap: 12px; align-items: center; } .rc-top b { display: block; } .rc-top .muted { font-size: 13px; }
+.rc-grade { flex: none; width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; font-family: var(--disp); font-weight: 900; font-size: 30px; background: var(--card2); border: 1px solid var(--line); }
+.rc-grade.gA, .rc-grade.gB { color: var(--grn); border-color: var(--grn); } .rc-grade.gD, .rc-grade.gF { color: var(--red); border-color: var(--red); }
+.rc-h { margin: 14px 0 4px; font-family: var(--disp); font-weight: 800; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink2); }
+.rc-note { font-size: 13px; margin: 12px 0 0; }
+.shop-row { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.shop-row:first-of-type { border-top: 0; } .shop-row span small { display: block; color: var(--ink3); font-size: 12px; } .shop-row > small { grid-column: 1 / -1; font-size: 12px; }
+.shop-all summary { cursor: pointer; padding: 10px 0 4px; color: var(--ink2); font-size: 14px; }
+.shop-tbl > div { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 6px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 12px; }
+.shop-tbl .shop-th { color: var(--ink3); border-top: 0; font-weight: 700; }
+.rules { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 4px; }
+.rule { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.rule .x { flex: none; }
 .alrt-steps { margin: 0; padding-left: 20px; color: var(--ink2); line-height: 1.6; }
 .alrt-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 8px 0; border-top: 1px solid var(--line); cursor: pointer; }
 .alrt-row:first-of-type { border-top: 0; }
@@ -1186,7 +1200,7 @@ body { background: transparent; }
     if (C.meta.locked) out.push(proCard('See the calls for this game'));
     else out.push(h('div', { class: 'card' }, h('h3', null, 'The calls', shareGameBtn(g)), h('div', { class: 'slip', style: 'margin:0;box-shadow:none' }, g.legs.map(leg),
       (() => { const r = [...new Set(g.legs.filter((c) => c.reasons).flatMap((c) => c.reasons.split('; ')))]; return r.length ? h('ul', { class: 'why', style: 'padding-top:10px' }, r.map((x) => h('li', null, x))) : null; })())));
-    out.push(C.meta.locked ? null : movesCard(g), injuryCard(g), weatherCard(g));
+    out.push(C.meta.locked ? null : movesCard(g), shopCard(g), injuryCard(g), weatherCard(g));
     if (u.away_fair_pct != null) out.push(h('div', { class: 'card' }, h('h3', null, 'Win chance, vig removed'),
       h('div', { class: 'fair' }, h('i', { style: `flex:${u.away_fair_pct};background:${col(g.away)}` }, `${g.away} ${pct(u.away_fair_pct, 0)}`), h('i', { style: `flex:${u.home_fair_pct};background:${col(g.home)}` }, `${pct(u.home_fair_pct, 0)} ${g.home}`)),
       h('p', { class: 'muted', style: 'margin:8px 0 0' }, `Book hold on the moneyline is ${pct(u.hold)}.`)));
@@ -1482,6 +1496,7 @@ body { background: transparent; }
     db.doc(base + '/profile').onSnapshot((d) => { ACCT.teams = (d.exists && d.data().teams) || []; sync(); }, () => {});
     db.doc('members/' + me.id).onSnapshot((d) => { ACCT.groups = (d.exists && d.data().groups) || []; ACCT.pickem = (d.exists && d.data().pickem) || {}; sync(); }, () => {});
     db.doc(base + '/bets').onSnapshot((d) => { BETS.items = (d.exists && d.data().items) || {}; BETS.bankroll = d.exists ? d.data().bankroll ?? null : null; BETS.budget = d.exists ? d.data().budget ?? null : null; sync(); if (location.hash === '#bets') route(); }, () => {});
+    db.doc(base + '/alerts').onSnapshot((d) => { RULES.items = (d.exists && d.data().rules) || {}; redrawAlerts(); }, () => {});
     db.doc(base + '/fantasy').onSnapshot((d) => { ACCT.leagues = (d.exists && d.data().leagues) || []; sync(); }, () => {});
     db.doc(base + '/cbb').onSnapshot((d) => { ACCT.cbb = (d.exists && d.data().leagues) || []; sync(); }, () => {});
     db.doc(base + '/waitlist').get().then((d) => { ACCT.waitlist = !!(d.exists && d.data().elite); }).catch(() => {});
@@ -3270,12 +3285,12 @@ body { background: transparent; }
     if (d && d.url) location.href = d.url; else toast('Could not open billing. Try again soon.');
   }
   const PRICE = { monthly: '$9.99/month', yearly: '$59/year', pro_monthly: '$9.99/month', pro_yearly: '$59/year', elite_monthly: '$19.99/month', elite_yearly: '$149/year' };
-  // Three tiers. Free and Pro are live; Elite (live odds from every book, NBA, props, report card,
-  // custom alerts) takes a waitlist until those are built. The waitlist is a private doc per person.
+  // Three tiers. Free and Pro are live; Elite (line shopping, report card, custom alerts) takes a
+  // waitlist until its checkout opens. The waitlist is a private doc per person.
   const TIERS = {
     free: ['Live scores and win chances', 'Team and player stats', 'The graded public record', 'Injuries and kickoff weather', 'Pick\'em, fantasy and the bet tracker'],
     pro: ['Everything in Free', 'This week\'s TRAP and WATCH calls', 'Trap meter and the reasons behind it', 'Slip of the Day and line movement', 'Alerts on new calls, line moves and results'],
-    elite: ['Everything in Pro', 'Live odds from every major sportsbook, with the best number', 'NBA lines and calls', 'Player prop analytics', 'Your report card: closing-line value and what makes or loses you money', 'Custom alerts you set'],
+    elite: ['Everything in Pro', 'Line shopping: every sportsbook\'s price, with the best number', 'Your report card: closing-line value and what makes or loses you money', 'Custom alerts: your number, fast line moves'],
   };
   function tierBlock(t) {
     const mine = SB.tier === t;
@@ -3464,13 +3479,15 @@ body { background: transparent; }
     if (!PUSH.sub) return card(
       h('p', { class: 'explain' }, 'Get a buzz when a TRAP call drops, when its line moves and when it wins or loses.'),
       h('button', { class: 'gbtn alrt-on', onclick: pushOn }, 'Turn on alerts'),
-      locked ? h('p', { class: 'muted alrt-note' }, 'Call and line alerts are part of Pro. Results alerts are free.') : null);
+      locked ? h('p', { class: 'muted alrt-note' }, 'Call and line alerts are part of Pro. Results alerts are free.') : null,
+      Object.keys(RULES.items).length ? rulesBlock() : null);
     const row = (k, t, sub, pro) => h('label', { class: 'alrt-row' }, h('span', null, h('b', null, t), h('small', null, pro && locked ? sub + ' Pro only.' : sub)),
       h('input', { type: 'checkbox', role: 'switch', checked: PUSH.prefs[k] !== false, onchange: (e) => { PUSH.prefs[k] = e.target.checked; pushSave(); } }));
     return card(
       row('calls', 'New TRAP calls', 'When a call drops, or gets pulled before kickoff.', true),
       row('moves', 'Line moves', 'When a called line moves a point or crosses 3 or 7.', true),
       row('results', 'Results', 'When a TRAP call wins or loses.', false),
+      rulesBlock(),
       h('div', { class: 'alrt-btns' }, h('button', { class: 'gbtn alt', onclick: pushTest }, 'Send a test'), h('button', { class: 'leave', style: 'margin:0', onclick: pushOff }, 'Turn off alerts')));
   }
 
@@ -3525,7 +3542,7 @@ body { background: transparent; }
       if (!(Math.abs(o) >= 100)) return toast('Enter American odds, like -110 or +150.');
       const id = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
       BETS.items = { ...BETS.items, [id]: { id, at: pre.at || new Date().toISOString(), date: pre.date || new Date().toISOString().slice(0, 10), desc: desc.value.trim().slice(0, 80),
-        stake: Math.round(s * 100) / 100, odds: o, book: book.value, kind: pre.kind || 'manual', src: pre.src || null, legs: pre.legs || null, info: pre.info || null, result: pre.legs ? null : pre.result || null } };
+        stake: Math.round(s * 100) / 100, odds: o, book: book.value, kind: pre.kind || 'manual', src: pre.src || null, legs: pre.legs || null, info: pre.info || null, shop: pre.shop || null, result: pre.legs ? null : pre.result || null } };
       saveBets().then(() => toast(`Logged ${usd(s)} on ${desc.value.trim()}.` + budgetNote()));
       close(); if (location.hash === '#bets') route();
     };
@@ -3540,7 +3557,10 @@ body { background: transparent; }
   const legOf = (c) => ({ game_id: c.game_id, away: c.away, home: c.home, market: c.market, pick: c.pick, odds: c.odds ?? -110, date: c.date });
   function logBtn(c) {
     return h('button', { class: 'save log', hidden: true, 'data-acct': '1', onclick: (e) => { e.stopPropagation();
-      betSheet({ desc: `${c.pick} (${c.away} @ ${c.home})`, odds: c.odds ?? -110, legs: [legOf(c)], date: c.date, kind: 'single', src: 'call' }); } }, '$ Log bet');
+      const sh = shopFor(c);
+      betSheet({ desc: `${c.pick} (${c.away} @ ${c.home})`, odds: c.odds ?? -110, legs: [legOf(c)], date: c.date, kind: 'single', src: 'call', shop: sh,
+        info: sh ? [`Best right now: ${sh.best.book}, ${({ away: c.away + ' ', home: c.home + ' ', over: 'Over ', under: 'Under ' })[sh.side]}${sh.side === 'over' || sh.side === 'under' ? sh.best.pt : sgnPt(sh.best.pt)} at ${odds(sh.best.price)}`]
+          .concat(sh.typ != null ? [`Typical price on ${c.pick}: ${odds(sh.typ)}`] : []) : null }); } }, '$ Log bet');
   }
   function logSlipBtn(legs, d) {
     return h('button', { class: 'shr', hidden: true, 'data-acct': '1', onclick: () => betSheet({ desc: `${legs.length}-leg Slip of the Day`, odds: Math.round((d >= 2 ? (d - 1) * 100 : -100 / (d - 1))),
@@ -3588,7 +3608,7 @@ body { background: transparent; }
         bank != null ? h('div', null, h('b', null, usd(bank + S.profit)), 'bankroll') : null))];
     out.push(h('div', { class: 'bt-add' }, h('button', { class: 'save-all', onclick: () => betSheet({}) }, '+ Add a bet'),
       h('button', { class: 'save-all alt', onclick: uploadSlip }, '📷 Upload bet slip')));
-    out.push(habitsCard(S));
+    out.push(reportCard(S), habitsCard(S));
     const ch = profitChart(S.done);
     if (ch) out.push(h('div', { class: 'card' }, h('h3', null, 'Profit over time'), ch));
     const bi = h('input', { class: 'search', type: 'number', inputmode: 'decimal', min: '0', placeholder: 'Starting bankroll, e.g. 500', value: bank ?? '', style: 'margin:0', 'aria-label': 'Starting bankroll' });
@@ -3613,6 +3633,221 @@ body { background: transparent; }
     out.push(h('p', { class: 'snap', style: 'text-align:center' }, 'Only you can see your bets. Bet responsibly · 21+ · 1-800-522-4700'));
     return out;
   }
+  // ---------- Elite: report card, line shopping, custom alerts ----------
+  // Open to everyone while the paywall is off (launch) and in the Claude app; Elite only once it is on.
+  const eliteOk = () => !HOSTED || !window.TRAP_PAYWALL || SB.tier === 'elite';
+  const etag = () => h('span', { class: 'etag' }, 'Elite');
+  const eliteLock = (what) => h('div', { class: 'card' }, h('h3', null, what, etag()), h('p', { class: 'muted', style: 'margin:0' }, 'Part of Elite. Join the Elite waitlist under Your plan to hear when it opens.'));
+  const sgnPt = (v) => v === 0 ? 'PK' : (v > 0 ? '+' : '') + v;
+  // The middle price of a list of American odds (two middle prices are averaged as payouts), back in American odds.
+  const median = (a) => { const d = a.map(dec).sort((x, y) => x - y), n = d.length; if (!n) return null;
+    const m = n % 2 ? d[(n - 1) / 2] : (d[n / 2 - 1] + d[n / 2]) / 2; return Math.round(m >= 2 ? (m - 1) * 100 : -100 / (m - 1)); };
+  const ptsTxt = (v) => (v > 0 ? '+' : '') + v.toFixed(1);
+
+  // Closing-line value per leg. C.closes[gid] = [spread (home margin), total, away_ml, home_ml, away_sp_odds, home_sp_odds, over_odds, under_odds].
+  // Spreads and totals: points better (+) or worse (-) than the close. Moneylines: expected return at the
+  // close's vig-free chance, so +0.03 means the price was 3% better than the market settled on.
+  function legClv(l) {
+    const c = (C.closes || {})[l.game_id]; if (!c || !l.pick) return null;
+    const ml = /^(\S+) ML$/.exec(l.pick), tot = /^(Over|Under) ([\d.]+)$/.exec(l.pick), sp = /^(\S+) ([+-]?[\d.]+)$/.exec(l.pick);
+    if (ml) {
+      if (ml[1] !== l.away && ml[1] !== l.home) return null;
+      const a = ml[1] === l.away, mine = a ? c[2] : c[3], other = a ? c[3] : c[2];
+      if (mine == null || other == null || l.odds == null) return null;
+      const fair = (1 / dec(mine)) / (1 / dec(mine) + 1 / dec(other));
+      return { kind: 'ml', v: dec(l.odds) * fair - 1 };
+    }
+    if (tot) return c[1] == null ? null : { kind: 'pts', v: Math.round((tot[1] === 'Under' ? +tot[2] - c[1] : c[1] - +tot[2]) * 10) / 10 };
+    if (sp && (sp[1] === l.away || sp[1] === l.home) && c[0] != null) return { kind: 'pts', v: Math.round((+sp[2] - (sp[1] === l.home ? -c[0] : c[0])) * 10) / 10 };
+    return null;
+  }
+  function reportCard(S) {
+    if (!S.all.length) return null;
+    if (!eliteOk()) return eliteLock('Report card');
+    const legs = S.all.flatMap((b) => (b.legs || []).map((l) => ({ l, b, c: legClv(l) }))).filter((x) => x.c);
+    const beat = legs.filter((x) => x.c.v > 0).length, worse = legs.filter((x) => x.c.v < 0).length;
+    const pts = legs.filter((x) => x.c.kind === 'pts'), mls = legs.filter((x) => x.c.kind === 'ml');
+    const avg = (l) => l.reduce((a, x) => a + x.c.v, 0) / l.length;
+    const rate = beat + worse ? beat / (beat + worse) : null;
+    const grade = legs.length < 10 || rate == null ? null : rate >= 0.6 ? 'A' : rate >= 0.53 ? 'B' : rate >= 0.47 ? 'C' : rate >= 0.4 ? 'D' : 'F';
+    const out = [h('h3', null, 'Report card', etag())];
+    if (legs.length) out.push(h('div', { class: 'rc-top' },
+      h('div', { class: 'rc-grade g' + (grade || 'n') }, grade || '–'),
+      h('div', null, h('b', null, `Beat the closing line on ${beat} of ${legs.length}`), h('span', { class: 'muted' },
+        grade ? `${pct(rate, 0)} of the bets where the line moved went your way.` : `Your grade shows after 10 bets with a closing line (${legs.length} so far).`))),
+      h('div', { class: 'bt-row', style: 'margin-top:10px' },
+        pts.length ? h('div', null, h('b', { class: avg(pts) >= 0 ? 'up' : 'dn' }, ptsTxt(avg(pts))), 'pts vs close') : null,
+        mls.length ? h('div', null, h('b', { class: avg(mls) >= 0 ? 'up' : 'dn' }, (avg(mls) >= 0 ? '+' : '') + pct(avg(mls), 1)), 'moneyline value') : null,
+        h('div', null, h('b', null, worse), 'got worse')));
+    else out.push(h('p', { class: 'muted', style: 'margin:0' }, 'Your closing-line check starts once your NFL bets kick off. Bets logged from a call, the Slip of the Day or a slip upload are checked automatically.'));
+
+    // Where the money comes from: settled bets by spot, with at least 3 in a group.
+    const isParlay = (b) => b.kind === 'parlay' || (b.legs && b.legs.length > 1);
+    const one = (b) => !isParlay(b) && b.legs && b.legs[0];
+    const team = (b) => { const l = one(b); const m = l && /^(\S+) /.exec(l.pick || ''); return m && (m[1] === l.home ? 'home' : m[1] === l.away ? 'road' : null); };
+    const spots = [['Parlays', isParlay], ['Singles', (b) => !isParlay(b)], ['Favorites', (b) => !isParlay(b) && b.odds < 0], ['Underdogs', (b) => !isParlay(b) && b.odds > 0],
+      ['Home teams', (b) => team(b) === 'home'], ['Road teams', (b) => team(b) === 'road'], ['Overs', (b) => /^Over /.test((one(b) || {}).pick || '')], ['Unders', (b) => /^Under /.test((one(b) || {}).pick || '')],
+      ['Trap Picks calls', (b) => b.src === 'call' || b.src === 'slip'], ['Your own picks', (b) => b.src !== 'call' && b.src !== 'slip'],
+      ...[...new Set(S.done.map((b) => b.book))].map((k) => ['At ' + k, (b) => b.book === k])]
+      .map(([k, f]) => [k, grp(S.all.filter(f))]).filter(([, g]) => g.n >= 3 && g.roi != null).sort((a, b) => b[1].roi - a[1].roi);
+    const line = (k, g) => h('div', { class: 'lmv' }, h('span', null, k), h('span', { class: 'muted mono' }, `${g.w}-${g.l} · ${pct(g.roi)}`), h('span', { class: 'to ' + (g.p >= 0 ? 'up' : 'dn') }, usd(g.p, true)));
+    if (spots.length >= 2) {
+      const best = spots[0], worst = spots[spots.length - 1];
+      out.push(h('p', { class: 'rc-h' }, 'What\'s working'), line(...best));
+      if (worst[1].p < 0) out.push(h('p', { class: 'rc-h' }, 'Where you leak'), line(...worst));
+    } else out.push(h('p', { class: 'muted rc-note' }, 'What\'s working and where you leak show up once you have 3 settled bets in a spot (favorites, road teams, a sportsbook and so on).'));
+
+    // Closing-line value by sportsbook (spreads and totals): who gives you the better numbers.
+    const byBook = {};
+    pts.forEach((x) => { (byBook[x.b.book] = byBook[x.b.book] || []).push(x); });
+    const bk = Object.entries(byBook).filter(([, l]) => l.length >= 2).sort((a, b) => avg(b[1]) - avg(a[1]));
+    if (bk.length >= 2) out.push(h('p', { class: 'rc-h' }, 'Points vs the close, by sportsbook'),
+      ...bk.map(([k, l]) => h('div', { class: 'lmv' }, h('span', null, k), h('span', { class: 'muted mono' }, `${l.length} bets`), h('span', { class: 'to ' + (avg(l) >= 0 ? 'up' : 'dn') }, ptsTxt(avg(l))))));
+
+    // Shopping: on bets logged with a price check, what the better price added on wins.
+    const shopped = S.done.filter((b) => b.shop && b.shop.typ != null);
+    if (shopped.length) {
+      const extra = shopped.filter((b) => betResult(b) === 'W').reduce((a, b) => a + b.stake * (dec(b.odds) - dec(b.shop.typ)), 0);
+      out.push(h('p', { class: 'rc-h' }, 'Line shopping'), h('div', { class: 'lmv' }, h('span', null, 'Extra paid vs the typical price'), h('span', { class: 'muted mono' }, `${shopped.length} bets`), h('span', { class: 'to ' + (extra >= 0 ? 'up' : 'dn') }, usd(extra, true))));
+    }
+    out.push(h('p', { class: 'muted rc-note' }, 'The closing line is the last number before kickoff, after the market has taken every bet. Getting a better number than the close, again and again, is the clearest sign your bets have value, even before the wins show up.'));
+    return h('div', { class: 'card rc' }, out);
+  }
+
+  // Line shopping: every US sportsbook's price from /api/odds (one shared copy on the server, refreshed every 10 minutes).
+  const ODDS = { at: null, games: null, state: 'idle', t: 0 };
+  async function loadOdds() {
+    if (!HOSTED || ODDS.state === 'loading' || Date.now() - ODDS.t < 5 * 60e3) return;
+    ODDS.state = 'loading';
+    const r = await fetch(`${window.TRAP_API}/odds?sport=nfl`, { headers: SB.session ? authHdr() : {} }).catch(() => null);
+    ODDS.t = Date.now();
+    const d = r && r.ok ? await r.json().catch(() => null) : null;
+    if (d && d.games) Object.assign(ODDS, { games: d.games, at: d.at, state: 'ok' });
+    else ODDS.state = r && r.status === 503 ? 'off' : 'err';
+    document.querySelectorAll('.shop-card').forEach((el) => { const g = games().find((x) => x.id === el.dataset.gid); const n = g && shopCard(g); if (n) el.replaceWith(n); });
+  }
+  const oddsFor = (gid) => { const [, , away, home] = gid.split('_'), ko = Date.parse((C.kickoff || {})[gid] || 0);
+    return (ODDS.games || []).find((x) => x.away === away && x.home === home && (!ko || Math.abs(Date.parse(x.start) - ko) < 12 * 36e5)); };
+  const SIDE_IX = { away: ['sp', 0], home: ['sp', 1], over: ['to', 0], under: ['to', 1] };
+  function bestOf(og, side) {
+    const [m, i] = SIDE_IX[side], k = side === 'over' ? -1 : 1;
+    let best = null;
+    for (const b of og.books) { const x = b[m] && b[m][i]; if (x && (!best || (x[0] !== best.pt ? k * (x[0] - best.pt) > 0 : dec(x[1]) > dec(best.price)))) best = { book: b.b, pt: x[0], price: x[1] }; }
+    if (best) best.typ = median(og.books.map((b) => b[m] && b[m][i]).filter((x) => x && x[0] === best.pt).map((x) => x[1]));
+    return best;
+  }
+  // The typical price at one exact number, for a bet's saved shopping check.
+  function typAt(og, side, pt) { const [m, i] = SIDE_IX[side]; return median(og.books.map((b) => b[m] && b[m][i]).filter((x) => x && x[0] === pt).map((x) => x[1])); }
+  function shopFor(c) {
+    if (!eliteOk() || !ODDS.games) return null;
+    const og = oddsFor(c.game_id); if (!og) return null;
+    const tot = /^(Over|Under) ([\d.]+)$/.exec(c.pick || ''), sp = /^(\S+) ([+-]?[\d.]+)$/.exec(c.pick || '');
+    const side = tot ? tot[1].toLowerCase() : sp && sp[1] === c.away ? 'away' : sp && sp[1] === c.home ? 'home' : null;
+    if (!side) return null;
+    const b = bestOf(og, side), pt = +(tot ? tot[2] : sp[2]);
+    return b ? { best: { book: b.book, pt: b.pt, price: b.price }, typ: typAt(og, side, pt), pt, side } : null;
+  }
+  function shopCard(g) {
+    if (!HOSTED || started(g.id)) return null;
+    if (!eliteOk()) return eliteLock('Line shopping');
+    loadOdds();
+    const card = (...k) => h('div', { class: 'card shop-card', 'data-gid': g.id }, h('h3', null, 'Line shopping', etag()), ...k);
+    const note = (t) => h('p', { class: 'muted', style: 'margin:0' }, t);
+    if (ODDS.state === 'off') return card(note('Prices from every sportsbook show here once live odds are connected.'));
+    if (ODDS.state === 'err' && !ODDS.games) return card(note('Could not load sportsbook prices just now. Try again in a minute.'));
+    if (!ODDS.games) return card(note('Loading prices from every sportsbook…'));
+    const og = oddsFor(g.id);
+    if (!og || !og.books.length) return card(note('No sportsbook has posted this game yet.'));
+    const row = (label, b) => b ? h('div', { class: 'shop-row' }, h('span', null, h('b', null, label(b.pt)), h('small', null, b.book)), h('b', { class: 'mono' }, odds(b.price)),
+      h('small', { class: 'muted' }, b.typ != null && dec(b.price) > dec(b.typ) ? `+${usd(100 * (dec(b.price) - dec(b.typ)))} per $100 vs typical ${odds(b.typ)}` : 'typical price')) : null;
+    const mlBest = (i) => og.books.filter((b) => b.ml).reduce((a, b) => (!a || dec(b.ml[i]) > dec(a.price) ? { book: b.b, price: b.ml[i] } : a), null);
+    const mlRow = (t, b) => b ? h('div', { class: 'shop-row' }, h('span', null, h('b', null, t + ' ML'), h('small', null, b.book)), h('b', { class: 'mono' }, odds(b.price)), h('small', { class: 'muted' }, 'best moneyline')) : null;
+    const cell = (x) => x ? `${sgnPt(x[0])} ${odds(x[1])}` : '–';
+    return card(
+      h('p', { class: 'muted', style: 'margin:-4px 0 8px;font-size:13px' }, `Best number at ${og.books.length} sportsbooks.`),
+      row((p) => `${g.away} ${sgnPt(p)}`, bestOf(og, 'away')), row((p) => `${g.home} ${sgnPt(p)}`, bestOf(og, 'home')),
+      row((p) => `Over ${p}`, bestOf(og, 'over')), row((p) => `Under ${p}`, bestOf(og, 'under')),
+      mlRow(g.away, mlBest(0)), mlRow(g.home, mlBest(1)),
+      h('details', { class: 'shop-all' }, h('summary', null, 'Every sportsbook'),
+        h('div', { class: 'shop-tbl' }, h('div', { class: 'shop-th' }, h('span', null, 'Book'), h('span', null, g.away), h('span', null, g.home), h('span', null, 'Total')),
+          og.books.map((b) => h('div', null, h('span', null, b.b), h('span', { class: 'mono' }, cell(b.sp[0])), h('span', { class: 'mono' }, cell(b.sp[1])),
+            h('span', { class: 'mono' }, b.to[0] ? `o${b.to[0][0]} ${odds(b.to[0][1])}` : '–'))))),
+      h('p', { class: 'snap', style: 'margin:8px 0 0' }, `Prices as of ${at(ODDS.at)}. Lines move fast, so check your book before you bet.`),
+      alertBtn(g));
+  }
+
+  // Custom alerts: private rules in data/users/<id>/alerts = {rules: {id: rule}}; /api/push-run checks
+  // them on every data refresh and sends to this person's phones. See functions/api/push-run.js.
+  const RULES = { items: {} };
+  const saveRules = () => write('alerts', { rules: RULES.items });
+  const totalNow = (gid) => { const m = (C.moves || {})[gid] || []; for (let i = m.length - 1; i >= 0; i--) if (m[i][2] != null) return m[i][2]; return null; };
+  function ruleText(r) {
+    if (r.gid === '*') return `Any game: a line moves ${r.pts}+ points`;
+    const [, , away, home] = r.gid.split('_'), nm = { away, home, over: 'Over', under: 'Under' }[r.side];
+    return r.kind === 'move' ? `${away} @ ${home}: a line moves ${r.pts}+ points`
+      : `${nm} ${r.side === 'over' || r.side === 'under' ? r.target : sgnPt(r.target)} or better (${away} @ ${home})`;
+  }
+  function alertBtn(g) {
+    return HOSTED && !started(g.id) ? h('button', { class: 'gbtn alt', style: 'margin-top:10px;width:100%', onclick: () => alertSheet(g) }, '🔔 Alert me on this game') : null;
+  }
+  function alertSheet(g) {
+    if (ACCT.state !== 'ready') return toast(ACCT.state === 'readonly' ? 'Saving is off for you on this link.' : signIn('set alerts'));
+    if (!eliteOk()) return toast('Custom alerts are part of Elite.');
+    const close = () => m.remove();
+    const sp = spreadNow(g.id), tt = totalNow(g.id);
+    const cur = { away: sp, home: sp == null ? null : -sp, over: tt, under: tt };
+    const kind = h('select', { class: 'search', 'aria-label': 'Alert type' }, h('option', { value: 'line' }, 'My number shows up'), h('option', { value: 'move' }, 'The line moves fast'));
+    const side = h('select', { class: 'search', 'aria-label': 'Side' }, [['away', `${g.away} spread`], ['home', `${g.home} spread`], ['over', 'Over'], ['under', 'Under']]
+      .filter(([k]) => cur[k] != null).map(([k, t]) => h('option', { value: k }, t)));
+    const num = h('input', { class: 'search', type: 'text', inputmode: 'decimal', 'aria-label': 'Number you want' });
+    const pts = h('select', { class: 'search', 'aria-label': 'Points' }, [1, 1.5, 2, 3].map((v) => h('option', { value: v, selected: v === 1.5 ? true : null }, `${v} points or more`)));
+    const hint = h('p', { class: 'muted', style: 'margin:0;font-size:13px' });
+    const lineBox = h('div', null, h('label', null, 'Side', side), h('label', null, 'Number you want', num)), moveBox = h('div', { hidden: true }, h('label', null, 'Move size', pts));
+    const fill = () => {
+      const k = side.value, c = cur[k];
+      const better = c == null ? null : k === 'over' ? c - 0.5 : c + 0.5;
+      num.value = better == null ? '' : k === 'over' || k === 'under' ? String(better) : sgnPt(better);
+      hint.textContent = c == null ? '' : `Now ${k === 'over' || k === 'under' ? `${k === 'over' ? 'Over' : 'Under'} ${c}` : `${k === 'away' ? g.away : g.home} ${sgnPt(c)}`}. You get one alert when any sportsbook we track reaches your number.`;
+    };
+    side.addEventListener('change', fill);
+    kind.addEventListener('change', () => { const mv = kind.value === 'move'; lineBox.hidden = mv; moveBox.hidden = !mv;
+      hint.textContent = mv ? 'You get an alert when the spread or total moves this much between our line checks.' : ''; if (!mv) fill(); });
+    if (!side.options.length) { kind.value = 'move'; kind.disabled = true; lineBox.hidden = true; moveBox.hidden = false; } else fill();
+    const save = () => {
+      const id = 'r' + Date.now().toString(36);
+      let r;
+      if (kind.value === 'move') r = { id, kind: 'move', gid: g.id, pts: +pts.value };
+      else {
+        const v = parseFloat(String(num.value).replace(/^pk$/i, '0').replace('+', ''));
+        if (!Number.isFinite(v) || Math.abs(v) > 99) return toast('Enter a number, like +7 or 44.5.');
+        r = { id, kind: 'line', gid: g.id, side: side.value, target: v };
+      }
+      RULES.items = { ...RULES.items, [id]: { ...r, made: new Date().toISOString() } };
+      saveRules().then(() => toast(PUSH.sub ? 'Alert set. You\'ll get a buzz when it happens.' : 'Alert set. Turn on alerts on My Picks so your phone can get it.'));
+      close(); redrawAlerts();
+    };
+    const m = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Set an alert', onclick: (e) => { if (e.target === m) close(); } },
+      h('div', { class: 'in sheet' }, h('h3', null, `Alert me: ${g.away} @ ${g.home}`), h('label', null, 'When', kind), lineBox, moveBox, hint,
+        h('div', { class: 'row' }, h('button', { class: 'alt', onclick: close }, 'Cancel'), h('button', { onclick: save }, 'Set alert'))));
+    document.body.append(m);
+  }
+  function rulesBlock() {
+    if (ACCT.state !== 'ready') return null;
+    if (!eliteOk()) return h('p', { class: 'muted alrt-note' }, 'Custom alerts (your number, fast line moves) are part of Elite.');
+    const list = Object.values(RULES.items).sort((a, b) => (a.made || '').localeCompare(b.made || ''));
+    const all = RULES.items.all_moves;
+    const drop = (id) => { const it = { ...RULES.items }; delete it[id]; RULES.items = it; saveRules(); redrawAlerts(); };
+    return h('div', { class: 'rules' }, h('p', { class: 'rc-h' }, 'Your alerts', etag()),
+      h('label', { class: 'alrt-row' }, h('span', null, h('b', null, 'Fast moves on every game'), h('small', null, 'When any spread or total moves 1.5 points or more.')),
+        h('input', { type: 'checkbox', role: 'switch', checked: all ? true : null, onchange: (e) => {
+          if (e.target.checked) RULES.items = { ...RULES.items, all_moves: { id: 'all_moves', kind: 'move', gid: '*', pts: 1.5, made: new Date().toISOString() } }; else return drop('all_moves');
+          saveRules(); } })),
+      list.filter((r) => r.id !== 'all_moves').map((r) => h('div', { class: 'rule' },
+        h('span', null, ruleText(r), r.hit_at ? h('small', { class: 'up' }, ' ✓ Hit') : r.gid !== '*' && started(r.gid) ? h('small', { class: 'muted' }, ' · game started') : null),
+        h('button', { class: 'x', 'aria-label': 'Delete alert', onclick: () => drop(r.id) }, '×'))),
+      h('p', { class: 'muted alrt-note' }, 'Add one from any game page with "🔔 Alert me on this game".'));
+  }
+
   // ---------- bet slip upload (website): a screenshot is read on the server, then checked by the user ----------
   const etDate = (iso) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   function slipGames() {

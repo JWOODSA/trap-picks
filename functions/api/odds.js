@@ -1,0 +1,19 @@
+// GET /api/odds?sport=nfl: every US sportsbook's current spread, total and moneyline for each game
+// (lib/odds.js keeps one shared copy). 503 until ODDS_API_KEY is set. With ELITE_ONLY=true it needs
+// a signed-in Elite member; during the free launch anyone can see it.
+import { json, userFrom, billingGet, isElite } from '../../lib/server.js';
+import { getOdds, oddsSport } from '../../lib/odds.js';
+
+export async function onRequestGet({ request, env }) {
+  const sport = oddsSport(new URL(request.url).searchParams.get('sport') || 'nfl');
+  if (!sport) return json({ error: 'unknown sport' }, 400);
+  if (!env.ODDS_API_KEY || !env.SUPABASE_SERVICE_ROLE_KEY) return json({ error: 'odds are not connected yet' }, 503);
+  if (env.ELITE_ONLY === 'true') {
+    const user = await userFrom(request, env).catch(() => null);
+    if (!user) return json({ error: 'sign in' }, 401);
+    if (!isElite(await billingGet(env, user.id).catch(() => null))) return json({ error: 'elite' }, 403);
+  }
+  const c = await getOdds(env, sport).catch(() => null);
+  if (!c || !c.data || !c.data.games) return json({ error: 'odds unavailable right now' }, 502);
+  return json({ at: c.fetched_at, games: c.data.games });
+}

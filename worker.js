@@ -8,10 +8,11 @@ import * as webhook from './functions/api/stripe-webhook.js';
 import * as slip from './functions/api/slip.js';
 import * as push from './functions/api/push.js';
 import * as pushRun from './functions/api/push-run.js';
+import * as oddsApi from './functions/api/odds.js';
 import * as pro from './functions/pro/_middleware.js';
 import * as hidden from './functions/alerts/_middleware.js';
 
-const API = { weather, checkout, portal, 'stripe-webhook': webhook, slip, push, 'push-run': pushRun };
+const API = { weather, checkout, portal, 'stripe-webhook': webhook, slip, push, 'push-run': pushRun, odds: oddsApi };
 
 // Pages Functions export onRequest or onRequest<Method>; pick the one for this request.
 function pick(mod, method) {

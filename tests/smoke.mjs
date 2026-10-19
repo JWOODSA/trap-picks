@@ -57,12 +57,29 @@ for (let n = 0; n < 16; n++) { const r = Math.floor(n / 2), i = n % 2; SEED[`lea
 SEED['data/users/me/cbb'].leagues.push('CBD002');
 Object.assign(SEED, { 'leagues/CBD002': { name: 'Live Draft', kind: 'cbb_draft', size: 2, rounds: 8, status: 'draft', order: ['me', 'u2'], created_by: 'me', season: cb.meta.season, draft_started_at: '2026-10-01T00:00:00Z' },
   'leagues/CBD002/teams/me': { name: 'John' }, 'leagues/CBD002/teams/u2': { name: 'Marcus' } });
+// Bets on games that have closed, so the report card has closing lines to check.
+const closed = Object.keys(core.closes || {}).slice(-14);
+SEED['data/users/me/bets'] = { bankroll: 500, items: Object.fromEntries(closed.map((gid, i) => {
+  const [, , away, home] = gid.split('_'), c = core.closes[gid], side = i % 2 ? away : home;
+  const line = (side === home ? -c[0] : c[0]) + [0.5, -0.5, 0][i % 3];
+  const pick = i % 4 === 3 ? (i % 8 === 3 ? 'Over ' : 'Under ') + c[1] : i % 5 === 4 ? side + ' ML' : `${side} ${line > 0 ? '+' : ''}${line}`;
+  const odds = /ML$/.test(pick) ? (side === away ? c[2] : c[3]) + 5 : -110;
+  return ['b' + i, { id: 'b' + i, at: `2026-10-0${1 + (i % 9)}T18:00:00Z`, date: '2026-10-05', desc: pick, stake: 20 + i, odds, book: ['FanDuel', 'DraftKings', 'BetMGM'][i % 3],
+    kind: 'single', src: i % 2 ? 'call' : null, legs: [{ game_id: gid, away, home, market: /ML$/.test(pick) ? 'moneyline' : /^(Over|Under)/.test(pick) ? 'Total' : 'Spread', pick, odds, date: '2026-10-05' }],
+    shop: i % 3 ? null : { typ: -115, best: { book: 'FanDuel', pt: line, price: -110 } }, result: null }];
+})) };
+// A fake /api/odds answer: three books on every game this week.
+const ODDS = { at: new Date().toISOString(), games: Object.entries(core.kickoff || {}).map(([gid, ko]) => {
+  const [, , away, home] = gid.split('_');
+  const bk = (b, sp, tt, p) => ({ b, t: ko, ml: [150 + p, -170 - p], sp: [[sp, -110 + p], [-sp, -110 - p]], to: [[tt, -112 + p], [tt, -108 - p]] });
+  return { away, home, start: ko, books: [bk('FanDuel', 3.5, 44.5, 5), bk('DraftKings', 3, 45, 0), bk('BetMGM', 3.5, 44.5, -5)] };
+}) };
 const SIGNED = ['cbbp_CBD002', 'me', 'grp_GRP001', 'fl', 'fl_NBA001', 'cbbp', 'cbbp_CBP001', 'cbbp_CBD001', 'bets'];
 
 const BAD = /\bundefined\b|\bNaN\b|\[object |\bInfinity\b|(^|\s)null(\s|$)/;
 const fails = [];
 const browser = await pw.chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {});
-async function run(label, routes, signedIn) {
+async function run(label, routes, signedIn, website) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, timezoneId: 'America/New_York' });
   const page = await ctx.newPage();
   let errs = [];
@@ -72,9 +89,10 @@ async function run(label, routes, signedIn) {
   await page.route('**/*', (r) => {
     const u = r.request().url();
     if (!u.startsWith(`http://localhost:${PORT}/`)) return r.abort();
+    if (u.includes('/api/odds')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(ODDS) });
     if (signedIn && /\/app(\.html)?$/.test(u.split('#')[0])) {
       const html = fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8').replace('<script>\n(() => {',
-        `<script>window.TRAP_API = undefined; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`);
+        `<script>window.TRAP_API = ${website ? '"/api"; window.TRAP_SUPABASE = undefined' : 'undefined'}; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`).replace('!HOSTED && window.claude && window.claude.use', 'window.claude && window.claude.use');
       return r.fulfill({ status: 200, contentType: types['.html'], body: html });
     }
     return r.continue();
@@ -146,6 +164,38 @@ async function taps() {
   }
   await ctx.close();
 }
+// Website-only taps (line shopping and custom alerts need the site's /api).
+async function website() {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'America/New_York' });
+  const p = await ctx.newPage(); const errs = [];
+  p.on('pageerror', (e) => errs.push('script error: ' + e.message));
+  await p.route('**/*', (r) => { const u = r.request().url(); if (!u.startsWith(`http://localhost:${PORT}/`)) return r.abort();
+    if (u.includes('/api/odds')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(ODDS) });
+    if (u.includes('/api/')) return r.fulfill({ status: 404, body: '{}' });
+    if (/\/app(\.html)?$/.test(u.split('#')[0])) return r.fulfill({ status: 200, contentType: types['.html'], body: fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8').replace('<script>\n(() => {',
+      `<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = undefined; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`)
+      .replace('!HOSTED && window.claude && window.claude.use', 'window.claude && window.claude.use') });   // the fake account stands in for Supabase here
+    return r.continue(); });
+  await p.goto(`http://localhost:${PORT}/app`); await p.evaluate(() => localStorage.clear()); await p.reload(); await p.waitForTimeout(1500);
+  const gid = Object.keys(core.kickoff || {}).find((g) => Date.parse(core.kickoff[g]) > Date.now());
+  let res = true;
+  if (!gid) res = 'no upcoming games (fine before a slate posts)';
+  else {
+    await p.evaluate((g) => { location.hash = 'g_' + g; }, gid); await p.waitForTimeout(1500);
+    const t = await p.locator('.shop-card').innerText().catch(() => '');
+    if (!/FanDuel|DraftKings|BetMGM/.test(t)) res = 'line shopping did not show sportsbook prices';
+    else {
+      await p.getByRole('button', { name: /Alert me on this game/ }).click(); await p.waitForTimeout(300);
+      await p.getByRole('button', { name: 'Set alert' }).click(); await p.waitForTimeout(600);
+      const r = await p.evaluate(() => Object.values((JSON.parse(localStorage.getItem('mockdb'))['data/users/me/alerts'] || {}).rules || {}));
+      if (!(r.length === 1 && r[0].kind === 'line' && Number.isFinite(r[0].target))) res = 'alert did not save: ' + JSON.stringify(r);
+    }
+  }
+  if (res !== true && !/fine before/.test(res)) fails.push('tap: set a line alert: ' + res);
+  errs.forEach((e) => fails.push('tap: set a line alert: ' + e));
+  console.log((res === true && !errs.length ? '✓ ' : '✗ ') + 'tap: line shopping + set a line alert' + (res === true ? '' : ' (' + res + ')'));
+  await ctx.close();
+}
 async function landing() {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = await ctx.newPage(); const errs = [];
   p.on('pageerror', (e) => errs.push(e.message));
@@ -160,6 +210,8 @@ async function landing() {
 await landing();
 await run('signed out', PUBLIC, false);
 await run('signed in', SIGNED, true);
+await run('signed in, website', ['me', 'bets', ...Object.keys(core.kickoff || {}).slice(0, 3).map((g) => 'g_' + g)], true, true);
+await website();
 await taps();
 await browser.close(); server.close();
 if (fails.length) { console.log('\nFAILED\n' + fails.map((f) => ' - ' + f).join('\n')); process.exit(1); }
