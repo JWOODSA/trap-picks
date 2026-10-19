@@ -334,6 +334,19 @@ details.card[open] summary { margin-bottom: 10px; }
 .tabbar nav { display: flex; width: 100%; max-width: 560px; }
 .tabbar nav a { flex: 1; }
 body:not([data-sport=nfl]) .tabbar a.nfl, body:not([data-sport=nba]) .tabbar a.nba, body:not([data-sport=ncaab]) .tabbar a.cbb { display: none; }
+.pkg { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+.pkg .pkm { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ink3); margin-bottom: 8px; }
+.pkg .pkb { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pkg .pkb button { display: flex; align-items: center; gap: 7px; min-height: 48px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card2); color: var(--ink); font: inherit; font-weight: 700; font-size: 15px; text-align: left; }
+.pkg .pkb button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pkg .pkb button small { font-family: var(--mono); font-size: 11px; color: var(--ink3); font-weight: 500; }
+.pkg .pkb button[aria-pressed=true] { border-color: var(--yel); background: rgba(245,38,27,.16); }
+.pkg .pkb button.w { border-color: var(--grn); }
+.pkg .pkb button.w[aria-pressed=true] { background: rgba(61,220,151,.16); }
+.pkg .pkb button.l { opacity: .55; }
+.pkg .pkb button:disabled { cursor: default; }
+.pkg .pkb i { width: 5px; height: 22px; border-radius: 3px; flex: none; }
+.pkg .pkf { font-size: 12px; color: var(--ink3); margin-top: 8px; }
 .cg { display: block; width: 100%; text-align: left; padding: 12px 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); margin-bottom: 10px; }
 .cg .cg-r { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; padding: 3px 0; }
 .cg .cg-r i { width: 6px; height: 18px; border-radius: 3px; flex: none; }
@@ -842,6 +855,7 @@ body { background: transparent; }
   <a href="#fl" data-tab="fl" class="nba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c1-3.5 3.6-5.5 6.5-5.5s5.5 2 6.5 5.5M15 14.6c2.6-.4 5 1.3 6 4.4"/></svg>Leagues</a>
   <a href="#cbb" data-tab="cbb" class="cbb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v4a2 2 0 0 0 0 4v6H4v-6a2 2 0 0 0 0-4z"/><path d="M9 9h6M9 14h6" stroke-linecap="round"/></svg>Games</a>
   <a href="#cbbt" data-tab="cbbt" class="cbb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Rankings</a>
+  <a href="#cbbp" data-tab="cbbp" class="cbb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c1-3.5 3.6-5.5 6.5-5.5s5.5 2 6.5 5.5M15 14.6c2.6-.4 5 1.3 6 4.4"/></svg>Play</a>
   <a href="#me" data-tab="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>My Picks</a>
 </nav></div>
 
@@ -1446,7 +1460,7 @@ body { background: transparent; }
   // On the public web host (Cloudflare) there is no Claude sign-in yet; accounts arrive with Supabase.
   const HOSTED = !!window.TRAP_API;
   const signIn = (what) => HOSTED ? (window.TRAP_SUPABASE ? `Sign in on the My Picks tab to ${what}.` : `Accounts are coming soon. Then you can ${what}.`) : `Sign in to claude.ai to ${what}.`;
-  const ACCT = { state: 'loading', id: null, name: '', avatar: '', picks: {}, teams: [], groups: [], leagues: [], pickem: {}, db: null, user: null, writing: Promise.resolve() };
+  const ACCT = { state: 'loading', id: null, name: '', avatar: '', picks: {}, teams: [], groups: [], leagues: [], cbb: [], pickem: {}, db: null, user: null, writing: Promise.resolve() };
   const pk = (c) => `${c.game_id}|${c.market}`;
   const started = (gid) => !!(C.kickoff && C.kickoff[gid] && Date.parse(C.kickoff[gid]) <= Date.now());
   async function initAccount() {
@@ -1463,6 +1477,7 @@ body { background: transparent; }
     db.doc('members/' + me.id).onSnapshot((d) => { ACCT.groups = (d.exists && d.data().groups) || []; ACCT.pickem = (d.exists && d.data().pickem) || {}; sync(); }, () => {});
     db.doc(base + '/bets').onSnapshot((d) => { BETS.items = (d.exists && d.data().items) || {}; BETS.bankroll = d.exists ? d.data().bankroll ?? null : null; BETS.budget = d.exists ? d.data().budget ?? null : null; sync(); if (location.hash === '#bets') route(); }, () => {});
     db.doc(base + '/fantasy').onSnapshot((d) => { ACCT.leagues = (d.exists && d.data().leagues) || []; sync(); }, () => {});
+    db.doc(base + '/cbb').onSnapshot((d) => { ACCT.cbb = (d.exists && d.data().leagues) || []; sync(); }, () => {});
     db.doc(base + '/waitlist').get().then((d) => { ACCT.waitlist = !!(d.exists && d.data().elite); }).catch(() => {});
     sync();
     if (SB.client) { await loadPro(); if (SB.checkoutBack) afterCheckout(); else if ((location.hash.slice(1) || 'board') === 'me') route(); }
@@ -1530,6 +1545,8 @@ body { background: transparent; }
     if ((location.hash.slice(1) || 'board') === 'me') view.replaceChildren(...mePage());
     if (location.hash.startsWith('#grp_') && !GROUP.code && ACCT.state === 'ready') route();
     if ((location.hash === '#fl' || location.hash.startsWith('#fl_')) && FL.acct !== ACCT.state) { FL.acct = ACCT.state; route(); }
+    const cbk = ACCT.state + (location.hash === '#cbbp' ? ':' + ACCT.cbb.join() : '');
+    if ((location.hash === '#cbbp' || location.hash.startsWith('#cbbp_')) && CL.acct !== cbk) { CL.acct = cbk; route(); }
   }
   let toastT;
   function toast(msg) {
@@ -1890,7 +1907,7 @@ body { background: transparent; }
   const SPORTS = [
     { k: 'nfl', icon: '🏈', name: 'NFL', go: 'board', status: 'Live', items: ['TRAP calls with a public record since 2016', 'Moneyline plays on small underdogs', 'Line moves, weather, injuries, matchups', 'Player props, team pages, pick\'em'] },
     { k: 'nba', icon: '🏀', name: 'NBA', go: 'nba', status: 'Live', items: ['Prop check for any line you bring', 'What changed: role, teammates, opponent', 'Fantasy rankings and leagues with friends'] },
-    { k: 'ncaab', icon: '🏀', name: 'NCAAB', go: 'cbb', status: 'New', items: ['Power ratings for every Division I team', 'Our own projected spread and total for each game', 'Rosters with transfers on their new team'] },
+    { k: 'ncaab', icon: '🏀', name: 'NCAAB', go: 'cbb', status: 'New', items: ['Power ratings for every Division I team', 'Our own projected spread and total for each game', 'Rosters with transfers on their new team', 'Weekly pick\'em and team draft leagues with friends'] },
     { k: 'wnba', icon: '🏀', name: 'WNBA', status: 'Soon', items: ['Season starts in May'] },
     { k: 'mlb', icon: '⚾', name: 'MLB', status: 'Soon', items: ['Season starts in March'] },
   ];
@@ -3672,6 +3689,341 @@ body { background: transparent; }
         rows.flatMap(([k, g]) => [h('span', null, k), h('span', { class: 'n' }, `${g.w}-${g.l}`), h('span', { class: 'n ' + (g.p >= 0 ? 'up' : 'dn') }, usd(g.p, true)), h('span', { class: 'n' }, pct(g.roi, 0))]))]),
       h('p', { class: 'muted', style: 'margin:10px 0 0;font-size:12px' }, 'Based on your settled bets. Need help? Call 1-800-522-4700.'));
   }
+  // ---------- college games: weekly pick'em and team draft ----------
+  // Pick'em: each week (Mon-Sun, ET) has 10 featured games, picked and frozen by export_ncaab.py. Pick the winner;
+  // each game locks at tip-off (at the start of its day, ET, when ESPN has no tip time yet).
+  // Team draft: friends snake-draft Division I teams, then every win by your teams scores points all season.
+  const CBR = 8, CB_MAX = 12, PK_MAX = 50;
+  const CBP = { win: 10, road: 2, upset: 5, blowout: 3 };
+  const cbKinds = { cbb_pickem: 'Weekly pick\'em', cbb_draft: 'Team draft' };
+  const CL = { code: null, unsubs: [], league: undefined, teams: [], picks: [], entries: [], names: {}, wk: null, q: '', box: null, det: {}, search: null };
+  const cbRes = () => CB.res || (CB.res = new Map(CB.results.map(([id, date, hm, aw, hs, as, neu, line]) => [String(id), { id, date, hm, aw, hs, as, neu, line }])));
+  const cbWeeks = () => Object.keys(CB.slates).sort();
+  const cbMonday = () => { const d = new Date(etDayOf(new Date()) + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - (d.getUTCDay() + 6) % 7); return d.toISOString().slice(0, 10); };
+  const cbThisWeek = () => { const ks = cbWeeks(), m = cbMonday(); let cur = ks[0]; for (const k of ks) if (k <= m) cur = k; return cur; };
+  const cbWkLabel = (wk) => `Week ${cbWeeks().indexOf(wk) + 1} · ${fmtDate(wk, { month: 'short', day: 'numeric' })}`;
+  const sg = (gid) => CB.slate_games[String(gid)];
+  const cbLockAt = (g) => g.tip ? Date.parse(g.tip) : Date.parse(g.date + 'T00:00:00-05:00');
+  const cbLocked = (g) => cbLockAt(g) <= Date.now();
+  const cbWinner = (gid) => { const r = cbRes().get(String(gid)); return r ? (r.hs > r.as ? r.hm : r.aw) : null; };
+  const tShort = (id) => { const t = CB.byId.get(id); return t ? t.short || t.name : 'Team'; };
+  const clName = (uid) => (CL.teams.find((t) => t.id === uid) || {}).name || CL.names[uid] || 'Player';
+  const youTag = (uid) => uid === ACCT.id ? ' (you)' : '';
+
+  async function setMyCbb(list) {
+    ACCT.cbb = list;
+    await flWrite(() => ACCT.db.doc('data/users/' + ACCT.id + '/cbb').set({ leagues: list }));
+  }
+  async function cbCreate(nm, kind, size) {
+    nm = nm.trim().slice(0, 40);
+    if (!nm) return toast('Give it a name first.');
+    if (ACCT.state !== 'ready') return toast(signIn('start a league'));
+    let code;
+    for (let i = 0; i < 5; i++) {
+      code = Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => CODE_CHARS[b % CODE_CHARS.length]).join('');
+      if (!(await ACCT.db.doc('leagues/' + code).get()).exists) break;
+    }
+    try {
+      await flWrite(() => ACCT.db.doc('leagues/' + code).set({ name: nm, kind, size: kind === 'cbb_draft' ? size : PK_MAX, rounds: CBR,
+        status: kind === 'cbb_draft' ? 'lobby' : 'season', order: [], created_by: ACCT.id, created_at: new Date().toISOString(), season: CB.meta.season }));
+      await flWrite(() => ACCT.db.doc(`leagues/${code}/teams/${ACCT.id}`).set({ name: ACCT.name || 'Me', joined_at: new Date().toISOString() }));
+      await setMyCbb([...ACCT.cbb, code]);
+      go('cbbp_' + code);
+    } catch (e) { /* toast already shown */ }
+  }
+  async function cbJoin(codeText) {
+    const code = codeText.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (ACCT.state !== 'ready') return toast(signIn('join a league'));
+    if (code.length !== 6) return toast('Codes are 6 letters and numbers.');
+    const d = await ACCT.db.doc('leagues/' + code).get();
+    if (!d.exists || !/^cbb_/.test(d.data().kind)) return toast('No college league with that code. Check it and try again.');
+    const L = d.data();
+    const teams = await ACCT.db.collection(`leagues/${code}/teams`).get();
+    const isIn = teams.docs.some((t) => t.id === ACCT.id);
+    if (!isIn && L.kind === 'cbb_draft' && L.status !== 'lobby') return toast('That league has already drafted, so it is closed to new players.');
+    if (!isIn && teams.size >= L.size) return toast('That league is full.');
+    try {
+      if (!isIn) await flWrite(() => ACCT.db.doc(`leagues/${code}/teams/${ACCT.id}`).set({ name: ACCT.name || 'Me', joined_at: new Date().toISOString() }));
+      if (!ACCT.cbb.includes(code)) await setMyCbb([...ACCT.cbb, code]);
+      go('cbbp_' + code);
+    } catch (e) { /* toast already shown */ }
+  }
+  async function cbLeave(code) {
+    const L = CL.league, drafted = L.kind === 'cbb_draft' && L.status !== 'lobby';
+    if (!confirm(drafted ? 'Hide this league from your list? Your drafted teams stay in the league.' : 'Leave this league?')) return;
+    try {
+      if (!drafted) await flWrite(() => ACCT.db.doc(`leagues/${code}/teams/${ACCT.id}`).delete());
+      await setMyCbb(ACCT.cbb.filter((c) => c !== code));
+      go('cbbp');
+    } catch (e) { /* toast already shown */ }
+  }
+
+  function cbbPlay() {
+    if (ACCT.state === 'loading') return [h('div', { class: 'loading' }, 'Checking your sign-in…')];
+    const box = h('div', null, h('div', { class: 'loading' }, 'Loading college games…'));
+    loadCbb().then(() => {
+      const wk = cbThisWeek(), slate = wk ? CB.slates[wk].map(sg).filter(Boolean) : [];
+      const preview = h('div', { class: 'card' }, h('h3', null, wk ? `This week's pick'em: ${cbWkLabel(wk)}` : 'This week\'s pick\'em'),
+        slate.length ? h('div', { class: 'plist' }, slate.sort((a, b) => cbLockAt(a) - cbLockAt(b)).map((g) => h('div', { class: 'prow' }, h('span', { class: 'pos' }, shortDay(g.date).split(',')[0]),
+          h('span', { class: 'nm' }, `${tShort(g.away)} ${g.neutral ? 'vs' : '@'} ${tShort(g.home)}`, h('small', null, `#${CB.byId.get(g.away).rank} vs #${CB.byId.get(g.home).rank} in our ratings`)), h('span', { class: 'pr' }, ''))))
+          : h('p', { class: 'muted' }, 'The next slate posts two weeks before its games.'));
+      const top = h('div', { class: 'fh fade' }, ball(), h('h1', null, 'College Games'), h('p', null, `Free games for ${CB.meta.season} college hoops with your friends. No money, just bragging rights. Scores come from final results, updated every morning.`));
+      if (ACCT.state === 'none') return box.replaceChildren(top, h('div', { class: 'card' }, h('h3', null, 'Sign in to play'), h('p', { class: 'explain' }, signIn('play with friends'))), preview);
+      const list = h('div', { class: 'plist' });
+      ACCT.cbb.forEach((c) => {
+        const row = h('button', { class: 'prow', onclick: () => go('cbbp_' + c) }, h('span', { class: 'pos' }, c), h('span', { class: 'nm' }, '…'), h('span', { class: 'pr' }, '→'));
+        ACCT.db.doc('leagues/' + c).get().then((d) => {
+          row.children[1].replaceChildren(d.exists ? d.data().name : 'League not found', h('small', null, d.exists ? cbKinds[d.data().kind] + (d.data().kind === 'cbb_draft' ? ` · ${d.data().status === 'lobby' ? 'waiting to draft' : d.data().status === 'draft' ? 'drafting' : 'in season'}` : '') : ''));
+        }).catch(() => {});
+        list.append(row);
+      });
+      const nm = h('input', { class: 'search', placeholder: 'Name, e.g. Office Hoops', maxlength: 40, 'aria-label': 'New league name', style: 'margin:0' });
+      let kind = 'cbb_pickem', size = 8;
+      const kinds = h('div', { class: 'fseg', style: 'margin:10px 0 0' });
+      const sizes = h('div', { class: 'tabs2', style: 'margin:10px 0 0' });
+      const explain = h('p', { class: 'muted', style: 'margin:8px 2px 0;font-size:13px' });
+      const drawKind = () => {
+        [...kinds.children].forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.k === kind)));
+        sizes.hidden = kind !== 'cbb_draft';
+        explain.textContent = kind === 'cbb_pickem'
+          ? `Every week, pick the winners of 10 featured games. Each game locks at tip-off. Most right wins the week, and the season board adds up every week. Friends can join any time.`
+          : `Everyone drafts ${CBR} Division I teams, live, in snake order. Then every win by your teams scores ${CBP.win} points, plus ${CBP.road} for a road win, ${CBP.upset} for an upset (winning when our line had them losing) and ${CBP.blowout} for winning by 20 or more. Most points at the end of the regular season wins.`;
+      };
+      Object.entries(cbKinds).forEach(([k, t]) => kinds.append(h('button', { 'data-k': k, onclick: () => { kind = k; drawKind(); } }, t)));
+      [4, 6, 8, 10, 12].forEach((n) => sizes.append(h('button', { 'aria-pressed': String(n === size), onclick: (e) => { size = n; [...sizes.children].forEach((b) => b.setAttribute('aria-pressed', String(b === e.currentTarget))); } }, `${n} players`)));
+      drawKind();
+      const cd = h('input', { class: 'search', placeholder: 'Join code, e.g. K7Q2XM', maxlength: 8, 'aria-label': 'League code', style: 'margin:0;text-transform:uppercase' });
+      box.replaceChildren(...[top,
+        ACCT.cbb.length ? h('div', { class: 'card' }, h('h3', null, 'Your leagues'), list) : null,
+        h('div', { class: 'card' }, h('h3', null, 'Start a league'), kinds, sizes, explain,
+          h('div', { class: 'gform' }, nm, h('button', { class: 'gbtn', onclick: () => cbCreate(nm.value, kind, size) }, 'Create'))),
+        h('div', { class: 'card' }, h('h3', null, 'Join a league'), h('p', { class: 'muted', style: 'margin:-4px 0 0' }, 'Got a code from a friend? Enter it here.'),
+          h('div', { class: 'gform' }, cd, h('button', { class: 'gbtn alt', onclick: () => cbJoin(cd.value) }, 'Join'))),
+        preview].filter(Boolean));
+    }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'College data failed to load.')));
+    return [box];
+  }
+
+  function clStop() { CL.unsubs.forEach((u) => u()); CL.unsubs = []; CL.code = null; }
+  function cbLeaguePage(code) {
+    if (ACCT.state === 'loading') return [h('div', { class: 'loading' }, 'Checking your sign-in…')];
+    if (ACCT.state === 'none') return cbbPlay();
+    const box = CL.box = h('div', null, h('div', { class: 'loading' }, 'Loading league…'));
+    loadCbb().then(() => {
+      if (CL.code !== code) {
+        clStop();
+        Object.assign(CL, { code, league: undefined, teams: [], picks: [], entries: [], wk: null, q: '', det: {}, search: null, nameInput: null });
+        const err = () => box.replaceChildren(h('p', { class: 'muted' }, 'The league could not load.'));
+        const base = 'leagues/' + code;
+        CL.unsubs.push(ACCT.db.doc(base).onSnapshot((d) => { CL.league = d.exists && /^cbb_/.test(d.data().kind) ? d.data() : null; clDraw(); }, err));
+        CL.unsubs.push(ACCT.db.collection(base + '/teams').onSnapshot((s) => {
+          CL.teams = s.docs.map((d) => ({ id: d.id, ...d.data() }));
+          const ids = CL.teams.map((t) => t.id).filter((i) => !(i in CL.names));
+          if (ids.length && ACCT.user) ACCT.user.profiles(ids).then((ps) => { ids.forEach((i) => { CL.names[i] = (ps[i] && ps[i].name) || 'Player'; }); clDraw(); }).catch(() => {});
+          clDraw();
+        }, err));
+        CL.unsubs.push(ACCT.db.collection(base + '/picks').onSnapshot((s) => { CL.picks = s.docs.map((d) => d.data()).sort((a, b) => a.n - b.n); clDraw(); }, err));
+        CL.unsubs.push(ACCT.db.collection(base + '/entries').onSnapshot((s) => { CL.entries = s.docs.map((d) => d.data()); clDraw(); }, err));
+      } else clDraw();
+    }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'College data failed to load.')));
+    return [box];
+  }
+
+  function clDraw() {
+    const box = CL.box, L = CL.league, code = CL.code;
+    if (!box || !box.isConnected || location.hash !== '#cbbp_' + code || L === undefined) return;
+    if (L === null) { box.replaceChildren(h('p', { class: 'muted', style: 'padding:40px 0;text-align:center' }, 'No college league with that code.')); return; }
+    const member = CL.teams.some((t) => t.id === ACCT.id), boss = L.created_by === ACCT.id;
+    const invite = `Join my Trap Picks college ${L.kind === 'cbb_draft' ? 'team draft' : 'pick\'em'} "${L.name}". Open the app, switch to NCAAB, tap Play, and enter code ${code}.`;
+    const out = [h('div', { class: 'grph fade', style: 'background:linear-gradient(150deg,#7a1410,#1a0b0b);border-color:#a3241c' },
+      h('span', null, `${cbKinds[L.kind]} · ${L.season}`), h('b', null, L.name),
+      h('div', { class: 'gcode' }, h('span', { class: 'mono' }, code), h('button', { onclick: () => {
+        if (navigator.share) navigator.share({ text: invite }).catch(() => {});
+        else navigator.clipboard.writeText(invite).then(() => toast('Invite copied. Send it to your friends.'), () => toast('Code: ' + code));
+      } }, 'Share invite')))];
+    const open = L.kind === 'cbb_pickem' || L.status === 'lobby';
+    if (!member && open && CL.teams.length < L.size) out.push(h('button', { class: 'save-all', onclick: () => cbJoin(code) }, 'Join this league'));
+    if (member) out.push(cbMyName());
+    if (L.kind === 'cbb_pickem') out.push(...pickemView(L, member));
+    else if (L.status === 'lobby') out.push(...cbLobby(L, boss));
+    else if (CL.picks.length < L.order.length * (L.rounds || CBR)) out.push(...cbDraftView(L, boss, member));
+    else out.push(...cbSeasonView(L));
+    if (ACCT.cbb.includes(code)) out.push(h('button', { class: 'leave', onclick: () => cbLeave(code) }, L.kind === 'cbb_draft' && L.status !== 'lobby' ? 'Hide from my leagues' : 'Leave league'));
+    const keep = document.activeElement && box.contains(document.activeElement) ? document.activeElement : null;
+    box.replaceChildren(...out.filter(Boolean));
+    if (keep && keep.isConnected) keep.focus();
+    box.querySelectorAll('details[data-k]').forEach((d) => {
+      const k = d.dataset.k;
+      if (k in CL.det) d.open = CL.det[k];
+      d.addEventListener('toggle', () => { CL.det[k] = d.open; });
+    });
+  }
+  function cbMyName() {
+    const mine = CL.teams.find((t) => t.id === ACCT.id);
+    const inp = CL.nameInput || (CL.nameInput = h('input', { class: 'search', maxlength: 30, 'aria-label': 'Your name in this league', style: 'margin:0' }));
+    if (document.activeElement !== inp) inp.value = mine ? mine.name : '';
+    const save = () => {
+      const v = inp.value.trim().slice(0, 30);
+      if (!v || (mine && v === mine.name)) return;
+      flWrite(() => ACCT.db.doc(`leagues/${CL.code}/teams/${ACCT.id}`).update({ name: v })).then(() => toast('Name saved.')).catch(() => {});
+    };
+    return h('details', { class: 'card', 'data-k': 'name' }, h('summary', null, 'Your name in this league'), h('div', { class: 'gform' }, inp, h('button', { class: 'gbtn alt', onclick: save }, 'Save')));
+  }
+
+  // ----- pick'em -----
+  const entryOf = (uid, wk) => (CL.entries.find((e) => e.uid === uid && e.wk === wk) || {}).picks || {};
+  function pkScore(uid, wk) {
+    const p = entryOf(uid, wk); let right = 0, done = 0;
+    for (const gid of CB.slates[wk] || []) { const w = cbWinner(gid); if (w == null) continue; done++; if (p[gid] === w) right++; }
+    return { right, done };
+  }
+  async function setPick(wk, gid, tid) {
+    const g = sg(gid);
+    if (!g || cbLocked(g)) return toast('That game has started, so picks are locked.');
+    const picks = { ...entryOf(ACCT.id, wk), [gid]: tid };
+    const ref = ACCT.db.doc(`leagues/${CL.code}/entries/${ACCT.id}_${wk}`);
+    const i = CL.entries.findIndex((e) => e.uid === ACCT.id && e.wk === wk);
+    const row = { uid: ACCT.id, wk, picks, at: new Date().toISOString() };
+    if (i >= 0) CL.entries[i] = row; else CL.entries.push(row);
+    clDraw();
+    await flWrite(() => ref.set(row)).catch(() => {});
+  }
+  function pickemView(L, member) {
+    const ks = cbWeeks();
+    if (!ks.length) return [h('div', { class: 'card' }, h('h3', null, 'No games yet'), h('p', { class: 'muted' }, 'The first slate posts two weeks before the season tips off.'))];
+    CL.wk = CL.wk && ks.includes(CL.wk) ? CL.wk : cbThisWeek();
+    const wk = CL.wk, i = ks.indexOf(wk), mine = entryOf(ACCT.id, wk);
+    const step = h('div', { class: 'stepper', style: 'margin:12px 0' },
+      h('button', { 'aria-label': 'Previous week', disabled: i === 0 ? true : null, onclick: () => { CL.wk = ks[i - 1]; clDraw(); } }, '‹'),
+      h('div', { style: 'flex:1;text-align:center;font-weight:700' }, cbWkLabel(wk), h('div', { class: 'muted', style: 'font-size:12px;font-weight:400' }, member ? `${Object.keys(mine).length} of ${CB.slates[wk].length} picked` : 'Join to make picks')),
+      h('button', { 'aria-label': 'Next week', disabled: i === ks.length - 1 ? true : null, onclick: () => { CL.wk = ks[i + 1]; clDraw(); } }, '›'));
+    const ids = CL.teams.map((t) => t.id);
+    const games = CB.slates[wk].filter(sg).sort((a, b) => cbLockAt(sg(a)) - cbLockAt(sg(b))).map((gid) => {
+      const g = sg(gid);
+      const lock = cbLocked(g), w = cbWinner(gid), my = mine[gid];
+      const btn = (tid) => { const t = CB.byId.get(tid) || {};
+        return h('button', { 'aria-pressed': String(my === tid), class: w == null ? '' : w === tid ? 'w' : 'l', disabled: !member || lock ? true : null, onclick: () => setPick(wk, gid, tid) },
+          h('i', { style: `background:${t.color || '#666'}` }), h('span', null, h('small', null, `#${t.rank} `), tShort(tid))); };
+      const r = cbRes().get(String(gid));
+      const who = lock ? ids.filter((u) => entryOf(u, wk)[gid] != null) : [];
+      const sideCount = (tid) => who.filter((u) => entryOf(u, wk)[gid] === tid).length;
+      return h('div', { class: 'pkg' },
+        h('div', { class: 'pkm' }, h('span', null, `${shortDay(g.date)} · ${g.tip ? new Date(g.tip).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: ET }) + ' ET' : 'time TBA'}${g.neutral ? ' · neutral' : ''}`),
+          h('span', null, r ? `Final ${tShort(r.aw)} ${r.as}, ${tShort(r.hm)} ${r.hs}` : lock ? 'Locked' : g.margin == null ? '' : `Our line: ${cbLine(g)}`)),
+        h('div', { class: 'pkb' }, btn(g.away), btn(g.home)),
+        lock ? h('div', { class: 'pkf' }, member && w != null ? h('b', { style: `color:${my === w ? 'var(--grn)' : 'var(--red)'}` }, my == null ? 'No pick. ' : my === w ? '✓ You got it. ' : '✗ Missed. ') : null,
+          who.length ? `League: ${sideCount(g.away)} took ${tShort(g.away)}, ${sideCount(g.home)} took ${tShort(g.home)}` : '') : null);
+    });
+    // Season board: right picks across every graded game; this week alongside.
+    const rows = ids.map((u) => { let right = 0, done = 0; ks.forEach((k) => { const s = pkScore(u, k); right += s.right; done += s.done; }); return { u, right, done, wk: pkScore(u, wk).right }; })
+      .sort((a, b) => (b.right - a.right) || (b.wk - a.wk));
+    const anyDone = rows.some((r) => r.done);
+    const board = h('div', { class: 'card' }, h('h3', null, 'Standings'), h('table', { class: 'tbl' },
+      h('tr', null, h('th', null, 'Player'), h('th', null, 'Week'), h('th', null, 'Season')),
+      rows.map((r) => h('tr', null, h('td', { style: 'font-family:var(--body)' }, clName(r.u) + youTag(r.u)), h('td', null, r.wk), h('td', null, r.right)))),
+      anyDone ? null : h('p', { class: 'muted', style: 'margin:10px 0 0' }, `Scores start when the first featured game ends. The season tips off ${fmtDate(CB.meta.first_game, { month: 'short', day: 'numeric' })}.`));
+    return [step, ...games, h('p', { class: 'muted', style: 'margin:0 2px 12px;font-size:12px' }, 'Pick the winner. Our line is shown as a hint; friends\' picks show once a game locks.'), board];
+  }
+
+  // ----- team draft -----
+  const cbRoster = (uid) => CL.picks.filter((p) => p.uid === uid).map((p) => p.tid);
+  const cbTaken = () => new Set(CL.picks.map((p) => p.tid));
+  const draftDay = (L) => L.draft_started_at ? etDayOf(new Date(L.draft_started_at)) : '0000';
+  // Points a team earned in one finished game (0 for a loss).
+  function gamePts(r, tid) {
+    const home = r.hm === tid, won = home ? r.hs > r.as : r.as > r.hs;
+    if (!won) return { pts: 0, won: false, tags: [] };
+    let pts = CBP.win; const tags = [];
+    if (!home && !r.neu) { pts += CBP.road; tags.push('road'); }
+    if (r.line != null && (home ? r.line < 0 : r.line > 0)) { pts += CBP.upset; tags.push('upset'); }
+    if (Math.abs(r.hs - r.as) >= 20) { pts += CBP.blowout; tags.push('by 20+'); }
+    return { pts, won: true, tags };
+  }
+  function teamTally(L, tid, wk) {
+    const from = draftDay(L); let pts = 0, w = 0, l = 0, wpts = 0; const log = [];
+    const wkEnd = wk ? new Date(Date.parse(wk + 'T12:00:00Z') + 6 * 864e5).toISOString().slice(0, 10) : null;
+    for (const r of cbRes().values()) {
+      if (r.date < from || (r.hm !== tid && r.aw !== tid)) continue;
+      const g = gamePts(r, tid); pts += g.pts; g.won ? w++ : l++;
+      if (wk && r.date >= wk && r.date <= wkEnd) wpts += g.pts;
+      log.push({ r, ...g });
+    }
+    return { pts, w, l, wpts, log };
+  }
+  function cbLobby(L, boss) {
+    const card = h('div', { class: 'card', style: 'margin-top:12px' }, h('h3', null, `Players (${CL.teams.length} of ${L.size})`),
+      h('div', { class: 'plist' }, CL.teams.map((t) => h('div', { class: 'prow' }, h('span', { class: 'pos' }, t.id === L.created_by ? 'BOSS' : 'IN'),
+        h('span', { class: 'nm' }, t.name, h('small', null, (CL.names[t.id] || '') + youTag(t.id))), h('span', null, '')))),
+      h('p', { class: 'muted', style: 'margin:10px 0 0' }, boss ? `Share the code. When everyone is in, start the draft. Order is random, ${L.rounds || CBR} rounds. Games from draft day on count.`
+        : 'Waiting for the league creator to start the draft. Keep this page open, or come back when it starts.'));
+    if (boss) card.append(h('button', { class: 'save-all', onclick: () => cbStartDraft(L) }, CL.teams.length < 2 ? 'Need at least 2 players' : `Start the draft with ${CL.teams.length} players`));
+    return [card];
+  }
+  async function cbStartDraft(L) {
+    if (CL.teams.length < 2) return toast('Invite at least one friend first.');
+    if (!confirm(`Start the draft now with ${CL.teams.length} players? Nobody else can join after this.`)) return;
+    const order = CL.teams.map((t) => t.id);
+    for (let i = order.length - 1; i > 0; i--) { const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1); [order[i], order[j]] = [order[j], order[i]]; }
+    await flWrite(() => ACCT.db.doc('leagues/' + CL.code).update({ status: 'draft', order, size: order.length, draft_started_at: new Date().toISOString() })).catch(() => {});
+  }
+  async function cbPick(tid, auto = false) {
+    const L = CL.league, n = CL.picks.length, uid = onClock(n, L.order);
+    if (n >= L.order.length * (L.rounds || CBR)) return;
+    if (uid !== ACCT.id && !(auto && L.created_by === ACCT.id)) return toast('Wait for your turn.');
+    if (cbTaken().has(tid)) return toast('That team is already taken.');
+    const ref = ACCT.db.doc(`leagues/${CL.code}/picks/p${pad3(n)}`);
+    try {
+      const lease = await ref.acquire({ holder: ACCT.id, ttlMs: 8000 });
+      if (!lease.acquired) return toast('Someone else is making this pick. One second.');
+      if ((await ref.get()).exists) return toast('That pick was just made.');
+      await flWrite(() => ref.set({ n, uid, tid, at: new Date().toISOString(), by: ACCT.id, auto }));
+      // Last pick: mark the league in season (only the creator can write the league doc on the website; the page works either way).
+      if (n + 1 >= L.order.length * (L.rounds || CBR)) ACCT.db.doc('leagues/' + CL.code).update({ status: 'season', draft_done_at: new Date().toISOString() }).catch(() => {});
+    } catch (e) { /* toast already shown */ }
+  }
+  function cbDraftView(L, boss, member) {
+    const R = L.rounds || CBR, T = L.order.length, n = CL.picks.length, uid = onClock(n, L.order), mine = uid === ACCT.id;
+    const clock = h('div', { class: 'card', style: `margin-top:12px;border-color:${mine ? 'var(--yel)' : 'var(--line)'}` },
+      h('h3', null, mine ? 'You are on the clock' : `${clName(uid)} is picking`),
+      h('p', { class: 'muted', style: 'margin:-4px 0 0' }, `Round ${Math.floor(n / T) + 1} of ${R} · pick ${n + 1} of ${T * R}`),
+      boss && !mine ? h('button', { class: 'gbtn alt', style: 'margin-top:10px;padding:10px 14px', onclick: () => {
+        const t = CB.teams.filter((x) => !cbTaken().has(x.id)).sort((a, b) => a.rank - b.rank)[0];
+        if (t && confirm(`Auto-pick ${t.name} for ${clName(uid)}?`)) cbPick(t.id, true); } }, `Auto-pick for ${clName(uid)}`) : null);
+    const my = cbRoster(ACCT.id).map((id) => CB.byId.get(id)).filter(Boolean);
+    const roster = member ? h('details', { class: 'card', 'data-k': 'roster' }, h('summary', null, `Your teams (${my.length} of ${R})`),
+      my.length ? h('div', { class: 'plist' }, my.map((t) => h('div', { class: 'prow' }, h('span', { class: 'pos' }, t.abbr), h('span', { class: 'nm' }, t.name), h('span', { class: 'pr' }, '#' + t.rank)))) : h('p', { class: 'muted' }, 'No teams yet.')) : null;
+    const inp = CL.search || (CL.search = h('input', { class: 'search', type: 'search', placeholder: 'Search available teams', 'aria-label': 'Search available teams', style: 'margin:0 0 10px' }));
+    if (!inp.dataset.wired) { inp.dataset.wired = 1; inp.addEventListener('input', () => { CL.q = inp.value; clDraw(); }); }
+    const tk = cbTaken(), q = CL.q.trim().toLowerCase();
+    const avail = CB.teams.filter((t) => !tk.has(t.id) && (!q || t.name.toLowerCase().includes(q) || (t.abbr || '').toLowerCase() === q)).sort((a, b) => a.rank - b.rank).slice(0, 60);
+    const list = h('div', { class: 'plist' }, avail.map((t) => h('div', { class: 'frow', style: `--tc:${t.color};grid-template-columns:34px auto 1fr auto` },
+      h('span', { class: 'rk' }, t.rank), h('span', { class: 'pos' }, t.abbr),
+      h('span', { class: 'nm' }, t.short || t.name, h('small', null, `${sgn(t.rating)} rating · ${t.gp ? t.rec + ' this season' : t.rec_last + ' last season'}`)),
+      mine ? h('button', { class: 'gbtn', style: 'padding:8px 12px', onclick: () => { if (confirm(`Draft ${t.name}?`)) cbPick(t.id); } }, 'Draft') : h('span', { class: 'vl' }, ''))));
+    const board = h('details', { class: 'card', 'data-k': 'board' }, h('summary', null, `Draft board (${n} picks)`),
+      h('div', { class: 'plist' }, [...CL.picks].reverse().slice(0, 40).map((pk) => { const t = CB.byId.get(pk.tid); return h('div', { class: 'prow' },
+        h('span', { class: 'pos' }, `${Math.floor(pk.n / T) + 1}.${pk.n % T + 1}`), h('span', { class: 'nm' }, t ? t.name : 'Team', h('small', null, clName(pk.uid) + (pk.auto ? ' · auto' : ''))), h('span', { class: 'pr' }, t ? '#' + t.rank : '')); })));
+    return [clock, roster, h('div', { class: 'card' }, h('h3', null, 'Available teams'), h('p', { class: 'muted', style: 'margin:-4px 0 10px;font-size:12.5px' }, 'Ranked by our power ratings.'), inp, list), board];
+  }
+  function cbSeasonView(L) {
+    const wk = cbMonday();
+    const rows = L.order.map((u) => { const ts = cbRoster(u).map((tid) => ({ tid, ...teamTally(L, tid, wk) }));
+      return { u, ts, pts: ts.reduce((a, t) => a + t.pts, 0), wpts: ts.reduce((a, t) => a + t.wpts, 0), w: ts.reduce((a, t) => a + t.w, 0), l: ts.reduce((a, t) => a + t.l, 0) }; })
+      .sort((a, b) => (b.pts - a.pts) || (b.wpts - a.wpts));
+    const anyGames = rows.some((r) => r.w + r.l);
+    const standings = h('div', { class: 'card', style: 'margin-top:12px' }, h('h3', null, 'Standings'), h('table', { class: 'tbl' },
+      h('tr', null, h('th', null, 'Player'), h('th', null, 'W-L'), h('th', null, 'Week'), h('th', null, 'Pts')),
+      rows.map((r) => h('tr', null, h('td', { style: 'font-family:var(--body)' }, clName(r.u) + youTag(r.u)), h('td', null, `${r.w}-${r.l}`), h('td', null, r.wpts), h('td', null, h('b', null, r.pts))))),
+      h('p', { class: 'muted', style: 'margin:10px 0 0;font-size:12.5px' }, anyGames ? `Win ${CBP.win} · road win +${CBP.road} · upset +${CBP.upset} · by 20+ +${CBP.blowout}. Division I games since the draft. "Week" is Monday to Sunday.`
+        : `Points start with the first game after the draft. The season tips off ${fmtDate(CB.meta.first_game, { month: 'short', day: 'numeric' })}. Win ${CBP.win} · road win +${CBP.road} · upset +${CBP.upset} · by 20+ +${CBP.blowout}.`));
+    const rosters = rows.map((r) => h('details', { class: 'card', 'data-k': 'r_' + r.u, open: r.u === ACCT.id ? true : null }, h('summary', null, `${clName(r.u)}${youTag(r.u)} · ${r.pts} pts`),
+      h('div', { class: 'plist' }, r.ts.sort((a, b) => b.pts - a.pts).map((t) => { const x = CB.byId.get(t.tid) || {}; const last = t.log[t.log.length - 1];
+        return h('button', { class: 'prow', onclick: () => go('c_' + t.tid) }, h('span', { class: 'pos' }, x.abbr || ''),
+          h('span', { class: 'nm' }, x.name || 'Team', h('small', null, last ? `${t.w}-${t.l} · last: ${last.won ? 'W' : 'L'} vs ${tShort(last.r.hm === t.tid ? last.r.aw : last.r.hm)}${last.tags.length ? ' (' + last.tags.join(', ') + ')' : ''}` : `#${x.rank} in our ratings · no games yet`)),
+          h('span', { class: 'pr' }, t.pts, h('small', null, 'pts'))); }))));
+    return [standings, ...rosters];
+  }
+
   function route() {
     if (!C) return;
     const hash = location.hash.slice(1) || 'board';
@@ -3689,6 +4041,8 @@ body { background: transparent; }
     else if (hash === 'cbb') { tab = 'cbb'; nodes = cbbGames(); }
     else if (hash === 'cbbt') { tab = 'cbbt'; nodes = cbbRank(); }
     else if (kind === 'c') { tab = 'cbbt'; nodes = cbbTeam(arg); }
+    else if (hash === 'cbbp') { tab = 'cbbp'; nodes = cbbPlay(); }
+    else if (kind === 'cbbp') { tab = 'cbbp'; nodes = cbLeaguePage(arg); }
     else if (kind === 'f') { tab = 'fantasy'; nodes = fplayer(arg); }
     else if (hash === 'fl') { tab = 'fl'; nodes = leaguesHome(); }
     else if (kind === 'fl') { tab = 'fl'; nodes = leaguePage(arg); }
@@ -3698,11 +4052,12 @@ body { background: transparent; }
     else if (kind === 'p') { tab = 'players'; nodes = player(arg); }
     else nodes = board();
     if (!(kind === 'fl' && arg) && FL.code) flStop();
+    if (!(kind === 'cbbp' && arg) && CL.code) clStop();
     if (kind !== 'grp' && GROUP.unsub) { GROUP.unsub(); GROUP.unsub = null; GROUP.code = null; }
-    const detail = (['g', 't', 'p', 'grp', 'f', 'fl', 'c'].includes(kind) && arg) || hash === 'bets';
+    const detail = (['g', 't', 'p', 'grp', 'f', 'fl', 'c', 'cbbp'].includes(kind) && arg) || hash === 'bets';
     // The sport follows the page: NBA pages switch the tab bar to NBA, NFL pages to NFL; shared pages keep the current one.
     if (['nba', 'fantasy', 'fl'].includes(hash) || kind === 'f' || kind === 'fl') setSport('nba');
-    else if (['cbb', 'cbbt'].includes(hash) || kind === 'c') setSport('ncaab');
+    else if (['cbb', 'cbbt', 'cbbp'].includes(hash) || kind === 'c' || kind === 'cbbp') setSport('ncaab');
     else if (!['sports', 'me', 'bets', 'login'].includes(hash) && kind !== 'grp') setSport('nfl');
     document.getElementById('back').hidden = !detail;
     document.querySelectorAll('.tabbar a').forEach((a) => { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
