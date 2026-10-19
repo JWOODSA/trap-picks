@@ -3844,7 +3844,7 @@ body { background: transparent; }
     const open = L.kind === 'cbb_pickem' || L.status === 'lobby';
     if (!member && open && CL.teams.length < L.size) out.push(h('button', { class: 'save-all', onclick: () => cbJoin(code) }, 'Join this league'));
     if (member) out.push(cbMyName());
-    if (L.kind === 'cbb_pickem') out.push(...pickemView(L, member));
+    if (L.kind === 'cbb_pickem') out.push(...cbPickemView(L, member));
     else if (L.status === 'lobby') out.push(...cbLobby(L, boss));
     else if (CL.picks.length < L.order.length * (L.rounds || CBR)) out.push(...cbDraftView(L, boss, member));
     else out.push(...cbSeasonView(L));
@@ -3888,7 +3888,7 @@ body { background: transparent; }
     clDraw();
     await flWrite(() => ref.set(row)).catch(() => {});
   }
-  function pickemView(L, member) {
+  function cbPickemView(L, member) {
     const ks = cbWeeks();
     if (!ks.length) return [h('div', { class: 'card' }, h('h3', null, 'No games yet'), h('p', { class: 'muted' }, 'The first slate posts two weeks before the season tips off.'))];
     CL.wk = CL.wk && ks.includes(CL.wk) ? CL.wk : cbThisWeek();
