@@ -334,6 +334,12 @@ details.card[open] summary { margin-bottom: 10px; }
 .tabbar nav { display: flex; width: 100%; max-width: 560px; }
 .tabbar nav a { flex: 1; }
 body:not([data-sport=nfl]) .tabbar a.nfl, body:not([data-sport=nba]) .tabbar a.nba, body:not([data-sport=ncaab]) .tabbar a.cbb { display: none; }
+.gm .gm-i { font-size: 20px; width: 34px; text-align: center; }
+.gm .prow .gbtn { padding: 8px 14px; font-size: 14px; }
+.gm-add summary { cursor: pointer; font-weight: 700; color: var(--yel); padding: 10px 2px 2px; list-style: none; }
+.gm-add summary::-webkit-details-marker { display: none; }
+.gm-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gm-btns button { padding: 12px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card2); color: var(--ink); font: inherit; font-weight: 600; font-size: 14px; text-align: left; }
 .pkg { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
 .pkg .pkm { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ink3); margin-bottom: 8px; }
 .pkg .pkb { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -1625,7 +1631,7 @@ body { background: transparent; }
     await (ACCT.writing = ACCT.writing.then(() => ACCT.db.doc('members/' + ACCT.id).set({ groups, picks: groups.length ? ACCT.picks : {}, pickem: groups.length ? ACCT.pickem : {} })));
   }
   const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  async function createGroup(nameText) {
+  async function createGroup(nameText, fam, after) {
     const nm = nameText.trim().slice(0, 40);
     if (!nm) return toast('Give the group a name first.');
     if (ACCT.state !== 'ready') return toast(signIn('make a group'));
@@ -1635,8 +1641,9 @@ body { background: transparent; }
       if (!(await ACCT.db.doc('groups/' + code).get()).exists) break;
     }
     try {
-      await ACCT.db.doc('groups/' + code).set({ name: nm, created_by: ACCT.id, created_at: new Date().toISOString() });
+      await ACCT.db.doc('groups/' + code).set({ name: nm, created_by: ACCT.id, created_at: new Date().toISOString(), ...(fam ? { family: fam } : {}) });
       await setGroups([...ACCT.groups, code]);
+      if (after) await after(code);
       go('grp_' + code);
     } catch (e) { toast(e && e.code === 'invalid_argument' ? 'Making groups is off for you on this link. Ask the owner for Contributor access.' : 'Could not make the group. Try again.'); }
   }
@@ -1689,6 +1696,7 @@ body { background: transparent; }
             else navigator.clipboard.writeText(invite).then(() => toast('Invite copied. Send it to your friends.'), () => toast('Code: ' + code));
           } }, 'Share invite'))),
         mine ? null : h('button', { class: 'save-all', onclick: () => joinGroup(code) }, 'Join this group'),
+        mine ? gamesCard({ code, kind: 'nfl', name: g.data().name, family: g.data().family }) : null,
         h('div', { class: 'fseg', role: 'tablist', 'aria-label': 'Group view' }, [['pickem', 'Pick\'em'], ['board', 'Saved picks']].map(([k, t]) => h('button', { role: 'tab', 'aria-pressed': GROUP.tab === k ? 'true' : 'false', onclick: () => { GROUP.tab = k; draw(); } }, t))),
         GROUP.tab === 'pickem' ? pickemView(code, ps) : null,
         GROUP.tab !== 'pickem' ? h('div', { class: 'card', style: 'margin-top:12px' }, h('h3', null, 'Leaderboard'), h('p', { class: 'muted', style: 'margin:-4px 0 10px' }, 'Ranked by units won this season. Picks lock at kickoff.'),
@@ -2131,7 +2139,7 @@ body { background: transparent; }
     ACCT.leagues = list;
     await flWrite(() => ACCT.db.doc('data/users/' + ACCT.id + '/fantasy').set({ leagues: list }));
   }
-  async function createLeague(nm, kind, size) {
+  async function createLeague(nm, kind, size, fam, after) {
     nm = nm.trim().slice(0, 40);
     if (!nm) return toast('Give the league a name first.');
     if (ACCT.state !== 'ready') return toast(signIn('make a league'));
@@ -2142,9 +2150,10 @@ body { background: transparent; }
     }
     try {
       await flWrite(() => ACCT.db.doc('leagues/' + code).set({ name: nm, kind, size: kind === 'weekly' ? 50 : size, status: kind === 'weekly' ? 'season' : 'lobby', ...(kind === 'late' ? { start_wk: openWeek() } : {}),
-        order: [], created_by: ACCT.id, created_at: new Date().toISOString(), season: F.meta.season }));
+        order: [], created_by: ACCT.id, created_at: new Date().toISOString(), season: F.meta.season, ...(fam ? { family: fam } : {}) }));
       await flWrite(() => ACCT.db.doc(`leagues/${code}/teams/${ACCT.id}`).set({ name: ACCT.name || 'My team', joined_at: new Date().toISOString() }));
       await setMyLeagues([...ACCT.leagues, code]);
+      if (after) await after(code);
       go('fl_' + code);
     } catch (e) { /* toast already shown */ }
   }
@@ -2273,7 +2282,7 @@ body { background: transparent; }
     const out = [head];
     const canJoin = !member && (L.kind === 'weekly' || (L.status === 'lobby' && FL.teams.length < L.size) || (L.kind === 'late' && L.status === 'season' && FL.teams.length < LATE_MAX));
     if (canJoin) out.push(h('button', { class: 'save-all', onclick: () => joinLeague(code) }, 'Join this league'));
-    if (member) out.push(myTeamName());
+    if (member) out.push(myTeamName(), gamesCard({ code, kind: L.kind, name: L.name, family: L.family }));
     if (drafty(L)) {
       if (L.status === 'lobby') out.push(...lobbyView(L, boss));
       else if (L.status === 'draft') out.push(...draftView(L, boss, member));
@@ -3714,7 +3723,7 @@ body { background: transparent; }
     ACCT.cbb = list;
     await flWrite(() => ACCT.db.doc('data/users/' + ACCT.id + '/cbb').set({ leagues: list }));
   }
-  async function cbCreate(nm, kind, size) {
+  async function cbCreate(nm, kind, size, fam, after) {
     nm = nm.trim().slice(0, 40);
     if (!nm) return toast('Give it a name first.');
     if (ACCT.state !== 'ready') return toast(signIn('start a league'));
@@ -3725,9 +3734,10 @@ body { background: transparent; }
     }
     try {
       await flWrite(() => ACCT.db.doc('leagues/' + code).set({ name: nm, kind, size: kind === 'cbb_draft' ? size : PK_MAX, rounds: CBR,
-        status: kind === 'cbb_draft' ? 'lobby' : 'season', order: [], created_by: ACCT.id, created_at: new Date().toISOString(), season: CB.meta.season }));
+        status: kind === 'cbb_draft' ? 'lobby' : 'season', order: [], created_by: ACCT.id, created_at: new Date().toISOString(), season: CB.meta.season, ...(fam ? { family: fam } : {}) }));
       await flWrite(() => ACCT.db.doc(`leagues/${code}/teams/${ACCT.id}`).set({ name: ACCT.name || 'Me', joined_at: new Date().toISOString() }));
       await setMyCbb([...ACCT.cbb, code]);
+      if (after) await after(code);
       go('cbbp_' + code);
     } catch (e) { /* toast already shown */ }
   }
@@ -3843,7 +3853,7 @@ body { background: transparent; }
       } }, 'Share invite')))];
     const open = L.kind === 'cbb_pickem' || L.status === 'lobby';
     if (!member && open && CL.teams.length < L.size) out.push(h('button', { class: 'save-all', onclick: () => cbJoin(code) }, 'Join this league'));
-    if (member) out.push(cbMyName());
+    if (member) out.push(cbMyName(), gamesCard({ code, kind: L.kind, name: L.name, family: L.family }));
     if (L.kind === 'cbb_pickem') out.push(...cbPickemView(L, member));
     else if (L.status === 'lobby') out.push(...cbLobby(L, boss));
     else if (CL.picks.length < L.order.length * (L.rounds || CBR)) out.push(...cbDraftView(L, boss, member));
@@ -4022,6 +4032,58 @@ body { background: transparent; }
           h('span', { class: 'nm' }, x.name || 'Team', h('small', null, last ? `${t.w}-${t.l} · last: ${last.won ? 'W' : 'L'} vs ${tShort(last.r.hm === t.tid ? last.r.aw : last.r.hm)}${last.tags.length ? ' (' + last.tags.join(', ') + ')' : ''}` : `#${x.rank} in our ratings · no games yet`)),
           h('span', { class: 'pr' }, t.pts, h('small', null, 'pts'))); }))));
     return [standings, ...rosters];
+  }
+
+  // ---------- games in this group ----------
+  // One crew, several games: any NFL group, NBA league or college league can add more games for the same friends.
+  // links/<family>/games/<code> lists them (family = the code of the first one); each new game stores family too.
+  const GAME_KINDS = {
+    nfl: { label: 'NFL pick\'em', sport: '🏈', path: 'grp_' },
+    draft: { label: 'NBA fantasy draft', sport: '🏀', path: 'fl_' }, late: { label: 'NBA Late to the Party', sport: '🏀', path: 'fl_' }, weekly: { label: 'NBA weekly lineups', sport: '🏀', path: 'fl_' },
+    cbb_pickem: { label: 'College pick\'em', sport: '🎓', path: 'cbbp_' }, cbb_draft: { label: 'College team draft', sport: '🎓', path: 'cbbp_' },
+  };
+  const ADDABLE = ['nfl', 'draft', 'weekly', 'cbb_pickem', 'cbb_draft'];
+  const FAM = { cache: {} };
+  const inGame = (g) => g.kind === 'nfl' ? ACCT.groups.includes(g.code) : /^cbb_/.test(g.kind) ? ACCT.cbb.includes(g.code) : ACCT.leagues.includes(g.code);
+  async function linkGame(fam, home, code, kind, name) {
+    const base = 'links/' + fam + '/games/';
+    if (home && !(await ACCT.db.doc(base + fam).get()).exists) await ACCT.db.doc(base + fam).set({ code: fam, kind: home.kind, name: home.name, at: new Date().toISOString(), by: ACCT.id });
+    await ACCT.db.doc(base + code).set({ code, kind, name, at: new Date().toISOString(), by: ACCT.id });
+    delete FAM.cache[fam];
+  }
+  async function addGame(fam, home, kind) {
+    if (ACCT.state !== 'ready') return toast(signIn('add a game'));
+    const nm = home.name;
+    if (!confirm(`Add ${GAME_KINDS[kind].label} for "${nm}"? Everyone in the group gets a one-tap join.`)) return;
+    const done = (code) => code && linkGame(fam, home, code, kind, nm).catch(() => {});
+    if (kind === 'nfl') return createGroup(nm, fam, done);
+    if (/^cbb_/.test(kind)) return loadCbb().then(() => cbCreate(nm, kind, 8, fam, done));
+    return loadFantasy().then(() => createLeague(nm, kind, 8, fam, done));
+  }
+  async function joinGame(g) {
+    if (g.kind === 'nfl') return joinGroup(g.code);
+    if (/^cbb_/.test(g.kind)) return loadCbb().then(() => cbJoin(g.code));
+    return loadFantasy().then(() => joinLeague(g.code));
+  }
+  // home: { code, kind, name, family } for the page being shown.
+  function gamesCard(home) {
+    if (ACCT.state !== 'ready' && ACCT.state !== 'readonly') return null;
+    const fam = home.family || home.code;
+    const card = h('div', { class: 'card gm' }, h('h3', null, 'Games in this group'), h('div', { class: 'loading', style: 'padding:8px 0' }, 'Loading…'));
+    const load = FAM.cache[fam] || (FAM.cache[fam] = ACCT.db.collection('links/' + fam + '/games').get().then((s) => s.docs.map((d) => d.data())));
+    load.then((list) => {
+      if (!list.some((g) => g.code === home.code)) list = [{ code: home.code, kind: home.kind, name: home.name }, ...list];
+      const have = new Set(list.map((g) => g.kind === 'late' ? 'draft' : g.kind));
+      const rows = h('div', { class: 'plist' }, list.map((g) => { const K = GAME_KINDS[g.kind] || { label: 'Game', sport: '🎮', path: 'fl_' }, here = g.code === home.code, mine = inGame(g);
+        return h('div', { class: 'prow' }, h('span', { class: 'gm-i' }, K.sport), h('span', { class: 'nm' }, K.label, h('small', null, here ? 'You are here' : mine ? 'You are in' : 'Not joined yet')),
+          here ? h('span', null, '') : mine ? h('button', { class: 'gbtn alt', onclick: () => go(K.path + g.code) }, 'Open') : h('button', { class: 'gbtn', onclick: () => joinGame(g) }, 'Join')); }));
+      const add = ADDABLE.filter((k) => !have.has(k));
+      card.replaceChildren(h('h3', null, 'Games in this group'), rows,
+        add.length ? h('details', { class: 'gm-add', open: FAM.open === home.code ? true : null, ontoggle: (e) => { FAM.open = e.currentTarget.open ? home.code : null; } }, h('summary', null, '+ Add a game for this group'),
+          h('p', { class: 'muted', style: 'margin:6px 0 8px;font-size:12.5px' }, 'Same name, new game. Friends see it here and join with one tap, no new code to share.'),
+          h('div', { class: 'gm-btns' }, add.map((k) => h('button', { onclick: () => addGame(fam, home, k) }, GAME_KINDS[k].sport + ' ' + GAME_KINDS[k].label)))) : null);
+    }).catch(() => card.replaceChildren(h('h3', null, 'Games in this group'), h('p', { class: 'muted' }, 'Could not load the group\'s games.')));
+    return card;
   }
 
   function route() {
