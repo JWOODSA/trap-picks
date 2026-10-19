@@ -871,8 +871,8 @@ body { background: transparent; }
     const M = C.moneyline, team = c.pick.split(' ')[0];
     return h('details', { class: 'mlp', onclick: (e) => e.stopPropagation() },
       h('summary', null, h('b', null, `💰 Better as moneyline: ${team}${c.ml != null ? ' ' + odds(c.ml) : ''}`),
-        h('span', null, `Small TRAP underdogs won outright ${pct(M.win_pct, 0)} of the time, ${M.from}-${M.to} · tap for why`)),
-      h('p', null, `A ${c.line}-point game is close to a coin flip. Backing ${team} to win outright pays more than taking the points, and these underdogs won often enough to make it worth it: ${recText(M)}, ${sgn(M.units)} units at the closing moneyline (${M.from}-${M.to}). On bigger underdogs the spread is the better way to play it.`));
+        h('span', null, `Won outright ${pct(M.win_pct, 0)} since ${M.from} · why?`)),
+      h('p', null, `Close games are near coin flips, so the moneyline pays more than taking the points. Full record on the Record tab.`));
   }
   function leg(c) {
     return h('div', { class: 'leg', 'data-c': c.call },
