@@ -354,6 +354,11 @@ body[data-sport=nfl] .tabbar a.nba, body[data-sport=nba] .tabbar a.nfl { display
 .ngame .ng-h { display: flex; align-items: center; gap: 8px; font-family: var(--disp); font-size: 22px; }
 .ngame .ng-h small { margin-left: auto; font-family: var(--body, inherit); font-size: 12px; color: var(--ink3); }
 .ngame .ng-p { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.imp { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(245,38,27,.08); border: 1px solid rgba(245,38,27,.35); font-size: 13.5px; line-height: 1.4; }
+.imp h4 { margin: 0 0 6px; font-family: var(--disp); font-size: 15px; letter-spacing: .06em; text-transform: uppercase; color: var(--yel); }
+.imp p { margin: 0; } .imp p + p { margin-top: 6px; }
+.imp small { display: block; margin-top: 6px; font-size: 11.5px; color: var(--ink3); }
+.ngame .imp { background: transparent; border-color: var(--line); }
 .ngame .ng-p button { font-size: 12.5px; padding: 6px 10px; border-radius: 999px; background: var(--card2); color: var(--ink); }
 .tabbar a { display: grid; justify-items: center; gap: 3px; padding: 4px 0; text-decoration: none; color: var(--ink3); font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; }
 .tabbar a svg { width: 24px; height: 24px; }
@@ -965,9 +970,20 @@ body { background: transparent; }
     if (u.st_games >= 20 && u.st_under_pct != null) chips.push(`Unders ${pct(u.st_under_pct, 0)} here (${u.st_games} games)`);
     if (A.streak && Hm.streak) chips.push(`${g.away} ${A.streak.toLowerCase()} · ${g.home} ${Hm.streak.toLowerCase()}`);
     return h('div', { class: 'gst' },
+      impactBox(g),
       h('div', { class: 'gst-t' }, h('b', null, g.away), h('span', null, 'Matchup'), h('b', null, g.home)),
       rows.map(([k, a, b]) => h('div', { class: 'gst-r' }, h('b', null, a ?? '–'), h('span', null, k), h('b', null, b ?? '–'))),
       chips.length ? h('div', { class: 'gst-c' }, chips.map((c) => h('span', null, c))) : null);
+  }
+  // What an injury means: the team with and without each Out or Doubtful starter (export_app.py "impact").
+  // Only shown when the injury report is for this game's week, so last week's report never leaks in.
+  function impactBox(g) {
+    const I = C.injuries; if (!C.impact || !I || I.week !== g.week) return null;
+    const rows = [g.away, g.home].flatMap((t) => (C.impact[t] || []).map((x) => ({ t, ...x })));
+    if (!rows.length) return null;
+    return h('div', { class: 'imp' }, h('h4', null, 'What the injuries mean'),
+      rows.map((x) => h('p', null, h('b', null, `${x.t} without ${x.player} (${x.status})`), `: ${x.without.pf} points a game, ${x.without.su} straight up, ${x.without.ats} against the spread in ${x.without.g} games. With him: ${x.with.pf}, ${x.with.su}, ${x.with.ats}.`)),
+      h('small', null, 'Last two seasons, regular season. Small samples swing a lot; the line may already reflect it.'));
   }
   function gcard(g) {
     const open = () => go('g_' + g.id);
@@ -1877,6 +1893,18 @@ body { background: transparent; }
         h('div', { class: 'sp-h' }, h('span', { class: 'sp-i' }, S.icon), h('h2', null, S.name), h('span', { class: 'sp-s' + (S.go ? '' : ' soon') }, S.status)),
         h('ul', null, S.items.map((t) => h('li', null, t))))))];
   }
+  // "If he sits": the biggest scoring jumps for teammates when a key player missed games (nba_props.json mates).
+  function sitBox(teams) {
+    const out = [];
+    for (const [pid, list] of Object.entries(NP.mates)) {
+      const p = F.byId.get(pid); if (!p || !teams.includes(p.team)) continue;
+      for (const m of list) if (m.without.pts - m.with.pts >= 2.5) out.push({ p, m, d: m.without.pts - m.with.pts });
+    }
+    if (!out.length) return null;
+    return h('div', { class: 'imp' }, h('h4', null, 'If he sits'),
+      out.sort((a, b) => b.d - a.d).slice(0, 3).map(({ p, m }) => h('p', null, h('b', null, `Without ${m.name}`), `: ${p.name} averaged ${f1(m.without.pts)} points and ${f1(m.without.min, 0)} minutes in ${m.without.g} games, vs ${f1(m.with.pts)} and ${f1(m.with.min, 0)} with him.`)),
+      h('small', null, 'Check the injury report before tip-off. Last season and this season, regular season.'));
+  }
   function nbaHome() {
     const box = h('div', null, h('div', { class: 'loading' }, 'Loading NBA games…'));
     Promise.all([loadFantasy(), loadProps()]).then(() => {
@@ -1893,7 +1921,7 @@ body { background: transparent; }
         ...todays.map((g) => h('div', { class: 'ngame' },
           h('div', { class: 'ng-h' }, h('span', { class: 'chip', style: `background:${tcol(g.opp)}` }), g.opp, h('span', { class: 'at' }, '@'), g.homeT, h('span', { class: 'chip', style: `background:${tcol(g.homeT)}` }),
             h('small', null, new Date(g.tip).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: ET }) + ' ET')),
-          h('div', { class: 'ng-p' }, [...top(g.opp), ...top(g.homeT)].map(pb)))));
+          h('div', { class: 'ng-p' }, [...top(g.opp), ...top(g.homeT)].map(pb)), sitBox([g.opp, g.homeT]))));
     }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'NBA data failed to load.')));
     return [box];
   }
