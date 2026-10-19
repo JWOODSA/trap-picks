@@ -294,7 +294,9 @@ details.lb summary::-webkit-details-marker { display: none; }
 .hr small { display: block; font-size: 11.5px; color: var(--ink3); }
 .pc-find { position: relative; }
 #prop { scroll-margin-top: 76px; }
-.pc-find .res { display: grid; gap: 6px; margin-top: 8px; }
+.pc-find .pc-res { display: grid; gap: 6px; margin-top: 8px; }
+.pc-res .frow { grid-template-columns: auto auto 1fr auto; }
+.pc-res .frow .nm { overflow-wrap: anywhere; }
 .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tbl th { text-align: right; font-weight: 600; color: var(--ink3); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; padding: 6px 6px; }
 .tbl td { text-align: right; padding: 7px 6px; font-family: var(--mono); border-top: 1px solid var(--line); }
@@ -1914,10 +1916,14 @@ body { background: transparent; }
   }
   function propFinder() {
     const input = h('input', { class: 'search', type: 'search', placeholder: 'Prop check: type a player', 'aria-label': 'Prop check player search' });
-    const res = h('div', { class: 'res' });
+    // Suggestions as you type: names with a word starting with what you typed come first ("jay" finds
+    // Jaylen Brown and Jayson Tatum), then any other match, biggest scorers first. Results list is .pc-res
+    // (.res is the W/L badge style).
+    const res = h('div', { class: 'pc-res' });
     input.addEventListener('input', () => {
       const q = input.value.trim().toLowerCase();
-      res.replaceChildren(...(q.length < 2 ? [] : F.players.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 6)
+      const hit = (p) => { const n = p.name.toLowerCase(); return n.split(/[\s.'-]+/).some((w) => w.startsWith(q)) || n.startsWith(q) ? 2 : n.includes(q) ? 1 : 0; };
+      res.replaceChildren(...(q.length < 2 ? [] : F.players.map((p) => [hit(p), p]).filter(([k]) => k).sort((a, b) => b[0] - a[0] || (b[1].pts || 0) - (a[1].pts || 0)).slice(0, 8).map(([, p]) => p)
         .map((p) => h('button', { class: 'frow', style: `--tc:${tcol(p.team)}`, onclick: () => { FS.toProp = true; go('f_' + p.id); } },
           h('span', { class: 'rk' }, '🎯'), h('span', { class: 'pos' }, p.pos), h('span', { class: 'nm' }, p.name, h('small', null, tname(p.team))), h('span', { class: 'vl' }, f1(p.pts), h('small', null, 'pts last season'))))));
     });
