@@ -2913,6 +2913,7 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
       const r = create ? await SB.client.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname + '#me' } })
         : await SB.client.auth.signInWithPassword({ email, password });
       if (r.error) return toast(create ? 'Could not create the account. Try signing in instead.' : 'Email or password is wrong. If you always used email links, sign in with a link once and set a password on My Picks.');
+      if (create && r.data.user && !(r.data.user.identities || []).length) return toast('That email already has an account. Tap Sign in, or if you never set a password, open Trap Picks in Safari and set one first.');
       if (create && !r.data.session) { note.textContent = `Almost done. Tap the confirm link we sent to ${email}, then sign in here with your password.`; return; }
       location.hash = '#me'; location.reload();
     };
@@ -2934,7 +2935,8 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
       mine ? h('div', { class: 'lin' }, ACCT.avatar ? h('img', { src: ACCT.avatar, alt: '' }) : h('span', { class: 'ini' }, (ACCT.name || '?').slice(0, 1)),
         h('div', null, h('b', null, `Signed in as ${ACCT.name || 'you'}`), h('span', null, SB.client ? (SB.session ? SB.session.user.email : '') : 'with your Claude account')),
         h('button', { class: 'gbtn', onclick: () => go('me') }, 'My Picks')) : null,
-      signInCard(),
+      mine && SB.client ? h('div', { class: 'card', style: 'margin-top:16px' }, h('h3', null, 'Set a password'), pwSetBlock()) : null,
+      mine && SB.client ? null : signInCard(),
       h('ul', { class: 'lperks' }, ['Save picks and track your record', 'Pick\'em with friends all season', 'Fantasy leagues and drafts', 'Pro: every TRAP call, the trap meter and the Slip of the Day', 'Elite, coming soon: live odds from every book, NBA and player props'].map((t) => h('li', null, t))),
       h('p', { class: 'lfine' }, 'By continuing you agree to the Terms and Privacy Policy. You must be 21 or older to bet where it is legal. Trap Picks sells information and does not take bets.'))];
   }
