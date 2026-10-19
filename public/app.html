@@ -1696,7 +1696,7 @@ body { background: transparent; }
             else navigator.clipboard.writeText(invite).then(() => toast('Invite copied. Send it to your friends.'), () => toast('Code: ' + code));
           } }, 'Share invite'))),
         mine ? null : h('button', { class: 'save-all', onclick: () => joinGroup(code) }, 'Join this group'),
-        mine ? gamesCard({ code, kind: 'nfl', name: g.data().name, family: g.data().family }) : null,
+        mine ? gamesCard({ code, kind: 'nfl', name: g.data().name, family: g.data().family, created_by: g.data().created_by }) : null,
         h('div', { class: 'fseg', role: 'tablist', 'aria-label': 'Group view' }, [['pickem', 'Pick\'em'], ['board', 'Saved picks']].map(([k, t]) => h('button', { role: 'tab', 'aria-pressed': GROUP.tab === k ? 'true' : 'false', onclick: () => { GROUP.tab = k; draw(); } }, t))),
         GROUP.tab === 'pickem' ? pickemView(code, ps) : null,
         GROUP.tab !== 'pickem' ? h('div', { class: 'card', style: 'margin-top:12px' }, h('h3', null, 'Leaderboard'), h('p', { class: 'muted', style: 'margin:-4px 0 10px' }, 'Ranked by units won this season. Picks lock at kickoff.'),
@@ -2066,6 +2066,40 @@ body { background: transparent; }
     return [box];
   }
 
+  // ---------- draft times (shared by NBA and college draft leagues) ----------
+  // The league leader can set a draft time. When it arrives, every phone treats the league as drafting, with an order
+  // shuffled from the league code, so nobody has to press start (on the website only the leader can edit the league).
+  const hashStr = (t) => { let x = 2166136261; for (const c of t) { x ^= c.charCodeAt(0); x = Math.imul(x, 16777619); } return x >>> 0; };
+  const draftDue = (L) => !!(L && L.status === 'lobby' && L.draft_at && Date.parse(L.draft_at) <= Date.now());
+  function effLeague(L, teams, picks, code, rounds) {
+    if (!L) return L;
+    if (draftDue(L) && teams.length >= 2) {
+      const order = teams.map((t) => t.id).sort((a, b) => hashStr(code + a) - hashStr(code + b));
+      L = { ...L, status: 'draft', order, size: order.length, draft_started_at: L.draft_at };
+    }
+    if (L.status === 'draft' && L.order && L.order.length && picks.length >= L.order.length * rounds) L = { ...L, status: 'season' };
+    return L;
+  }
+  const whenText = (iso) => new Date(iso).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  // Leader: pick a time. Everyone: see it. Redraws itself when the time comes.
+  function draftTimeBox(L, code, boss, redraw, store) {
+    clearTimeout(store.tmr);
+    if (L.draft_at && Date.parse(L.draft_at) > Date.now()) store.tmr = setTimeout(redraw, Math.min(Date.parse(L.draft_at) - Date.now() + 500, 2 ** 31 - 1));
+    const at = L.draft_at ? h('p', { style: 'margin:10px 0 0;font-weight:700' }, `🕗 Draft starts ${whenText(L.draft_at)}`) : null;
+    if (!boss) return at || h('p', { class: 'muted', style: 'margin:10px 0 0' }, 'The leader has not set a draft time yet.');
+    const pad = (n) => String(n).padStart(2, '0');
+    const loc = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const inp = h('input', { class: 'search', type: 'datetime-local', 'aria-label': 'Draft time', style: 'margin:0', min: loc(new Date()), value: L.draft_at ? loc(new Date(L.draft_at)) : '' });
+    const save = () => {
+      const t = inp.value ? new Date(inp.value) : null;
+      if (!t || isNaN(t) || t <= new Date()) return toast('Pick a time in the future.');
+      flWrite(() => ACCT.db.doc('leagues/' + code).update({ draft_at: t.toISOString() })).then(() => toast(`Draft set for ${whenText(t)}.`)).catch(() => {});
+    };
+    return h('div', null, at, h('div', { class: 'hb-sec', style: 'margin-top:12px' }, 'Draft time'),
+      h('p', { class: 'muted', style: 'margin:0 0 8px;font-size:12.5px' }, 'Set it and the draft starts on its own at that time, with everyone who has joined. Joining closes then.'),
+      h('div', { class: 'gform', style: 'margin:0' }, inp, h('button', { class: 'gbtn alt', onclick: save }, 'Set')));
+  }
+
   // ---------- fantasy leagues ----------
   // Two kinds. Draft league: friends join, snake-draft 13-man rosters live, then play weekly head-to-head;
   // a team's week = its best 10 players' fantasy points that week (no lineups to set). Weekly lineups:
@@ -2165,6 +2199,7 @@ body { background: transparent; }
     if (!d.exists) return toast('No league with that code. Check it and try again.');
     const L = d.data();
     if (L.kind === 'draft' && L.status !== 'lobby' && !(L.order || []).includes(ACCT.id)) return toast('That league has already drafted, so it is closed to new teams.');
+    if (L.kind === 'draft' && draftDue(L)) return toast('That draft has started, so it is closed to new teams.');
     if (L.kind === 'late' && L.status === 'draft' && !(L.order || []).includes(ACCT.id)) return toast('The draft is on right now. Join as soon as it ends and pick from who is left.');
     const teams = await ACCT.db.collection(`leagues/${code}/teams`).get();
     const isIn = teams.docs.some((t) => t.id === ACCT.id);
@@ -2270,6 +2305,7 @@ body { background: transparent; }
     if (!box || !box.isConnected || location.hash !== '#fl_' + code) return;
     if (L === undefined) return;
     if (L === null) { box.replaceChildren(h('p', { class: 'muted', style: 'padding:40px 0;text-align:center' }, 'No league with that code.')); return; }
+    if (drafty(L)) FL.league = L = effLeague(L, FL.teams, FL.picks, code, ROUNDS);
     const member = FL.teams.some((t) => t.id === ACCT.id);
     const boss = L.created_by === ACCT.id;
     const invite = `Join my Trap Picks fantasy league "${L.name}". Open the app, go to Fantasy, then Fantasy Leagues, and enter code ${code}.`;
@@ -2282,7 +2318,7 @@ body { background: transparent; }
     const out = [head];
     const canJoin = !member && (L.kind === 'weekly' || (L.status === 'lobby' && FL.teams.length < L.size) || (L.kind === 'late' && L.status === 'season' && FL.teams.length < LATE_MAX));
     if (canJoin) out.push(h('button', { class: 'save-all', onclick: () => joinLeague(code) }, 'Join this league'));
-    if (member) out.push(myTeamName(), gamesCard({ code, kind: L.kind, name: L.name, family: L.family }));
+    if (member) out.push(myTeamName(), gamesCard({ code, kind: L.kind, name: L.name, family: L.family, created_by: L.created_by }));
     if (drafty(L)) {
       if (L.status === 'lobby') out.push(...lobbyView(L, boss));
       else if (L.status === 'draft') out.push(...draftView(L, boss, member));
@@ -2316,12 +2352,12 @@ body { background: transparent; }
 
   function lobbyView(L, boss) {
     const card = h('div', { class: 'card', style: 'margin-top:12px' }, h('h3', null, `Teams (${FL.teams.length} of ${L.size})`),
-      h('div', { class: 'plist' }, FL.teams.map((t) => h('div', { class: 'prow' }, h('span', { class: 'pos' }, t.id === L.created_by ? 'BOSS' : 'TEAM'),
+      h('div', { class: 'plist' }, FL.teams.map((t) => h('div', { class: 'prow' }, h('span', { class: 'pos' }, t.id === L.created_by ? 'LEADER' : 'TEAM'),
         h('span', { class: 'nm' }, t.name, h('small', null, (FL.names[t.id] || '') + (t.id === ACCT.id ? ' (you)' : ''))), h('span', null, '')))));
     const note = h('p', { class: 'muted', style: 'margin:10px 0 0' }, boss
       ? `Share the code. When everyone is in, start the draft. Draft order is random. ${ROUNDS} rounds.`
-      : 'Waiting for the league creator to start the draft. Keep this page open, or come back when it starts.');
-    card.append(note);
+      : 'Waiting for the league leader to start the draft. Keep this page open, or come back when it starts.');
+    card.append(note, draftTimeBox(L, FL.code, boss, flDraw, FL));
     if (L.kind === 'late') card.append(h('p', { class: 'muted', style: 'margin:8px 0 0' }, `Late to the Party: scoring starts ${wkLabel(lateStart(L))}${lateStart(L) < openWeek() ? ' (moves to ' + wkLabel(openWeek()) + ' when the draft starts)' : ''} and runs to the end of the regular season. Players are ranked by this season's form.`));
     if (boss) card.append(h('button', { class: 'save-all', onclick: startDraft }, FL.teams.length < 2 ? 'Need at least 2 teams' : `Start the draft with ${FL.teams.length} teams`));
     return [card];
@@ -2351,7 +2387,8 @@ body { background: transparent; }
       if (!lease.acquired) return toast('Someone else is making this pick. One second.');
       if ((await ref.get()).exists) return toast('That pick was just made.');
       await flWrite(() => ref.set({ n, uid, pid: Number(pid), at: new Date().toISOString(), by: ACCT.id, auto }));
-      if (n + 1 >= L.order.length * ROUNDS) await flWrite(() => ACCT.db.doc('leagues/' + FL.code).update({ status: 'season', draft_done_at: new Date().toISOString() }));
+      // Only the leader can edit the league on the website; the page works out "in season" from the picks either way.
+      if (n + 1 >= L.order.length * ROUNDS) ACCT.db.doc('leagues/' + FL.code).update({ status: 'season', draft_done_at: new Date().toISOString() }).catch(() => {});
     } catch (e) { /* toast already shown */ }
   }
 
@@ -3750,7 +3787,7 @@ body { background: transparent; }
     const L = d.data();
     const teams = await ACCT.db.collection(`leagues/${code}/teams`).get();
     const isIn = teams.docs.some((t) => t.id === ACCT.id);
-    if (!isIn && L.kind === 'cbb_draft' && L.status !== 'lobby') return toast('That league has already drafted, so it is closed to new players.');
+    if (!isIn && L.kind === 'cbb_draft' && (L.status !== 'lobby' || draftDue(L))) return toast('That league has already drafted, so it is closed to new players.');
     if (!isIn && teams.size >= L.size) return toast('That league is full.');
     try {
       if (!isIn) await flWrite(() => ACCT.db.doc(`leagues/${code}/teams/${ACCT.id}`).set({ name: ACCT.name || 'Me', joined_at: new Date().toISOString() }));
@@ -3843,6 +3880,8 @@ body { background: transparent; }
     const box = CL.box, L = CL.league, code = CL.code;
     if (!box || !box.isConnected || location.hash !== '#cbbp_' + code || L === undefined) return;
     if (L === null) { box.replaceChildren(h('p', { class: 'muted', style: 'padding:40px 0;text-align:center' }, 'No college league with that code.')); return; }
+    if (L.kind === 'cbb_draft') CL.league = effLeague(L, CL.teams, CL.picks, code, L.rounds || CBR);
+    const L2 = CL.league;
     const member = CL.teams.some((t) => t.id === ACCT.id), boss = L.created_by === ACCT.id;
     const invite = `Join my Trap Picks college ${L.kind === 'cbb_draft' ? 'team draft' : 'pick\'em'} "${L.name}". Open the app, switch to NCAAB, tap Play, and enter code ${code}.`;
     const out = [h('div', { class: 'grph fade', style: 'background:linear-gradient(150deg,#7a1410,#1a0b0b);border-color:#a3241c' },
@@ -3851,13 +3890,13 @@ body { background: transparent; }
         if (navigator.share) navigator.share({ text: invite }).catch(() => {});
         else navigator.clipboard.writeText(invite).then(() => toast('Invite copied. Send it to your friends.'), () => toast('Code: ' + code));
       } }, 'Share invite')))];
-    const open = L.kind === 'cbb_pickem' || L.status === 'lobby';
+    const open = L.kind === 'cbb_pickem' || L2.status === 'lobby';
     if (!member && open && CL.teams.length < L.size) out.push(h('button', { class: 'save-all', onclick: () => cbJoin(code) }, 'Join this league'));
-    if (member) out.push(cbMyName(), gamesCard({ code, kind: L.kind, name: L.name, family: L.family }));
+    if (member) out.push(cbMyName(), gamesCard({ code, kind: L.kind, name: L.name, family: L.family, created_by: L.created_by }));
     if (L.kind === 'cbb_pickem') out.push(...cbPickemView(L, member));
-    else if (L.status === 'lobby') out.push(...cbLobby(L, boss));
-    else if (CL.picks.length < L.order.length * (L.rounds || CBR)) out.push(...cbDraftView(L, boss, member));
-    else out.push(...cbSeasonView(L));
+    else if (L2.status === 'lobby') out.push(...cbLobby(L2, boss));
+    else if (CL.picks.length < L2.order.length * (L2.rounds || CBR)) out.push(...cbDraftView(L2, boss, member));
+    else out.push(...cbSeasonView(L2));
     if (ACCT.cbb.includes(code)) out.push(h('button', { class: 'leave', onclick: () => cbLeave(code) }, L.kind === 'cbb_draft' && L.status !== 'lobby' ? 'Hide from my leagues' : 'Leave league'));
     const keep = document.activeElement && box.contains(document.activeElement) ? document.activeElement : null;
     box.replaceChildren(...out.filter(Boolean));
@@ -3962,10 +4001,11 @@ body { background: transparent; }
   }
   function cbLobby(L, boss) {
     const card = h('div', { class: 'card', style: 'margin-top:12px' }, h('h3', null, `Players (${CL.teams.length} of ${L.size})`),
-      h('div', { class: 'plist' }, CL.teams.map((t) => h('div', { class: 'prow' }, h('span', { class: 'pos' }, t.id === L.created_by ? 'BOSS' : 'IN'),
+      h('div', { class: 'plist' }, CL.teams.map((t) => h('div', { class: 'prow' }, h('span', { class: 'pos' }, t.id === L.created_by ? 'LEADER' : 'IN'),
         h('span', { class: 'nm' }, t.name, h('small', null, (CL.names[t.id] || '') + youTag(t.id))), h('span', null, '')))),
       h('p', { class: 'muted', style: 'margin:10px 0 0' }, boss ? `Share the code. When everyone is in, start the draft. Order is random, ${L.rounds || CBR} rounds. Games from draft day on count.`
-        : 'Waiting for the league creator to start the draft. Keep this page open, or come back when it starts.'));
+        : 'Waiting for the league leader to start the draft. Keep this page open, or come back when it starts.'),
+      draftTimeBox(L, CL.code, boss, clDraw, CL));
     if (boss) card.append(h('button', { class: 'save-all', onclick: () => cbStartDraft(L) }, CL.teams.length < 2 ? 'Need at least 2 players' : `Start the draft with ${CL.teams.length} players`));
     return [card];
   }
@@ -4077,10 +4117,13 @@ body { background: transparent; }
       const rows = h('div', { class: 'plist' }, list.map((g) => { const K = GAME_KINDS[g.kind] || { label: 'Game', sport: '🎮', path: 'fl_' }, here = g.code === home.code, mine = inGame(g);
         return h('div', { class: 'prow' }, h('span', { class: 'gm-i' }, K.sport), h('span', { class: 'nm' }, K.label, h('small', null, here ? 'You are here' : mine ? 'You are in' : 'Not joined yet')),
           here ? h('span', null, '') : mine ? h('button', { class: 'gbtn alt', onclick: () => go(K.path + g.code) }, 'Open') : h('button', { class: 'gbtn', onclick: () => joinGame(g) }, 'Join')); }));
-      const add = ADDABLE.filter((k) => !have.has(k));
+      // Only the group leader adds games: whoever made the first game (or added the first link).
+      const root = list.find((g) => g.code === fam);
+      const leader = home.created_by === ACCT.id && (!root || !root.by || root.by === ACCT.id);
+      const add = leader ? ADDABLE.filter((k) => !have.has(k)) : [];
       card.replaceChildren(h('h3', null, 'Games in this group'), rows,
         add.length ? h('details', { class: 'gm-add', open: FAM.open === home.code ? true : null, ontoggle: (e) => { FAM.open = e.currentTarget.open ? home.code : null; } }, h('summary', null, '+ Add a game for this group'),
-          h('p', { class: 'muted', style: 'margin:6px 0 8px;font-size:12.5px' }, 'Same name, new game. Friends see it here and join with one tap, no new code to share.'),
+          h('p', { class: 'muted', style: 'margin:6px 0 8px;font-size:12.5px' }, 'Same name, new game. Friends see it here and join with one tap, no new code to share. Only you, the leader, can add games.'),
           h('div', { class: 'gm-btns' }, add.map((k) => h('button', { onclick: () => addGame(fam, home, k) }, GAME_KINDS[k].sport + ' ' + GAME_KINDS[k].label)))) : null);
     }).catch(() => card.replaceChildren(h('h3', null, 'Games in this group'), h('p', { class: 'muted' }, 'Could not load the group\'s games.')));
     return card;
