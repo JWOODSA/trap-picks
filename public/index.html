@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Trap Picks</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b1324">
+<meta name="theme-color" content="#0a0a0c">
 <meta name="description" content="Trap Picks finds NFL games where the popular bet has lost more than the odds say. Live scores, weather, injuries, pick'em with friends. Information, not a sportsbook.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,29 +12,29 @@
 <style>
 :root {
   color-scheme: dark;
-  --bg: #0b1324; --bg2: #101b33; --card: #15223f; --card2: #1b2a4d; --line: #27385f;
-  --ink: #eef2fb; --ink2: #a9b6d3; --ink3: #7182a8;
-  --yel: #ffd23f; --red: #ff4d5e; --grn: #3ddc97; --blu: #5aa9ff; --org: #ff9f43;
-  --paper: #f6f1e4; --paper-ink: #1a1d29;
+  --bg: #0a0a0c; --bg2: #111114; --card: #17171b; --card2: #212127; --line: #303038;
+  --ink: #f4f4f6; --ink2: #b8b8c1; --ink3: #85858f;
+  --yel: #f5261b; --red: #ff4d5e; --grn: #3ddc97; --blu: #5aa9ff; --org: #ff9f43;
+  --paper: #efefef; --paper-ink: #141416;
   --disp: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
   --body: 'Barlow', system-ui, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; -webkit-text-size-adjust: 100%; }
-body { overflow-x: hidden; background: radial-gradient(1000px 520px at 50% -160px, #1d3566 0%, transparent 70%), var(--bg); }
+body { overflow-x: hidden; background: radial-gradient(1000px 520px at 50% -160px, #3a0b09 0%, transparent 70%), var(--bg); }
 a { color: inherit; text-decoration: none; }
 .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
 .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
-nav { position: sticky; top: 0; z-index: 10; background: rgba(11,19,36,.86); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+nav { position: sticky; top: 0; z-index: 10; background: rgba(10,10,12,.86); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 nav .wrap { display: flex; align-items: center; gap: 10px; height: 56px; }
 .mark { font-family: var(--disp); font-weight: 900; font-size: 26px; letter-spacing: .02em; text-transform: uppercase; }
 .mark b { color: var(--yel); }
 nav .sp { flex: 1; }
 nav .lnk { font-size: 14px; font-weight: 600; color: var(--ink2); padding: 8px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 18px; border-radius: 12px; font-weight: 800; font-size: 16px; }
-.btn.y { background: var(--yel); color: #1a1600; }
+.btn.y { background: var(--yel); color: #ffffff; }
 .btn.r { background: #d81f33; color: #fff; }
 .btn.g { background: var(--card2); color: var(--ink); border: 1px solid var(--line); }
 nav .btn { padding: 8px 14px; font-size: 14px; }
@@ -57,7 +57,7 @@ nav .btn { padding: 8px 14px; font-size: 14px; }
 .slip .mu i { width: 12px; height: 30px; border-radius: 4px; display: inline-block; }
 .slip .mu .at { font-size: 24px; color: #8a8270; }
 .slip .stamp { margin-left: auto; font-size: 22px; padding: 3px 10px; border: 3px solid var(--red); color: var(--red); border-radius: 8px; transform: rotate(-6deg); }
-.slip .leg { border-top: 2px dashed #d9cfb8; padding: 10px 0 6px; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; }
+.slip .leg { border-top: 2px dashed #cfcfd3; padding: 10px 0 6px; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; }
 .slip .leg small { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6b6655; }
 .slip .leg .pk { font-family: var(--disp); font-weight: 800; font-size: 30px; }
 .slip .leg .pk.blur { filter: blur(7px); user-select: none; }
@@ -83,12 +83,12 @@ h2 span { color: var(--yel); }
 .steps { display: grid; gap: 10px; }
 @media (min-width: 820px) { .steps { grid-template-columns: repeat(3, 1fr); } }
 .steps > div { padding: 16px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
-.steps .n { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--yel); color: #1a1600; font-family: var(--disp); font-weight: 900; font-size: 20px; margin-bottom: 10px; }
+.steps .n { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--yel); color: #ffffff; font-family: var(--disp); font-weight: 900; font-size: 20px; margin-bottom: 10px; }
 .steps h3 { margin: 0 0 6px; font-size: 18px; }
 .steps p { margin: 0; color: var(--ink2); font-size: 15px; line-height: 1.4; }
 .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .tag { font-family: var(--disp); font-weight: 800; font-size: 14px; letter-spacing: .06em; padding: 3px 8px; border-radius: 5px; }
-.tag.T { background: var(--red); color: #fff; } .tag.W { background: var(--org); color: #241300; } .tag.P { background: var(--card2); color: var(--ink2); }
+.tag.T { background: var(--red); color: #fff; } .tag.W { background: var(--org); color: #220605; } .tag.P { background: var(--card2); color: var(--ink2); }
 
 .feats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 @media (min-width: 820px) { .feats { grid-template-columns: repeat(4, 1fr); } }
@@ -101,7 +101,7 @@ h2 span { color: var(--yel); }
 .plans { display: grid; gap: 12px; }
 @media (min-width: 820px) { .plans { grid-template-columns: 1fr 1fr; } }
 .plan { padding: 20px; border-radius: 20px; background: var(--card); border: 1px solid var(--line); }
-.plan.pro { background: linear-gradient(150deg, #3b2a00, #17120a); border-color: #6b5100; }
+.plan.pro { background: linear-gradient(150deg, #350907, #130404); border-color: #5c0f0b; }
 .plan .nm { font-family: var(--disp); font-weight: 900; font-size: 30px; text-transform: uppercase; }
 .plan .pr { font-family: var(--mono); font-size: 34px; font-weight: 700; margin: 4px 0 2px; } .plan .pr small { font-size: 15px; color: var(--ink2); }
 .plan .alt { color: var(--yel); font-weight: 700; font-size: 14px; }
@@ -116,17 +116,18 @@ details.faq summary::after { content: '+'; color: var(--yel); font-weight: 900; 
 details.faq[open] summary::after { content: '–'; }
 details.faq p { margin: 10px 0 0; color: var(--ink2); line-height: 1.45; }
 
-.final { margin: 50px 0 0; padding: 26px 18px; border-radius: 22px; text-align: center; background: linear-gradient(160deg, #1a2c55, #0f1a33 70%); border: 1px solid var(--line); position: relative; overflow: hidden; }
+.final { margin: 50px 0 0; padding: 26px 18px; border-radius: 22px; text-align: center; background: linear-gradient(160deg, #1a1a1f, #141417 70%); border: 1px solid var(--line); position: relative; overflow: hidden; }
 .final h2 { margin-bottom: 10px; }
 .final p { color: var(--ink2); margin: 0 0 18px; }
 .final .cta { justify-content: center; }
 footer { padding: 30px 0 calc(30px + env(safe-area-inset-bottom)); color: var(--ink3); font-size: 13px; line-height: 1.5; }
 footer b { color: var(--ink2); }
+body { background: linear-gradient(180deg, rgba(10,10,12,.45), rgba(10,10,12,.8) 60%, rgba(10,10,12,.92)), url('/brand/pano.jpg') center top / cover no-repeat fixed, #0a0a0c; }
 </style>
 </head>
 <body>
 <nav><div class="wrap">
-  <a class="mark" href="/">Trap <b>Picks</b></a><span class="sp"></span>
+  <a class="mark" href="/"><img src="/brand/mark.jpg" alt="Trap Picks" width="44" height="44" style="display:block;width:44px;height:44px;border-radius:10px"></a><span class="sp"></span>
   <a class="lnk" href="#pricing">Pricing</a>
   <a class="btn y" href="/app#board">Open the board</a>
 </div></nav>
