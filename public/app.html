@@ -331,7 +331,30 @@ details.card[open] summary { margin-bottom: 10px; }
 /* Tab bar */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; justify-content: center;
   padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); background: rgba(10,10,12,.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
-.tabbar nav { display: grid; grid-template-columns: repeat(6, 1fr); width: 100%; max-width: 560px; }
+.tabbar nav { display: flex; width: 100%; max-width: 560px; }
+.tabbar nav a { flex: 1; }
+body[data-sport=nfl] .tabbar a.nba, body[data-sport=nba] .tabbar a.nfl { display: none; }
+/* Sport switcher */
+.sport { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px 0 10px; border-radius: 999px; background: var(--card2); border: 1px solid var(--line); font-weight: 800; font-size: 14px; letter-spacing: .03em; }
+.sport svg { width: 12px; height: 12px; opacity: .7; }
+.top .sub .upd { display: block; margin-top: 3px; }
+.sports { display: grid; gap: 12px; margin-top: 14px; }
+.sp { position: relative; display: block; width: 100%; text-align: left; padding: 16px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); overflow: hidden; }
+.sp.on { border-color: var(--yel); box-shadow: 0 0 0 1px var(--yel) inset; }
+.sp .sp-h { display: flex; align-items: center; gap: 10px; }
+.sp .sp-i { font-size: 30px; line-height: 1; }
+.sp h2 { font-family: var(--disp); font-size: 26px; margin: 0; letter-spacing: .02em; }
+.sp .sp-s { margin-left: auto; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px; background: var(--yel); color: #fff; }
+.sp .sp-s.soon { background: var(--card2); color: var(--ink3); }
+.sp ul { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; color: var(--ink2); }
+.sp ul li::before { content: '✓ '; color: var(--grn); font-weight: 800; }
+.sp.soonc { opacity: .62; }
+.sp.soonc ul li::before { content: '· '; color: var(--ink3); }
+.ngame { display: block; width: 100%; text-align: left; padding: 12px 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); margin-bottom: 10px; }
+.ngame .ng-h { display: flex; align-items: center; gap: 8px; font-family: var(--disp); font-size: 22px; }
+.ngame .ng-h small { margin-left: auto; font-family: var(--body, inherit); font-size: 12px; color: var(--ink3); }
+.ngame .ng-p { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ngame .ng-p button { font-size: 12.5px; padding: 6px 10px; border-radius: 999px; background: var(--card2); color: var(--ink); }
 .tabbar a { display: grid; justify-items: center; gap: 3px; padding: 4px 0; text-decoration: none; color: var(--ink3); font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; }
 .tabbar a svg { width: 24px; height: 24px; }
 .tabbar a[aria-current=page] { color: var(--yel); }
@@ -790,17 +813,19 @@ body { background: transparent; }
   <header class="top">
     <button class="back" id="back" hidden aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <img class="mark-img" src="brand/mark.jpg" alt="Trap Picks" width="44" height="44">
-    <div class="sub" id="upd"></div>
+    <div class="sub" id="upd"><button class="sport" id="sport" aria-label="Choose a sport"><span id="sportLbl">🏈 NFL</span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l4 4 4-4"/></svg></button><span class="upd" id="updT"></span></div>
     <button class="acct" id="acct" aria-label="Sign in">Sign in</button>
   </header>
   <main id="view"><div class="loading">Loading this week's board…</div></main>
 </div>
 <div class="tabbar"><nav>
-  <a href="#board" data-tab="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v4a2 2 0 0 0 0 4v6H4v-6a2 2 0 0 0 0-4z"/><path d="M9 9h6M9 14h6" stroke-linecap="round"/></svg>Board</a>
-  <a href="#teams" data-tab="teams"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/></svg>Teams</a>
-  <a href="#players" data-tab="players"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Players</a>
-  <a href="#record" data-tab="record"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Record</a>
-  <a href="#fantasy" data-tab="fantasy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M5.6 5.6c3 2.6 3 10.2 0 12.8M18.4 5.6c-3 2.6-3 10.2 0 12.8"/></svg>Fantasy</a>
+  <a href="#board" data-tab="board" class="nfl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v4a2 2 0 0 0 0 4v6H4v-6a2 2 0 0 0 0-4z"/><path d="M9 9h6M9 14h6" stroke-linecap="round"/></svg>Board</a>
+  <a href="#teams" data-tab="teams" class="nfl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/></svg>Teams</a>
+  <a href="#players" data-tab="players" class="nfl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Players</a>
+  <a href="#record" data-tab="record" class="nfl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Record</a>
+  <a href="#nba" data-tab="nba" class="nba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v4a2 2 0 0 0 0 4v6H4v-6a2 2 0 0 0 0-4z"/><path d="M9 9h6M9 14h6" stroke-linecap="round"/></svg>Games</a>
+  <a href="#fantasy" data-tab="fantasy" class="nba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M5.6 5.6c3 2.6 3 10.2 0 12.8M18.4 5.6c-3 2.6-3 10.2 0 12.8"/></svg>Fantasy</a>
+  <a href="#fl" data-tab="fl" class="nba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c1-3.5 3.6-5.5 6.5-5.5s5.5 2 6.5 5.5M15 14.6c2.6-.4 5 1.3 6 4.4"/></svg>Leagues</a>
   <a href="#me" data-tab="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>My Picks</a>
 </nav></div>
 
@@ -1830,6 +1855,47 @@ body { background: transparent; }
           h('span', { class: 'rk' }, '🎯'), h('span', { class: 'pos' }, p.pos), h('span', { class: 'nm' }, p.name, h('small', null, tname(p.team))), h('span', { class: 'vl' }, f1(p.pts), h('small', null, 'pts last season'))))));
     });
     return h('div', { class: 'card pc-find' }, h('h3', null, 'Prop check'), h('p', { class: 'muted', style: 'margin:-4px 0 10px;font-size:13.5px' }, 'Bring the line from your sportsbook. See how often he cleared it, and what changed since.'), input, res);
+  }
+
+  // ---------- sports ----------
+  // One app, several sports: the header pill shows the sport you are in and opens this list.
+  let SPORT = (() => { try { return localStorage.getItem('tp_sport') || 'nfl'; } catch { return 'nfl'; } })();
+  const SPORTS = [
+    { k: 'nfl', icon: '🏈', name: 'NFL', go: 'board', status: 'Live', items: ['TRAP calls with a public record since 2016', 'Moneyline plays on small underdogs', 'Line moves, weather, injuries, matchups', 'Player props, team pages, pick\'em'] },
+    { k: 'nba', icon: '🏀', name: 'NBA', go: 'nba', status: 'Live', items: ['Prop check for any line you bring', 'What changed: role, teammates, opponent', 'Fantasy rankings and leagues with friends'] },
+    { k: 'wnba', icon: '🏀', name: 'WNBA', status: 'Soon', items: ['Season starts in May'] },
+    { k: 'mlb', icon: '⚾', name: 'MLB', status: 'Soon', items: ['Season starts in March'] },
+  ];
+  function setSport(k) {
+    SPORT = k; document.body.dataset.sport = k;
+    const S = SPORTS.find((x) => x.k === k); document.getElementById('sportLbl').textContent = `${S.icon} ${S.name}`;
+    try { localStorage.setItem('tp_sport', k); } catch {}
+  }
+  function sportsPage() {
+    return [h('div', { class: 'sh' }, h('h2', null, 'Sports'), h('span', null, 'Pick one to switch')),
+      h('div', { class: 'sports' }, SPORTS.map((S) => h(S.go ? 'button' : 'div', { class: `sp${S.go ? '' : ' soonc'}${S.k === SPORT ? ' on' : ''}`, onclick: S.go ? () => { setSport(S.k); go(S.go); } : null },
+        h('div', { class: 'sp-h' }, h('span', { class: 'sp-i' }, S.icon), h('h2', null, S.name), h('span', { class: 'sp-s' + (S.go ? '' : ' soon') }, S.status)),
+        h('ul', null, S.items.map((t) => h('li', null, t))))))];
+  }
+  function nbaHome() {
+    const box = h('div', null, h('div', { class: 'loading' }, 'Loading NBA games…'));
+    Promise.all([loadFantasy(), loadProps()]).then(() => {
+      const games = [];
+      for (const [team, list] of Object.entries(NP.next)) for (const g of list) if (g.home) games.push({ ...g, homeT: team });
+      const day = games.map((g) => g.date).sort()[0];
+      const todays = games.filter((g) => g.date === day).sort((a, b) => a.tip.localeCompare(b.tip));
+      const top = (t) => F.players.filter((p) => p.team === t).sort((a, b) => b.pts - a.pts).slice(0, 2);
+      const pb = (p) => h('button', { onclick: (e) => { e.stopPropagation(); FS.toProp = true; go('f_' + p.id); } }, `🎯 ${p.name.split(' ').slice(-1)[0]} ${f1(p.pts)}`);
+      box.replaceChildren(
+        h('div', { class: 'fh fade' }, ball(), h('h1', null, 'NBA'), h('p', null, `${NP.meta.season} season. Bring a line from your sportsbook and see how often a player cleared it, and what has changed since.`)),
+        propFinder(),
+        h('div', { class: 'sh' }, h('h2', null, day ? (day === etDayOf(new Date()) ? 'Tonight' : shortDay(day)) : 'Games'), h('span', null, `${todays.length} games`)),
+        ...todays.map((g) => h('div', { class: 'ngame' },
+          h('div', { class: 'ng-h' }, h('span', { class: 'chip', style: `background:${tcol(g.opp)}` }), g.opp, h('span', { class: 'at' }, '@'), g.homeT, h('span', { class: 'chip', style: `background:${tcol(g.homeT)}` }),
+            h('small', null, new Date(g.tip).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: ET }) + ' ET')),
+          h('div', { class: 'ng-p' }, [...top(g.opp), ...top(g.homeT)].map(pb)))));
+    }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'NBA data failed to load.')));
+    return [box];
   }
 
   function fplayer(id) {
@@ -3509,9 +3575,11 @@ body { background: transparent; }
     else if (hash === 'bets') { tab = 'me'; nodes = betsPage(); }
     else if (hash === 'login') { tab = 'me'; nodes = loginPage(); }
     else if (hash === 'fantasy') { tab = 'fantasy'; nodes = fantasy(); }
+    else if (hash === 'sports') { tab = null; nodes = sportsPage(); }
+    else if (hash === 'nba') { tab = 'nba'; nodes = nbaHome(); }
     else if (kind === 'f') { tab = 'fantasy'; nodes = fplayer(arg); }
-    else if (hash === 'fl') { tab = 'fantasy'; nodes = leaguesHome(); }
-    else if (kind === 'fl') { tab = 'fantasy'; nodes = leaguePage(arg); }
+    else if (hash === 'fl') { tab = 'fl'; nodes = leaguesHome(); }
+    else if (kind === 'fl') { tab = 'fl'; nodes = leaguePage(arg); }
     else if (kind === 'grp') { tab = 'me'; nodes = groupPage(arg); }
     else if (kind === 'g') nodes = game(arg);
     else if (kind === 't') { tab = 'teams'; nodes = team(arg); }
@@ -3520,6 +3588,9 @@ body { background: transparent; }
     if (!(kind === 'fl' && arg) && FL.code) flStop();
     if (kind !== 'grp' && GROUP.unsub) { GROUP.unsub(); GROUP.unsub = null; GROUP.code = null; }
     const detail = (['g', 't', 'p', 'grp', 'f', 'fl'].includes(kind) && arg) || hash === 'bets';
+    // The sport follows the page: NBA pages switch the tab bar to NBA, NFL pages to NFL; shared pages keep the current one.
+    if (['nba', 'fantasy', 'fl'].includes(hash) || kind === 'f' || kind === 'fl') setSport('nba');
+    else if (!['sports', 'me', 'bets', 'login'].includes(hash) && kind !== 'grp') setSport('nfl');
     document.getElementById('back').hidden = !detail;
     document.querySelectorAll('.tabbar a').forEach((a) => { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     view.replaceChildren(...[nodes].flat(3).filter(Boolean));
@@ -3536,7 +3607,9 @@ body { background: transparent; }
   fetch('core.json').then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => {
     C = d;
     const g = new Date(C.meta.generated);
-    document.getElementById('upd').append(`NFL · ${C.meta.current_season}`, h('br'), `Updated ${g.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${g.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`);
+    document.getElementById('updT').textContent = `Updated ${g.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${g.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+    document.getElementById('sport').addEventListener('click', () => go('sports'));
+    setSport(SPORT);
     route();
     pushInit();
     Promise.resolve(initAccount()).then(pushSync, () => {});
