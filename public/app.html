@@ -165,6 +165,12 @@ details.lb summary::-webkit-details-marker { display: none; }
 .leave { display: block; margin: 8px auto 0; padding: 10px 16px; color: var(--ink3); font-size: 14px; text-decoration: underline; }
 
 /* Account */
+.leg .mlp { grid-column: 1 / -1; margin-top: 4px; border: 2px solid #d81f33; border-radius: 8px; background: rgba(216,31,51,.06); }
+.leg .mlp summary { list-style: none; cursor: pointer; padding: 7px 10px; display: flex; flex-direction: column; gap: 2px; }
+.leg .mlp summary::-webkit-details-marker { display: none; }
+.leg .mlp summary b { font-size: 15px; color: #b3121f; }
+.leg .mlp summary span { font-size: 12px; color: #6b6655; }
+.leg .mlp p { margin: 0; padding: 0 10px 9px; font-size: 13px; line-height: 1.4; color: #3d3a30; }
 .leg .sides { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 .leg .sides .save { margin-top: 0; }
 .save.fade { border-color: #d81f33; color: #d81f33; }
@@ -858,12 +864,23 @@ body { background: transparent; }
 
   // ---------- slip ----------
   function meter(v) { const n = Math.round(Math.max(0, Math.min(100, v)) / 10); return h('div', { class: 'meter', 'aria-label': `Trap meter ${v} of 100` }, Array.from({ length: 10 }, (_, i) => h('i', { class: i < n ? 'on' : null }))); }
+  // Moneyline plays: a TRAP underdog getting only a few points wins outright often enough that the
+  // moneyline pays more than the spread (backtest in core.moneyline; cutoff in trapscore.ML_MAX_LINE).
+  const mlPlay = (c) => C.moneyline && c.call === 'TRAP' && c.market === 'Spread' && c.line != null && c.line <= C.moneyline.max_line;
+  function mlBox(c) {
+    const M = C.moneyline, team = c.pick.split(' ')[0];
+    return h('details', { class: 'mlp', onclick: (e) => e.stopPropagation() },
+      h('summary', null, h('b', null, `💰 Better as moneyline: ${team}${c.ml != null ? ' ' + odds(c.ml) : ''}`),
+        h('span', null, `Small TRAP underdogs won outright ${pct(M.win_pct, 0)} of the time, ${M.from}-${M.to} · tap for why`)),
+      h('p', null, `A ${c.line}-point game is close to a coin flip. Backing ${team} to win outright pays more than taking the points, and these underdogs won often enough to make it worth it: ${recText(M)}, ${sgn(M.units)} units at the closing moneyline (${M.from}-${M.to}). On bigger underdogs the spread is the better way to play it.`));
+  }
   function leg(c) {
     return h('div', { class: 'leg', 'data-c': c.call },
       h('div', null, h('div', { class: 'mk' }, `${c.market} · public on`), h('div', { class: 'pub' }, c.popular)),
       h('div', { class: 'score' }, h('b', null, c.meter), 'trap meter'),
       h('div', { class: 'pick', style: 'grid-column:1/-1' }, c.call === 'PASS' ? 'No trap, popular side fairly priced' : c.pick, edge(c) && c.odds != null ? h('small', null, odds(c.odds)) : null),
       meter(c.meter),
+      mlPlay(c) ? mlBox(c) : null,
       edge(c) ? h('div', { class: 'sides' }, saveBtn(c, 'with'), saveBtn(c, 'fade'), logBtn(c)) : null);
   }
   function slip(g) {
@@ -1282,6 +1299,21 @@ body { background: transparent; }
         : h('p', { class: 'muted' }, 'Shows once this week\'s first locked call kicks off.'),
       h('p', { class: 'snap', style: 'margin:8px 0 0' }, 'Calls lock at the line when they were made; the close comes from nflverse after kickoff.'));
   }
+  function mlCard() {
+    const M = C.moneyline;
+    if (!M) return null;
+    const L = M.live, rows = C.ledger.filter((r) => r.ml_result).sort((a, b) => b.date.localeCompare(a.date));
+    return h('div', { class: 'card' }, h('h3', null, 'Moneyline plays'),
+      h('p', { class: 'muted', style: 'margin:-4px 0 10px;font-size:13.5px' }, `TRAP underdogs getting ${M.max_line} points or fewer, bet to win outright at the closing moneyline instead of on the spread. Typical price: ${odds(M.avg_ml)}.`),
+      h('div', { class: 'kv' },
+        h('div', { class: L.wins + L.losses ? (L.units > 0 ? 'good' : 'bad') : null }, h('b', null, recText(L)), h('span', null, `Live · ${sgn(L.units, 2)}u`)),
+        h('div', { class: M.units > 0 ? 'good' : 'bad' }, h('b', null, recText(M)), h('span', null, `Backtest ${M.from}-${M.to}`)),
+        h('div', null, h('b', null, sgn(M.units)), h('span', null, `Units · ${sgn(M.roi * 100, 1)}% return`))),
+      rows.map((r) => h('div', { class: 'lg' }, h('span', { class: 'tag ' + r.call }, LABEL[r.call]),
+        h('span', null, h('b', null, `${r.pick_side} ML`), ' ', h('span', { class: 'muted' }, `${r.away} @ ${r.home} · ${odds(r.ml_close)}`)),
+        h('span', { class: 'res ' + r.ml_result }, r.ml_result))),
+      h('p', { class: 'snap', style: 'margin:8px 0 0' }, `The ${M.max_line}-point cutoff was picked after looking at the backtest, so the live record is the real test.`));
+  }
   function record() {
     const all = recRow('All', 'Both'), sp = recRow('All', 'Spread'), tt = recRow('All', 'Total'), live = recRow('Live', 'Both');
     const out = [h('div', { class: 'bigrec fade' },
@@ -1291,6 +1323,7 @@ body { background: transparent; }
       h('div', { class: 'b' }, h('b', null, tt ? pct(tt.win_pct) : '–'), h('span', null, 'Total traps'), h('small', null, tt ? `${recText(tt)} · ${sgn(tt.units)}u` : '')))];
     out.push(h('p', { class: 'muted', style: 'margin:10px 2px 0' }, 'Breakeven at standard -110 juice is 52.4%. Units assume one unit risked per call at the recorded odds.'));
     out.push(recapFull());
+    out.push(mlCard());
     out.push(clvCard());
     out.push(h('div', { class: 'card', style: 'margin-top:14px' }, h('h3', null, 'Units by season'), seasonChart(),
       h('div', { class: 'legend', style: 'margin:8px 0 0' }, h('span', null, h('i', { style: 'background:var(--blu)' }), 'Spread traps'), h('span', null, h('i', { style: 'background:var(--yel)' }), 'Total traps'))));
