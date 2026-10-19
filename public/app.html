@@ -142,6 +142,8 @@ a { color: inherit; }
 
 /* Groups */
 .gform { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 10px; }
+.pwform { display: grid; gap: 8px; margin-top: 10px; } .pwbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .pwbtns .gbtn { min-height: 44px; }
+.lnk { display: block; margin: 10px auto 0; padding: 8px; background: none; color: var(--ink2); font-size: 14px; text-decoration: underline; }
 .gbtn { padding: 0 16px; border-radius: 12px; background: var(--yel); color: #1a1600; font-weight: 800; }
 .gbtn.alt { background: var(--card2); color: var(--ink); }
 .grph { margin: 16px 0 12px; padding: 18px 16px; border-radius: 20px; background: linear-gradient(150deg, #3b2a00, #1c1503); border: 1px solid #6b5100; }
@@ -2879,7 +2881,7 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
   }
   function signInCard() {
     const em = h('input', { class: 'search', type: 'email', placeholder: 'you@gmail.com', autocomplete: 'email', 'aria-label': 'Email', style: 'margin:0' });
-    const note = h('p', { class: 'muted', style: 'margin:8px 0 0;font-size:13px' }, 'We email you a link. Tap it and you are in, no password needed.');
+    const note = h('p', { class: 'muted', style: 'margin:8px 0 0;font-size:13px' }, 'On iPhone, use a password if you added Trap Picks to your Home Screen. Email links open in Safari, not the Home Screen app.');
     const live = !!SB.client;
     const off = () => toast(ACCT.state === 'ready' ? `You are already signed in with your Claude account${ACCT.name ? ' as ' + ACCT.name : ''}. Google and email sign-in work on the Trap Picks website.` : 'Google and email sign-in work on the Trap Picks website. Here, sign in to claude.ai.');
     const send = async () => {
@@ -2901,12 +2903,26 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
       location.hash = '#me'; location.reload();
     };
     const code = h('div', { class: 'gform', hidden: true, style: 'margin-top:10px' }, ci, h('button', { class: 'gbtn', onclick: verify }, 'Sign in'));
+    // Email + password works inside an iPhone Home Screen app, where email links open Safari instead.
+    const pw = h('input', { class: 'search', type: 'password', placeholder: 'Password', autocomplete: 'current-password', 'aria-label': 'Password', style: 'margin:0' });
+    const pwIn = async (create) => {
+      const email = em.value.trim(), password = pw.value;
+      if (!/^\S+@\S+\.\S+$/.test(email)) return toast('Enter your email address.');
+      if (password.length < 8) return toast('Use a password of at least 8 characters.');
+      if (!live) return off();
+      const r = create ? await SB.client.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname + '#me' } })
+        : await SB.client.auth.signInWithPassword({ email, password });
+      if (r.error) return toast(create ? 'Could not create the account. Try signing in instead.' : 'Email or password is wrong. If you always used email links, sign in with a link once and set a password on My Picks.');
+      if (create && !r.data.session) { note.textContent = `Almost done. Tap the confirm link we sent to ${email}, then sign in here with your password.`; return; }
+      location.hash = '#me'; location.reload();
+    };
     return h('div', { class: 'card signin', style: 'margin-top:16px' }, h('h3', null, 'Sign in or create an account'),
       h('p', { class: 'explain', style: 'margin:0 0 12px' }, 'Save picks, play pick\'em with friends, run fantasy leagues and unlock Pro.'),
       h('button', { class: 'gsign', onclick: () => !live ? off() : SB.client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname + '#me' } }) },
         h('span', { class: 'g' }, 'G'), 'Continue with Google'),
       h('div', { class: 'or' }, h('span', null, 'or use any email')),
-      h('div', { class: 'gform' }, em, h('button', { class: 'gbtn', onclick: send }, 'Email me a link')), note, code);
+      h('div', { class: 'pwform' }, em, pw, h('div', { class: 'pwbtns' }, h('button', { class: 'gbtn', onclick: () => pwIn(false) }, 'Sign in'), h('button', { class: 'gbtn alt', onclick: () => pwIn(true) }, 'Create account'))),
+      h('button', { class: 'lnk', onclick: send }, 'No password? Email me a sign-in link'), note, code);
   }
   // Full-screen login page (#login), reached from the Sign in button in the top bar.
   function loginPage() { return [loginPageBody(), alertsCard()].flat(3).filter(Boolean); }
@@ -2929,6 +2945,18 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
     b.replaceChildren(on ? (ACCT.avatar ? h('img', { src: ACCT.avatar, alt: '' }) : h('span', { class: 'ini' }, (ACCT.name || '?').slice(0, 1))) : 'Sign in');
     b.setAttribute('aria-label', on ? 'My account' : 'Sign in');
   }
+  // Lets link-only accounts add a password so the iPhone Home Screen app can sign in too.
+  function pwSetBlock() {
+    const np = h('input', { class: 'search', type: 'password', placeholder: 'New password (8+ characters)', autocomplete: 'new-password', 'aria-label': 'New password', style: 'margin:0' });
+    const save = async () => {
+      if (np.value.length < 8) return toast('Use at least 8 characters.');
+      const { error } = await SB.client.auth.updateUser({ password: np.value });
+      if (error) return toast('Could not save the password. Try again.');
+      np.value = ''; toast('Password saved. Use it to sign in from your Home Screen app.');
+    };
+    return h('div', { style: 'margin-top:14px' }, h('p', { class: 'muted', style: 'margin:0 0 6px;font-size:13px' }, 'Password (for signing in from the Home Screen app)'),
+      h('div', { class: 'gform', style: 'margin-top:0' }, np, h('button', { class: 'gbtn', onclick: save }, 'Save')));
+  }
   function planCard() {
     const until = SB.until ? new Date(SB.until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
     return h('div', { class: 'card plan' }, h('h3', null, 'Your plan'),
@@ -2936,6 +2964,7 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
         h('button', { class: 'gbtn alt', onclick: openPortal }, 'Manage subscription'), SB.tier === 'pro' ? tierBlock('elite') : null]
         : [h('p', { class: 'explain', style: 'margin:0 0 10px' }, 'Free plan. Upgrade to see this week\'s calls.'), tiersCard(),
           SB.status ? h('button', { class: 'gbtn alt', style: 'margin-top:8px', onclick: openPortal }, 'Billing history') : null],
+      pwSetBlock(),
       h('button', { class: 'leave', style: 'margin-top:12px', onclick: () => SB.client.auth.signOut() }, `Sign out${SB.session ? ' of ' + SB.session.user.email : ''}`));
   }
 
