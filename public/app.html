@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false;</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "ca9efb5ada75";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -2693,6 +2693,16 @@ body { background: transparent; }
     }, anyIn ? 20000 : 300000);
   }
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && C) Promise.all(['nfl', 'nba'].map(pollLive)).then(liveLoop); });
+  // Website: when the app comes back on screen, reload if a newer version (code or data) went live,
+  // unless the person is in the middle of typing or has a sheet open.
+  async function freshCheck() {
+    if (!window.TRAP_BUILD) return;
+    const v = await fetch('/version.txt', { cache: 'no-store' }).then((r) => r.ok ? r.text() : '').catch(() => '');
+    const busy = document.querySelector('.modal') || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && document.activeElement.value);
+    if (v && v.trim() !== window.TRAP_BUILD && !busy) location.reload();
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') freshCheck(); });
+  window.addEventListener('pageshow', (e) => { if (e.persisted) freshCheck(); });
 
   const liveFor = (lg, away, home) => LIVE[lg] && LIVE[lg].games.find((g) => g.away.abbr === away && g.home.abbr === home);
   function timeLeft(g) {
