@@ -2,7 +2,7 @@
 // (lib/odds.js keeps one shared copy). 503 until ODDS_API_KEY is set. With ELITE_ONLY=true it needs
 // a signed-in Elite member; during the free launch anyone can see it.
 import { json, userFrom, billingGet, isElite } from '../../lib/server.js';
-import { getOdds, oddsSport } from '../../lib/odds.js';
+import { getOdds, oddsSport, licensed } from '../../lib/odds.js';
 
 export async function onRequestGet({ request, env }) {
   const sport = oddsSport(new URL(request.url).searchParams.get('sport') || 'nfl');
@@ -15,5 +15,5 @@ export async function onRequestGet({ request, env }) {
   }
   const c = await getOdds(env, sport).catch(() => null);
   if (!c || !c.data || !c.data.games) return json({ error: 'odds unavailable right now' }, 502);
-  return json({ at: c.fetched_at, games: c.data.games });
+  return json({ at: c.fetched_at, games: licensed(c.data.games) });
 }
