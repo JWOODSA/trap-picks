@@ -2887,14 +2887,26 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
       if (!/^\S+@\S+\.\S+$/.test(email)) return toast('Enter your email address.');
       if (!live) return off();
       const { error } = await SB.client.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname + '#me' } });
-      note.textContent = error ? 'Could not send the link. Check the address and try again.' : `Check ${email} for your sign-in link. You can close this tab.`;
+      if (error) { note.textContent = 'Could not send the link. Check the address and try again.'; return; }
+      note.textContent = `Check ${email}. Tap the link, or type the code from the email here. Use the code if you opened Trap Picks from your Home Screen.`;
+      code.hidden = false; code.querySelector('input').focus();
     };
+    // iPhone Home Screen apps keep their own sign-in, separate from Safari, so the emailed code signs in right here.
+    const ci = h('input', { class: 'search', inputmode: 'numeric', autocomplete: 'one-time-code', placeholder: 'Code from the email', 'aria-label': 'Sign-in code', style: 'margin:0' });
+    const verify = async () => {
+      const token = ci.value.replace(/\D/g, '');
+      if (token.length < 6) return toast('Enter the code from the email.');
+      const { error } = await SB.client.auth.verifyOtp({ email: em.value.trim(), token, type: 'email' });
+      if (error) return toast('That code did not work. Check it, or send a new one.');
+      location.hash = '#me'; location.reload();
+    };
+    const code = h('div', { class: 'gform', hidden: true, style: 'margin-top:10px' }, ci, h('button', { class: 'gbtn', onclick: verify }, 'Sign in'));
     return h('div', { class: 'card signin', style: 'margin-top:16px' }, h('h3', null, 'Sign in or create an account'),
       h('p', { class: 'explain', style: 'margin:0 0 12px' }, 'Save picks, play pick\'em with friends, run fantasy leagues and unlock Pro.'),
       h('button', { class: 'gsign', onclick: () => !live ? off() : SB.client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname + '#me' } }) },
         h('span', { class: 'g' }, 'G'), 'Continue with Google'),
       h('div', { class: 'or' }, h('span', null, 'or use any email')),
-      h('div', { class: 'gform' }, em, h('button', { class: 'gbtn', onclick: send }, 'Email me a link')), note);
+      h('div', { class: 'gform' }, em, h('button', { class: 'gbtn', onclick: send }, 'Email me a link')), note, code);
   }
   // Full-screen login page (#login), reached from the Sign in button in the top bar.
   function loginPage() { return [loginPageBody(), alertsCard()].flat(3).filter(Boolean); }
