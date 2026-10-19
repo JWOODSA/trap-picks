@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0"};</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false};</script>
 </head><body>
 <style>
 /* One deliberate theme: stadium at night. Navy field, floodlight yellow, trap red. */
@@ -2883,6 +2883,9 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
     const em = h('input', { class: 'search', type: 'email', placeholder: 'you@gmail.com', autocomplete: 'email', 'aria-label': 'Email', style: 'margin:0' });
     const note = h('p', { class: 'muted', style: 'margin:8px 0 0;font-size:13px' }, 'On iPhone, use a password if you added Trap Picks to your Home Screen. Email links open in Safari, not the Home Screen app.');
     const live = !!SB.client;
+    // Google shows once it is switched on in Supabase; email links open Safari, so the Home Screen app sticks to passwords.
+    const google = !HOSTED || !!(window.TRAP_SUPABASE && window.TRAP_SUPABASE.google);
+    const homeApp = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
     const off = () => toast(ACCT.state === 'ready' ? `You are already signed in with your Claude account${ACCT.name ? ' as ' + ACCT.name : ''}. Google and email sign-in work on the Trap Picks website.` : 'Google and email sign-in work on the Trap Picks website. Here, sign in to claude.ai.');
     const send = async () => {
       const email = em.value.trim();
@@ -2919,11 +2922,11 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
     };
     return h('div', { class: 'card signin', style: 'margin-top:16px' }, h('h3', null, 'Sign in or create an account'),
       h('p', { class: 'explain', style: 'margin:0 0 12px' }, 'Save picks, play pick\'em with friends, run fantasy leagues and unlock Pro.'),
-      h('button', { class: 'gsign', onclick: () => !live ? off() : SB.client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname + '#me' } }) },
+      google ? [h('button', { class: 'gsign', onclick: () => !live ? off() : SB.client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname + '#me' } }) },
         h('span', { class: 'g' }, 'G'), 'Continue with Google'),
-      h('div', { class: 'or' }, h('span', null, 'or use any email')),
+      h('div', { class: 'or' }, h('span', null, 'or use any email'))] : null,
       h('div', { class: 'pwform' }, em, pw, h('div', { class: 'pwbtns' }, h('button', { class: 'gbtn', onclick: () => pwIn(false) }, 'Sign in'), h('button', { class: 'gbtn alt', onclick: () => pwIn(true) }, 'Create account'))),
-      h('button', { class: 'lnk', onclick: send }, 'No password? Email me a sign-in link'), note, code);
+      homeApp ? null : h('button', { class: 'lnk', onclick: send }, 'No password? Email me a sign-in link'), homeApp ? null : note, code);
   }
   // Full-screen login page (#login), reached from the Sign in button in the top bar.
   function loginPage() { return [loginPageBody(), alertsCard()].flat(3).filter(Boolean); }
