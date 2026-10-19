@@ -284,6 +284,17 @@ details.lb summary::-webkit-details-marker { display: none; }
 .stepper .hit b { display: block; font-family: var(--mono); font-size: 22px; color: var(--yel); }
 .stepper .hit span { font-size: 12px; color: var(--ink3); }
 .bars svg { display: block; width: 100%; height: auto; }
+.stepper input { width: 84px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg2); color: var(--ink); font-family: var(--mono); font-size: 20px; font-weight: 700; text-align: center; }
+.pc-odds { display: flex; align-items: center; gap: 8px; margin: -4px 0 12px; font-size: 13px; color: var(--ink3); }
+.pc-odds input { width: 74px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg2); color: var(--ink); font-family: var(--mono); font-size: 15px; text-align: center; }
+.hr { display: grid; grid-template-columns: 1fr auto 64px; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.hr b { font-family: var(--mono); font-size: 15px; text-align: right; }
+.hr .n { font-family: var(--mono); font-size: 12.5px; color: var(--ink3); }
+.hr.good b { color: var(--grn); } .hr.bad b { color: var(--red); }
+.hr small { display: block; font-size: 11.5px; color: var(--ink3); }
+.pc-find { position: relative; }
+#prop { scroll-margin-top: 76px; }
+.pc-find .res { display: grid; gap: 6px; margin-top: 8px; }
 .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tbl th { text-align: right; font-weight: 600; color: var(--ink3); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; padding: 6px 6px; }
 .tbl td { text-align: right; padding: 7px 6px; font-family: var(--mono); border-top: 1px solid var(--line); }
@@ -1706,11 +1717,119 @@ body { background: transparent; }
         list.replaceChildren(...(rows.length ? rows : [h('p', { class: 'muted' }, 'No players match.')]));
       }
       draw();
-      box.replaceChildren(fantasySwitch('data'), hero, h('div', { id: 'nbaLive' }), seg, views, input, pos, note, list,
+      box.replaceChildren(fantasySwitch('data'), hero, h('div', { id: 'nbaLive' }), propFinder(), seg, views, input, pos, note, list,
         h('p', { class: 'muted', style: 'margin:16px 2px 0;font-size:12px' }, `Stats: ESPN box scores via the free sportsdataverse archive. Rookies and players who logged under 10 games last season are not listed yet. Updated ${new Date(m.generated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`));
       renderLive();
     }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'Fantasy data failed to load.')));
     return [box];
+  }
+
+  // ---------- NBA prop check ----------
+  // No prop lines in our free data, so the user brings the line and we show how often he cleared it,
+  // plus what changed since those games. Data: nba_props.json (export_nba_props.py).
+  let NP = null, npLoading = null;
+  const loadProps = () => npLoading || (npLoading = fetch('nba_props.json').then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => (NP = d)));
+  const PSTAT = [['pts', 'PTS', [6]], ['reb', 'REB', [7]], ['ast', 'AST', [8]], ['tpm', '3PM', [9]], ['pra', 'P+R+A', [6, 7, 8]],
+    ['pr', 'P+R', [6, 7]], ['pa', 'P+A', [6, 8]], ['ra', 'R+A', [7, 8]], ['sb', 'STL+BLK', [10, 11]]];
+  const OPPK = { pts: 'points', reb: 'rebounds', ast: 'assists', tpm: 'three_point_field_goals_made' };
+  const npState = {};
+  const ord = (n) => n + (['th', 'st', 'nd', 'rd'][(n % 100 - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th');
+  const shortDay = (d) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  function propCheck(p) {
+    const card = h('div', { class: 'card', id: 'prop' }, h('h3', null, 'Prop check'), h('div', { class: 'loading' }, 'Loading game logs…'));
+    loadProps().then(() => {
+      const L = NP.logs[String(p.id)] || [];
+      if (!L.length) { card.replaceChildren(h('h3', null, 'Prop check'), h('p', { class: 'muted' }, 'No NBA games for him in the last two seasons yet. Hit rates show once he plays.')); return; }
+      const cur = +NP.meta.season.slice(-2), last = cur - 1;
+      const st = npState[p.id] || (npState[p.id] = { k: 'pts', line: null, odds: -110 });
+      const nx = (NP.next[p.team] || [])[0];
+      const lastDate = (i) => i > 0 ? (new Date(L[i][0]) - new Date(L[i - 1][0])) / 864e5 : 9;
+      const rows = L.map((r, i) => ({ r, b2b: lastDate(i) === 1 }));
+      const draw = () => {
+        const [k, lab, idx] = PSTAT.find((x) => x[0] === st.k);
+        const val = (r) => idx.reduce((a, i) => a + r[i], 0);
+        const thisS = rows.filter((x) => x.r[1] === cur), lastS = rows.filter((x) => x.r[1] === last);
+        const base = thisS.length >= 5 ? thisS : lastS.length ? lastS : rows;
+        if (st.line == null) st.line = Math.floor(base.reduce((a, x) => a + val(x.r), 0) / base.length) + 0.5;
+        const dec = st.odds > 0 ? 1 + st.odds / 100 : 1 + 100 / -st.odds, be = 1 / dec;
+        const rate = (arr) => { const live = arr.filter((x) => val(x.r) !== st.line); const w = live.filter((x) => val(x.r) > st.line).length; return { w, n: live.length, pct: live.length ? w / live.length : null }; };
+        const hr = (label, arr, note) => {
+          const x = rate(arr); if (!arr.length) return null;
+          const tone = x.pct == null || x.n < 5 ? '' : x.pct > be + 0.03 ? 'good' : x.pct < be - 0.03 ? 'bad' : '';
+          return h('div', { class: 'hr ' + tone }, h('span', null, label, note || x.n < 5 ? h('small', null, note || 'Small sample') : null), h('span', { class: 'n' }, `${x.w}/${x.n}`), h('b', null, x.pct == null ? '–' : pct(x.pct, 0)));
+        };
+        const lineIn = h('input', { type: 'number', inputmode: 'decimal', step: '0.5', min: '0', value: st.line, 'aria-label': 'Line' });
+        lineIn.addEventListener('change', () => { const v = parseFloat(lineIn.value); if (v >= 0) { st.line = v; draw(); } });
+        const oddsIn = h('input', { type: 'number', inputmode: 'numeric', value: st.odds, 'aria-label': 'Odds' });
+        oddsIn.addEventListener('change', () => { const v = parseInt(oddsIn.value, 10); if (v >= 100 || v <= -100) { st.odds = v; draw(); } else oddsIn.value = st.odds; });
+        const stepSz = st.line >= 15 ? 1 : 0.5;
+        const list = [hr('Last 5', rows.slice(-5)), hr('Last 10', rows.slice(-10)),
+          thisS.length ? hr(`This season (${NP.meta.season})`, thisS) : null, hr(`Last season (${NP.meta.last_season})`, lastS)];
+        if (nx) {
+          list.push(hr(`vs ${nx.opp}, last two seasons`, rows.filter((x) => x.r[3] === nx.opp)));
+          list.push(hr(nx.home ? 'At home' : 'On the road', rows.filter((x) => x.r[4] === (nx.home ? 1 : 0))));
+          if (nx.b2b) list.push(hr('Second night of a back-to-back', rows.filter((x) => x.b2b)));
+        }
+        const recent = rows.slice(-15).map((x) => ({ v: val(x.r), opponent: x.r[3] }));
+        card.replaceChildren(
+          h('h3', null, 'Prop check'),
+          h('p', { class: 'muted', style: 'margin:-4px 0 10px;font-size:13.5px' }, 'Type the line from your sportsbook. We show how often he went over it, and what has changed since. History, not a pick.'),
+          h('div', { class: 'tabs2' }, PSTAT.map(([kk, ll]) => h('button', { 'aria-pressed': String(kk === k), onclick: () => { st.k = kk; st.line = null; draw(); } }, ll))),
+          h('div', { class: 'stepper' }, h('button', { 'aria-label': 'Lower line', onclick: () => { st.line = Math.max(0.5, st.line - stepSz); draw(); } }, '−'), lineIn,
+            h('button', { 'aria-label': 'Raise line', onclick: () => { st.line += stepSz; draw(); } }, '+'),
+            h('div', { class: 'hit' }, h('b', null, pct(rate(rows.slice(-10)).pct, 0)), h('span', null, `over ${st.line} ${lab}, last 10`))),
+          h('label', { class: 'pc-odds' }, 'Odds', oddsIn, h('span', null, `Break-even at these odds: ${pct(be, 1)}`)),
+          ...list.filter(Boolean),
+          h('div', { class: 'bars', style: 'margin-top:12px' }, bars(recent, 'v', st.line)),
+          h('p', { class: 'muted', style: 'margin:6px 0 0;font-size:12px' }, `Last ${recent.length} games, oldest on the left. Green is over the line. Green rates beat the break-even by 3+ points, red trail it.`));
+        card.append(whatChanged(p, rows, k, cur, last, nx));
+      };
+      draw();
+      if (FS.toProp) { FS.toProp = false; setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }
+    }).catch(() => card.replaceChildren(h('h3', null, 'Prop check'), h('p', { class: 'muted' }, 'Game logs failed to load.')));
+    return card;
+  }
+  function whatChanged(p, rows, k, cur, last, nx) {
+    const F_ = [], avg = (arr, i) => arr.length ? arr.reduce((a, x) => a + x.r[i], 0) / arr.length : null;
+    const share = (arr) => { const t = arr.reduce((a, x) => a + x.r[14], 0); return t ? arr.reduce((a, x) => a + x.r[13], 0) / t : null; };
+    const thisS = rows.filter((x) => x.r[1] === cur), lastS = rows.filter((x) => x.r[1] === last);
+    if (p.prev_team) F_.push({ tone: 'bad', fact: `New team. He played for ${tname(p.prev_team)} last season, so his role and these hit rates may not carry over.` });
+    if (thisS.length >= 3 && lastS.length) {
+      const dm = avg(thisS, 5) - avg(lastS, 5), ds = share(thisS) - share(lastS);
+      F_.push({ tone: dm >= 3 || ds >= 0.03 ? 'good' : dm <= -3 || ds <= -0.03 ? 'bad' : null, fact: `Role: ${f1(avg(thisS, 5))} minutes and ${pct(share(thisS), 0)} of his team's shots this season, versus ${f1(avg(lastS, 5))} and ${pct(share(lastS), 0)} last season.` });
+    } else if (lastS.length) F_.push({ fact: `Role last season: ${f1(avg(lastS, 5))} minutes and ${pct(share(lastS), 0)} of his team's shots. This season's role shows after his first few games.` });
+    const key = OPPK[k] ? k : 'pts', KL = { pts: 'points', reb: 'rebounds', ast: 'assists', tpm: 'threes' }[key];
+    for (const m of NP.mates[String(p.id)] || []) {
+      const a = m.with[key], b = m.without[key], d = b - a;
+      F_.push({ tone: Math.abs(d) >= 3 ? (d > 0 ? 'good' : 'bad') : null, fact: `With ${m.name}: ${f1(a)} ${KL} in ${m.with.g} games. Without him: ${f1(b)} in ${m.without.g} games.` });
+    }
+    const mv = NP.moves[p.team];
+    const names = (arr, dir) => arr.slice(0, 3).map((x) => `${x.name}${dir === 'in' ? ` (${x.from})` : x.to ? ` (to ${x.to})` : ''}`).join(', ');
+    if (mv && (mv.in.length || mv.out.length)) F_.push({ fact: `${tname(p.team)} since last season.${mv.in.length ? ' Added: ' + names(mv.in, 'in') + '.' : ''}${mv.out.length ? ' Lost: ' + names(mv.out, 'out') + '.' : ''}` });
+    if (nx) {
+      const o = NP.opp[nx.opp], pos = NP.pos[String(p.id)] || p.pos, ok = OPPK[key];
+      const when = `${shortDay(nx.date)}, ${nx.home ? 'home vs' : 'at'} ${nx.opp}`;
+      if (o && o[pos]) {
+        const r = o[pos]['rank_' + ok], seas = o.season === 2000 + cur ? 'this season' : 'last season';
+        F_.push({ tone: r <= 8 ? 'good' : r >= 23 ? 'bad' : null, fact: `Next: ${when}. ${nx.opp} allowed ${f1(o[pos][ok])} ${KL} a game to ${POSN[pos].toLowerCase()}s ${seas}, ${ord(r)} most in the league. Pace: ${ord(o.pace_rank)} fastest.` });
+        const om = NP.moves[nx.opp];
+        if (om && (om.in.length || om.out.length) && o.season !== 2000 + cur) F_.push({ fact: `${nx.opp}'s roster changed since then.${om.in.length ? ' Added: ' + names(om.in, 'in') + '.' : ''}${om.out.length ? ' Lost: ' + names(om.out, 'out') + '.' : ''}` });
+      } else F_.push({ fact: `Next: ${when}.` });
+      if (nx.b2b) F_.push({ tone: 'bad', fact: 'That game is the second night of a back-to-back, when teams rest players most.' });
+    }
+    return h('div', { style: 'margin-top:14px' }, h('h3', null, 'What changed'), facts(F_),
+      h('p', { class: 'snap', style: 'margin:8px 0 0' }, `Regular-season games, ${NP.meta.last_season} and ${NP.meta.season}, through ${fmtDate(NP.meta.through, { month: 'short', day: 'numeric' })}. Injury news is not included; check it before game time.`));
+  }
+  function propFinder() {
+    const input = h('input', { class: 'search', type: 'search', placeholder: 'Prop check: type a player', 'aria-label': 'Prop check player search' });
+    const res = h('div', { class: 'res' });
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      res.replaceChildren(...(q.length < 2 ? [] : F.players.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 6)
+        .map((p) => h('button', { class: 'frow', style: `--tc:${tcol(p.team)}`, onclick: () => { FS.toProp = true; go('f_' + p.id); } },
+          h('span', { class: 'rk' }, '🎯'), h('span', { class: 'pos' }, p.pos), h('span', { class: 'nm' }, p.name, h('small', null, tname(p.team))), h('span', { class: 'vl' }, f1(p.pts), h('small', null, 'pts last season'))))));
+    });
+    return h('div', { class: 'card pc-find' }, h('h3', null, 'Prop check'), h('p', { class: 'muted', style: 'margin:-4px 0 10px;font-size:13.5px' }, 'Bring the line from your sportsbook. See how often he cleared it, and what changed since.'), input, res);
   }
 
   function fplayer(id) {
@@ -1723,6 +1842,7 @@ body { background: transparent; }
         h('div', { class: 'meta' }, `${POSN[p.pos] || p.pos} · ${tname(p.team)}`, h('br'), [p.age && `Age ${p.age}`, p.exp != null && `${p.exp} yrs in league`].filter(Boolean).join(' · ')),
         p.prev_team ? h('div', { class: 'inj' }, `New team: played for ${tname(p.prev_team)} last season`) : null)];
       out.push(kv([[`#${p.rank_pts}`, 'Points league rank', 'hot'], [`#${p.rank_cat}`, '9-Cat rank', 'hot'], [f1(p.fpts), 'Fantasy pts / game'], [sgn(p.cat9, 2), '9-cat value']]));
+      out.push(propCheck(p));
       const trend = [];
       if (p.fpts_last15 != null) { const d = p.fpts_last15 - p.fpts; trend.push({ tone: d >= 2 ? 'good' : d <= -2 ? 'bad' : null, fact: `Last 15 games: ${f1(p.fpts_last15)} fantasy points a game, ${sgn(d)} versus the full season.` }); }
       if (p.fpts_prev != null) { const d = p.fpts - p.fpts_prev; trend.push({ tone: d >= 2 ? 'good' : d <= -2 ? 'bad' : null, fact: `${F.meta.prior_season}: ${f1(p.fpts_prev)} a game, so last season was ${sgn(d)}.` }); }
