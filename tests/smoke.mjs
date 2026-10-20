@@ -89,6 +89,11 @@ const nbaSoon = nbaGames.some((g) => Date.parse(g.start) > Date.now());
 // And player lines from PrizePicks and the books: the top scorer with game logs, tipping in three hours.
 const ppPlayer = fan.players.filter((p) => (np.logs[String(p.id)] || []).length).sort((a, b) => b.pts - a.pts)[0];
 const PPLINES = { at: new Date().toISOString(), players: ppPlayer ? { [ppPlayer.name]: { away: 'BOS', home: 'NY', start: new Date(Date.now() + 3 * 36e5).toISOString(), lines: { pts: { PrizePicks: [21.5, null], Underdog: [21.5, -122], FanDuel: [22.5, -115] }, reb: { DraftKings: [6.5, -110] } } } } : {} };
+// And an injury list: the prop-check player is day-to-day, one teammate is out.
+const mate = ppPlayer && fan.players.find((p) => p.team === ppPlayer.team && p.id !== ppPlayer.id);
+const INJURIES = { at: new Date().toISOString(), teams: ppPlayer ? { [ppPlayer.team]: [
+  { id: String(ppPlayer.id), name: ppPlayer.name, pos: 'G', status: 'Day-To-Day', note: 'Questionable for Tuesday with a sore ankle.', date: null, ret: null },
+  ...(mate ? [{ id: String(mate.id), name: mate.name, pos: 'F', status: 'Out', note: 'Out with a knee injury.', date: null, ret: '2026-11-01' }] : [])] } : {} };
 const oddsBody = (u) => JSON.stringify(u.includes('sport=ncaab') ? CBODDS : u.includes('sport=nba_props') ? PPLINES : u.includes('sport=nba') ? NBODDS : ODDS);
 const SIGNED = ['cbbp_CBD002', 'me', 'grp_GRP001', 'fl', 'fl_NBA001', 'cbbp', 'cbbp_CBP001', 'cbbp_CBD001', 'bets'];
 
@@ -106,6 +111,7 @@ async function run(label, routes, signedIn, website) {
     const u = r.request().url();
     if (!u.startsWith(`http://localhost:${PORT}/`)) return r.abort();
     if (u.includes('/api/odds')) return r.fulfill({ status: 200, contentType: types['.json'], body: oddsBody(u) });
+    if (u.includes('/api/injuries')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(INJURIES) });
     if (signedIn && /\/app(\.html)?$/.test(u.split('#')[0])) {
       const html = fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8').replace('<script>\n(() => {',
         `<script>window.TRAP_API = ${website ? '"/api"; window.TRAP_SUPABASE = undefined' : 'undefined'}; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`).replace('!HOSTED && window.claude && window.claude.use', 'window.claude && window.claude.use');
@@ -187,6 +193,7 @@ async function website() {
   p.on('pageerror', (e) => errs.push('script error: ' + e.message));
   await p.route('**/*', (r) => { const u = r.request().url(); if (!u.startsWith(`http://localhost:${PORT}/`)) return r.abort();
     if (u.includes('/api/odds')) return r.fulfill({ status: 200, contentType: types['.json'], body: oddsBody(u) });
+    if (u.includes('/api/injuries')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(INJURIES) });
     if (u.includes('/api/')) return r.fulfill({ status: 404, body: '{}' });
     if (/\/app(\.html)?$/.test(u.split('#')[0])) return r.fulfill({ status: 200, contentType: types['.html'], body: fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8').replace('<script>\n(() => {',
       `<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = undefined; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`)
@@ -221,7 +228,8 @@ async function website() {
   if (res === true && ppPlayer) {
     await p.evaluate((id) => { location.hash = 'f_' + id; }, ppPlayer.id); await p.waitForTimeout(2500);
     const t = await p.locator('#prop').innerText().catch(() => '');
-    if (!/Tonight's PTS lines[\s\S]*PrizePicks[\s\S]*21\.5[\s\S]*FanDuel/.test(t)) res = 'prop check did not show the book lines';
+    if (!/Day-to-day/.test(t)) res = 'prop check did not show his injury';
+    else if (!/Tonight's PTS lines[\s\S]*PrizePicks[\s\S]*21\.5[\s\S]*FanDuel/.test(t)) res = 'prop check did not show the book lines';
     if (process.env.SHOTS) await p.locator('#prop').screenshot({ path: path.join(process.env.SHOTS, 'prizepicks.png') });
   }
   if (res === true) for (const [hash, nm] of [['board', 'NFL'], ['nba', 'NBA'], ['cbb', 'college']]) {

@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "2e9599c2cd3b";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "04468eb3cad5";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -809,6 +809,7 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
   .swipe-wrap { margin:4px 0 6px; } .swipe { display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; scroll-padding-left:12px; margin:0 -12px; padding:2px 12px 10px; scrollbar-width:none; -webkit-overflow-scrolling:touch; } .swipe::-webkit-scrollbar { display:none; }
   .sw-card { flex:0 0 152px; scroll-snap-align:start; display:flex; flex-direction:column; gap:4px; text-align:left; padding:12px; border-radius:14px; border:1px solid var(--line); border-top:3px solid var(--tc, var(--red)); background:var(--card, rgba(255,255,255,.04)); color:var(--ink); font:inherit; }
   .sw-card small { color:var(--ink3); font-size:11.5px; } .sw-mu { font-size:15px; line-height:1.2; min-height:2.4em; } .sw-line { font-family:var(--mono, monospace); font-weight:700; font-size:15px; } .sw-tag { font-size:12px; color:var(--ink2); } .sw-tag .tag { font-size:10.5px; padding:1px 6px; }
+  .inj-ln { margin:8px 0 0; font-size:13px; color:var(--ink2); } .inj-ln p { margin:2px 0; } .inj-ban { margin:0 0 10px; padding:8px 12px; border-radius:10px; background:rgba(225,29,42,.14); border:1px solid rgba(225,29,42,.5); font-size:13.5px; } .inj-ban span { display:block; color:var(--ink2); margin-top:2px; } .sw-inj { color:var(--red); font-weight:700; }
   .nshop { margin-top:10px; border-top:1px solid var(--line); padding-top:8px; } .nshop > summary { cursor:pointer; font-size:14px; list-style:none; } .nshop > summary::-webkit-details-marker { display:none; } .nshop[open] > summary { margin-bottom:8px; }
 .shop-all summary { cursor: pointer; padding: 10px 0 4px; color: var(--ink2); font-size: 14px; }
 .shop-tbl > div { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 6px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 12px; }
@@ -1854,6 +1855,20 @@ body { background: transparent; }
   const ppName = (n) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[.'’]/g, '').replace(/\b(jr|sr|ii|iii|iv)\b/g, '').replace(/\s+/g, ' ').trim();
   const loadPP = () => PP.p || (PP.p = !HOSTED ? Promise.resolve() : fetch(`${window.TRAP_API}/odds?sport=nba_props`).then((r) => (r.ok ? r.json() : null))
     .then((d) => { if (d && d.players) { PP.at = d.at; PP.players = new Map(Object.entries(d.players).map(([n, v]) => [ppName(n), v])); } }).catch(() => {}));
+  // NBA injuries from /api/injuries (ESPN's list, cached 15 minutes on the server; website only).
+  const INJ = { teams: null, at: null, p: null };
+  const loadInj = () => INJ.p || (INJ.p = !HOSTED ? Promise.resolve() : fetch(`${window.TRAP_API}/injuries`).then((r) => (r.ok ? r.json() : null))
+    .then((d) => { if (d && d.teams) Object.assign(INJ, d); }).catch(() => {}));
+  const injLabel = (st) => /out/i.test(st) ? 'Out' : /day/i.test(st) ? 'Day-to-day' : st;
+  const injOf = (p) => ((INJ.teams || {})[p.team] || []).find((x) => (x.id && x.id === String(p.id)) || ppName(x.name) === ppName(p.name)) || null;
+  // One line per game card: who is out or day-to-day on each team.
+  function injLine(teams) {
+    if (!INJ.teams) return null;
+    const rows = teams.map((t) => [t, (INJ.teams[t] || [])]).filter(([, l]) => l.length);
+    if (!rows.length) return h('p', { class: 'inj-ln muted' }, 'Injuries: nobody listed.');
+    return h('div', { class: 'inj-ln' }, rows.map(([t, l]) => h('p', null, h('b', null, t + ': '),
+      l.map((x) => `${x.name} (${injLabel(x.status)})`).join(', '))));
+  }
   // His lines for a stat, by book ({PrizePicks: [line, price], FanDuel: [...]}), only for a game that has not tipped yet.
   const DFS = new Set(['PrizePicks', 'Underdog']);
   const bookLines = (p, k) => { const x = PP.players && PP.players.get(ppName(p.name)); const L = x && x.lines && x.lines[k]; return L && Object.keys(L).length && Date.parse(x.start) > Date.now() ? L : null; };
@@ -1861,7 +1876,7 @@ body { background: transparent; }
   const mainLine = (L) => { if (L.PrizePicks) return L.PrizePicks[0]; const c = {}; Object.values(L).forEach(([v]) => { c[v] = (c[v] || 0) + 1; }); return +Object.entries(c).sort((a, b) => b[1] - a[1])[0][0]; };
   function propCheck(p) {
     const card = h('div', { class: 'card', id: 'prop' }, h('h3', null, 'Prop check'), h('div', { class: 'loading' }, 'Loading game logs…'));
-    Promise.all([loadProps(), loadPP()]).then(() => {
+    Promise.all([loadProps(), loadPP(), loadInj()]).then(() => {
       const L = NP.logs[String(p.id)] || [];
       if (!L.length) { card.replaceChildren(h('h3', null, 'Prop check'), h('p', { class: 'muted' }, 'No NBA games for him in the last two seasons yet. Hit rates show once he plays.')); return; }
       const cur = +NP.meta.season.slice(-2), last = cur - 1;
@@ -1898,6 +1913,7 @@ body { background: transparent; }
         const recent = rows.slice(-15).map((x) => ({ v: val(x.r), opponent: x.r[3] }));
         card.replaceChildren(
           h('h3', null, 'Prop check'),
+          injOf(p) ? h('div', { class: 'inj-ban' }, h('b', null, `${injLabel(injOf(p).status)}${injOf(p).ret && /out/i.test(injOf(p).status) ? ', expected back ' + shortDay(injOf(p).ret.slice(0, 10)) : ''}`), injOf(p).note ? h('span', null, injOf(p).note) : null) : '',
           h('p', { class: 'muted', style: 'margin:-4px 0 10px;font-size:13.5px' }, 'Type the line from your sportsbook. We show how often he went over it, and what has changed since. History, not a pick.'),
           h('div', { class: 'tabs2' }, PSTAT.map(([kk, ll]) => h('button', { 'aria-pressed': String(kk === k), onclick: () => { st.k = kk; st.line = null; draw(); } }, ll))),
           h('div', { class: 'stepper' }, h('button', { 'aria-label': 'Lower line', onclick: () => { st.line = Math.max(0.5, st.line - stepSz); draw(); } }, '−'), lineIn,
@@ -1933,6 +1949,8 @@ body { background: transparent; }
       const a = m.with[key], b = m.without[key], d = b - a;
       F_.push({ tone: Math.abs(d) >= 3 ? (d > 0 ? 'good' : 'bad') : null, fact: `With ${m.name}: ${f1(a)} ${KL} in ${m.with.g} games. Without him: ${f1(b)} in ${m.without.g} games.` });
     }
+    const hurt = ((INJ.teams || {})[p.team] || []).filter((x) => ppName(x.name) !== ppName(p.name));
+    if (hurt.length) F_.push({ tone: 'bad', fact: `Teammates on the injury report: ${hurt.map((x) => `${x.name} (${injLabel(x.status)})`).join(', ')}. Check the "With" lines above for how he did without them.` });
     const mv = NP.moves[p.team];
     const names = (arr, dir) => arr.slice(0, 3).map((x) => `${x.name}${dir === 'in' ? ` (${x.from})` : x.to ? ` (to ${x.to})` : ''}`).join(', ');
     if (mv && (mv.in.length || mv.out.length)) F_.push({ fact: `${tname(p.team)} since last season.${mv.in.length ? ' Added: ' + names(mv.in, 'in') + '.' : ''}${mv.out.length ? ' Lost: ' + names(mv.out, 'out') + '.' : ''}` });
@@ -1948,7 +1966,7 @@ body { background: transparent; }
       if (nx.b2b) F_.push({ tone: 'bad', fact: 'That game is the second night of a back-to-back, when teams rest players most.' });
     }
     return h('div', { style: 'margin-top:14px' }, h('h3', null, 'What changed'), facts(F_),
-      h('p', { class: 'snap', style: 'margin:8px 0 0' }, `Regular-season games, ${NP.meta.last_season} and ${NP.meta.season}, through ${fmtDate(NP.meta.through, { month: 'short', day: 'numeric' })}. Injury news is not included; check it before game time.`));
+      h('p', { class: 'snap', style: 'margin:8px 0 0' }, `Regular-season games, ${NP.meta.last_season} and ${NP.meta.season}, through ${fmtDate(NP.meta.through, { month: 'short', day: 'numeric' })}. ${INJ.teams ? 'Injuries from ESPN\'s list, refreshed every 15 minutes; confirm before tip-off.' : 'Injury news is not included; check it before game time.'}`));
   }
   function propFinder() {
     const input = h('input', { class: 'search', type: 'search', placeholder: 'Prop check: type a player', 'aria-label': 'Prop check player search' });
@@ -2130,11 +2148,11 @@ body { background: transparent; }
     return swipeRow('Tonight\'s players', cards.slice(0, 20).map((c) => h('button', { class: 'sw-card', style: `--tc:${tcol(c.p.team)}`, onclick: () => { FS.toProp = true; go('f_' + c.p.id); } },
       h('small', null, `${c.p.team} ${c.home ? 'vs' : '@'} ${c.o} · ${tipText(c.tip)}`), h('b', { class: 'sw-mu' }, c.p.name),
       c.line != null ? h('span', { class: 'sw-line' }, `${c.line} PTS`) : h('span', { class: 'sw-line' }, `${f1(c.p.pts)} PTS avg`),
-      h('span', { class: 'sw-tag' }, c.line != null && c.n ? `Over in ${c.over} of last ${c.n}` : 'Tap for prop check'))));
+      injOf(c.p) ? h('span', { class: 'sw-tag sw-inj' }, `${injLabel(injOf(c.p).status)}`) : h('span', { class: 'sw-tag' }, c.line != null && c.n ? `Over in ${c.over} of last ${c.n}` : 'Tap for prop check'))));
   }
   function nbaHome() {
     const box = h('div', null, h('div', { class: 'loading' }, 'Loading NBA games…'));
-    Promise.all([loadFantasy(), loadProps(), loadPP()]).then(() => {
+    Promise.all([loadFantasy(), loadProps(), loadPP(), loadInj()]).then(() => {
       const games = [];
       for (const [team, list] of Object.entries(NP.next)) for (const g of list) if (g.home) games.push({ ...g, homeT: team });
       const day = games.map((g) => g.date).sort()[0];
@@ -2149,7 +2167,7 @@ body { background: transparent; }
         ...todays.map((g) => h('div', { class: 'ngame' },
           h('div', { class: 'ng-h' }, h('span', { class: 'chip', style: `background:${tcol(g.opp)}` }), g.opp, h('span', { class: 'at' }, '@'), g.homeT, h('span', { class: 'chip', style: `background:${tcol(g.homeT)}` }),
             h('small', null, new Date(g.tip).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: ET }) + ' ET')),
-          h('div', { class: 'ng-p' }, [...top(g.opp), ...top(g.homeT)].map(pb)), nbaShop(g), sitBox([g.opp, g.homeT]))));
+          h('div', { class: 'ng-p' }, [...top(g.opp), ...top(g.homeT)].map(pb)), injLine([g.opp, g.homeT]), nbaShop(g), sitBox([g.opp, g.homeT]))));
     }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'NBA data failed to load.')));
     return [box];
   }
