@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "aa460abf0b65";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "c4c34963007b";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -803,7 +803,9 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
 .rc-note { font-size: 13px; margin: 12px 0 0; }
 .shop-row { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; padding: 8px 0; border-top: 1px solid var(--line); }
 .shop-row:first-of-type { border-top: 0; } .shop-row span small { display: block; color: var(--ink3); font-size: 12px; } .shop-row > small { grid-column: 1 / -1; font-size: 12px; }
-  .pp-line { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:10px 0 4px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; } .pp-line small { display:block; color:var(--ink3); font-size:12px; margin-top:2px; } .pp-line .gbtn { padding:8px 12px; white-space:nowrap; margin:0; }
+  .pp-line { margin:10px 0 4px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; } .pp-line > small { display:block; color:var(--ink3); font-size:12px; margin-top:6px; }
+  .pp-books { display:flex; gap:6px; overflow-x:auto; margin-top:8px; padding-bottom:2px; scrollbar-width:none; } .pp-books::-webkit-scrollbar { display:none; }
+  .pp-books button { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; min-width:72px; padding:6px 10px; border:1px solid var(--line); border-radius:10px; background:transparent; color:var(--ink); font:inherit; } .pp-books button small { font-size:11px; color:var(--ink3); } .pp-books button b { font-size:16px; } .pp-books button[aria-pressed="true"] { border-color:var(--red); background:rgba(225,29,42,.12); }
   .nshop { margin-top:10px; border-top:1px solid var(--line); padding-top:8px; } .nshop > summary { cursor:pointer; font-size:14px; list-style:none; } .nshop > summary::-webkit-details-marker { display:none; } .nshop[open] > summary { margin-bottom:8px; }
 .shop-all summary { cursor: pointer; padding: 10px 0 4px; color: var(--ink2); font-size: 14px; }
 .shop-tbl > div { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 6px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 12px; }
@@ -1837,8 +1839,11 @@ body { background: transparent; }
   const ppName = (n) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[.'’]/g, '').replace(/\b(jr|sr|ii|iii|iv)\b/g, '').replace(/\s+/g, ' ').trim();
   const loadPP = () => PP.p || (PP.p = !HOSTED ? Promise.resolve() : fetch(`${window.TRAP_API}/odds?sport=nba_props`).then((r) => (r.ok ? r.json() : null))
     .then((d) => { if (d && d.players) { PP.at = d.at; PP.players = new Map(Object.entries(d.players).map(([n, v]) => [ppName(n), v])); } }).catch(() => {}));
-  // His PrizePicks line for a stat, only for a game that has not tipped yet.
-  const ppLine = (p, k) => { const x = PP.players && PP.players.get(ppName(p.name)); return x && x.pp[k] != null && Date.parse(x.start) > Date.now() ? x.pp[k] : null; };
+  // His lines for a stat, by book ({PrizePicks: [line, price], FanDuel: [...]}), only for a game that has not tipped yet.
+  const DFS = new Set(['PrizePicks', 'Underdog']);
+  const bookLines = (p, k) => { const x = PP.players && PP.players.get(ppName(p.name)); const L = x && x.lines && x.lines[k]; return L && Object.keys(L).length && Date.parse(x.start) > Date.now() ? L : null; };
+  // The line to start from: PrizePicks, else the number most books post.
+  const mainLine = (L) => { if (L.PrizePicks) return L.PrizePicks[0]; const c = {}; Object.values(L).forEach(([v]) => { c[v] = (c[v] || 0) + 1; }); return +Object.entries(c).sort((a, b) => b[1] - a[1])[0][0]; };
   function propCheck(p) {
     const card = h('div', { class: 'card', id: 'prop' }, h('h3', null, 'Prop check'), h('div', { class: 'loading' }, 'Loading game logs…'));
     Promise.all([loadProps(), loadPP()]).then(() => {
@@ -1854,8 +1859,8 @@ body { background: transparent; }
         const val = (r) => idx.reduce((a, i) => a + r[i], 0);
         const thisS = rows.filter((x) => x.r[1] === cur), lastS = rows.filter((x) => x.r[1] === last);
         const base = thisS.length >= 5 ? thisS : lastS.length ? lastS : rows;
-        const pp = ppLine(p, k);
-        if (st.line == null) st.line = pp != null ? pp : Math.floor(base.reduce((a, x) => a + val(x.r), 0) / base.length) + 0.5;
+        const BL = bookLines(p, k);
+        if (st.line == null) st.line = BL ? mainLine(BL) : Math.floor(base.reduce((a, x) => a + val(x.r), 0) / base.length) + 0.5;
         const dec = st.odds > 0 ? 1 + st.odds / 100 : 1 + 100 / -st.odds, be = 1 / dec;
         const rate = (arr) => { const live = arr.filter((x) => val(x.r) !== st.line); const w = live.filter((x) => val(x.r) > st.line).length; return { w, n: live.length, pct: live.length ? w / live.length : null }; };
         const hr = (label, arr, note) => {
@@ -1883,8 +1888,11 @@ body { background: transparent; }
           h('div', { class: 'stepper' }, h('button', { 'aria-label': 'Lower line', onclick: () => { st.line = Math.max(0.5, st.line - stepSz); draw(); } }, '−'), lineIn,
             h('button', { 'aria-label': 'Raise line', onclick: () => { st.line += stepSz; draw(); } }, '+'),
             h('div', { class: 'hit' }, h('b', null, pct(rate(rows.slice(-10)).pct, 0)), h('span', null, `over ${st.line} ${lab}, last 10`))),
-          ...(pp == null ? [] : [h('div', { class: 'pp-line' }, h('span', null, h('b', null, `PrizePicks: ${pp} ${lab}`), h('small', null, `As of ${at(PP.at)}. PrizePicks pays by entry, so break-even is about 54% to 58% a pick.`)),
-            st.line === pp ? h('span', { class: 'muted' }, 'Showing') : h('button', { class: 'gbtn alt', onclick: () => { st.line = pp; draw(); } }, 'Use it'))]),
+...(BL ? [h('div', { class: 'pp-line' }, h('b', null, `Tonight's ${lab} lines`),
+            h('div', { class: 'pp-books' }, Object.entries(BL).sort(([a], [b]) => (DFS.has(b) - DFS.has(a)) || a.localeCompare(b)).map(([bk, [v, pr]]) =>
+              h('button', { 'aria-pressed': String(st.line === v && (DFS.has(bk) || st.odds === pr)), onclick: () => { st.line = v; if (!DFS.has(bk) && pr) st.odds = pr; draw(); } },
+                h('small', null, bk), h('b', null, String(v)), DFS.has(bk) || pr == null ? null : h('small', null, odds(pr))))),
+            h('small', null, `Tap a book to check its line. As of ${at(PP.at)}. PrizePicks and Underdog pay by entry, so break-even there is about 54% to 58% a pick.`))] : []),
           h('label', { class: 'pc-odds' }, 'Odds', oddsIn, h('span', null, `Break-even at these odds: ${pct(be, 1)}`)),
           ...list.filter(Boolean),
           h('div', { class: 'bars', style: 'margin-top:12px' }, bars(recent, 'v', st.line)),

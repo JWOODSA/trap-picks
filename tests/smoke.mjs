@@ -86,9 +86,9 @@ const NBODDS = { at: new Date().toISOString(), games: nbaGames.map((g) => ({ ...
   { b: 'FanDuel', t: '', ml: [140, -160], sp: [[4.5, -110], [-4.5, -110]], to: [[221.5, -110], [221.5, -110]] },
   { b: 'DraftKings', t: '', ml: [135, -155], sp: [[4, -108], [-4, -112]], to: [[222, -110], [222, -110]] }] })) };
 const nbaSoon = nbaGames.some((g) => Date.parse(g.start) > Date.now());
-// And PrizePicks lines: the top scorer with game logs, tipping in three hours.
+// And player lines from PrizePicks and the books: the top scorer with game logs, tipping in three hours.
 const ppPlayer = fan.players.filter((p) => (np.logs[String(p.id)] || []).length).sort((a, b) => b.pts - a.pts)[0];
-const PPLINES = { at: new Date().toISOString(), players: ppPlayer ? { [ppPlayer.name]: { away: 'BOS', home: 'NY', start: new Date(Date.now() + 3 * 36e5).toISOString(), pp: { pts: 21.5, reb: 6.5 } } } : {} };
+const PPLINES = { at: new Date().toISOString(), players: ppPlayer ? { [ppPlayer.name]: { away: 'BOS', home: 'NY', start: new Date(Date.now() + 3 * 36e5).toISOString(), lines: { pts: { PrizePicks: [21.5, null], Underdog: [21.5, -122], FanDuel: [22.5, -115] }, reb: { DraftKings: [6.5, -110] } } } } : {} };
 const oddsBody = (u) => JSON.stringify(u.includes('sport=ncaab') ? CBODDS : u.includes('sport=nba_props') ? PPLINES : u.includes('sport=nba') ? NBODDS : ODDS);
 const SIGNED = ['cbbp_CBD002', 'me', 'grp_GRP001', 'fl', 'fl_NBA001', 'cbbp', 'cbbp_CBP001', 'cbbp_CBD001', 'bets'];
 
@@ -221,7 +221,7 @@ async function website() {
   if (res === true && ppPlayer) {
     await p.evaluate((id) => { location.hash = 'f_' + id; }, ppPlayer.id); await p.waitForTimeout(2500);
     const t = await p.locator('#prop').innerText().catch(() => '');
-    if (!/PrizePicks: 21\.5 PTS/.test(t)) res = 'prop check did not show the PrizePicks line';
+    if (!/Tonight's PTS lines[\s\S]*PrizePicks[\s\S]*21\.5[\s\S]*FanDuel/.test(t)) res = 'prop check did not show the book lines';
     if (process.env.SHOTS) await p.locator('#prop').screenshot({ path: path.join(process.env.SHOTS, 'prizepicks.png') });
   }
   if (res !== true && !/fine before/.test(res)) fails.push('tap: set a line alert: ' + res);
