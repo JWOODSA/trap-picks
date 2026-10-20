@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "963035b12efa";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "f9e089b5dd2d";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -1976,19 +1976,19 @@ body { background: transparent; }
   const cbLine = (g) => { const H = CB.byId.get(g.home), A = CB.byId.get(g.away); if (g.margin === 0) return 'Pick\'em';
     return g.margin > 0 ? `${H.abbr} -${g.margin}` : `${A.abbr} -${-g.margin}`; };
   // Sportsbook lines for college games (/api/odds?sport=ncaab, one shared copy refreshed every 30 minutes).
-  // Books name teams their own way, so a game only gets book lines when both teams match ours by name on
-  // the same day; anything unsure is left without, never guessed.
+  // Books name teams their own way; each team's book name (bk) comes from export_ncaab.py (exact match or the
+  // hand-checked alias list). A game gets book lines only when both teams match that way on the same day.
   const CBO = { games: null, at: null, p: null };
   const loadCbOdds = () => CBO.p || (CBO.p = !HOSTED ? Promise.resolve() : fetch(`${window.TRAP_API}/odds?sport=ncaab`, { headers: SB.session ? authHdr() : {} })
     .then((r) => (r.ok ? r.json() : null)).then((d) => { if (d && d.games) Object.assign(CBO, { games: d.games, at: d.at }); }).catch(() => {}));
-  const cbNorm = (s) => String(s || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9 ]/g, '').replace(/\bsaint\b/g, 'st').replace(/\bstate\b/g, 'st').replace(/\s+/g, ' ').trim();
   function cbBooks(g) {
     if (!CBO.games) return null;
-    const H = CB.byId.get(g.home), A = CB.byId.get(g.away), nh = cbNorm(H.name), na = cbNorm(A.name);
+    const H = CB.byId.get(g.home), A = CB.byId.get(g.away), nh = H.bk, na = A.bk;
+    if (!nh || !na) return null;
     const day = (iso) => new Date(iso).toLocaleDateString('en-CA', { timeZone: ET });
     for (const o of CBO.games) {
       if (day(o.start) !== g.date) continue;
-      const oa = cbNorm(o.away), oh = cbNorm(o.home);
+      const oa = o.away, oh = o.home;
       const flip = oa === nh && oh === na;           // neutral-site games can list the teams the other way round
       if (!(oa === na && oh === nh) && !flip) continue;
       const books = o.books.filter((b) => b.sp[0] && b.sp[1]);

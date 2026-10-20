@@ -75,7 +75,7 @@ const ODDS = { at: new Date().toISOString(), games: Object.entries(core.kickoff 
   return { away, home, start: ko, books: [bk('FanDuel', 3.5, 44.5, 5), bk('DraftKings', 3, 45, 0), bk('BetMGM', 3.5, 44.5, -5)] };
 }) };
 // And a fake college answer: books on the first few college games, named the way sportsbooks name teams.
-const cbName = new Map(cb.teams.map((t) => [t.id, t.name]));
+const cbName = new Map(cb.teams.map((t) => [t.id, t.bk || t.name]));
 const CBODDS = { at: new Date().toISOString(), games: (cb.games || []).slice(0, 6).map((g, i) => ({ away: cbName.get(g.away), home: cbName.get(g.home), start: g.tip || `${g.date}T23:00:00Z`,
   books: [{ b: 'FanDuel', t: '', ml: null, sp: [[g.margin - 2.5 + i, -110], [-(g.margin - 2.5 + i), -110]], to: [[g.total - 3, -110], [g.total - 3, -110]] },
     { b: 'DraftKings', t: '', ml: null, sp: [[g.margin - 2 + i, -105], [-(g.margin - 2 + i), -115]], to: [[g.total - 2.5, -110], [g.total - 2.5, -110]] }] })) };
