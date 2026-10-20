@@ -26,7 +26,7 @@ const server = http.createServer((req, res) => {
 }).listen(PORT);
 
 const J = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
-const core = J('core.json'), players = J('players.json'), fan = J('fantasy.json'), cb = J('ncaab.json'), cf = J('cfb.json');
+const core = J('core.json'), players = J('players.json'), fan = J('fantasy.json'), cb = J('ncaab.json'), cf = J('cfb.json'), nh = J('nhl.json');
 const games = [...new Set(core.calls.map((c) => c.game_id))];
 const teams = core.teams.map((t) => t.team);
 const pids = players.profiles.slice(0, 8).map((p) => p.player_id);
@@ -34,8 +34,8 @@ const fids = fan.players.slice(0, 6).map((p) => p.id);
 const cfids = cf.teams.slice().sort((a, b) => a.rank - b.rank).slice(0, 4).map((t) => t.id);
 const cids = cb.teams.slice().sort((a, b) => a.rank - b.rank).slice(0, 5).map((t) => t.id);
 
-const PUBLIC = ['board', 'teams', 'players', 'record', 'me', 'login', 'sports', 'nba', 'fantasy', 'fl', 'cbb', 'cbbt', 'cbbp', 'cfb', 'cfbt',
-  ...games.map((g) => 'g_' + g), ...teams.map((t) => 't_' + t), ...pids.map((p) => 'p_' + p), ...fids.map((f) => 'f_' + f), ...cids.map((c) => 'c_' + c), ...cfids.map((c) => 'cf_' + c)];
+const PUBLIC = ['board', 'teams', 'players', 'record', 'me', 'login', 'sports', 'nba', 'fantasy', 'fl', 'cbb', 'cbbt', 'cbbp', 'cfb', 'cfbt', 'nhl', 'nhlt',
+  ...games.map((g) => 'g_' + g), ...teams.map((t) => 't_' + t), ...pids.map((p) => 'p_' + p), ...fids.map((f) => 'f_' + f), ...cids.map((c) => 'c_' + c), ...cfids.map((c) => 'cf_' + c), 'nh_CAR', 'nh_VAN'];
 
 // Fake signed-in account: one NFL group, one NBA league, a college pick'em and a college draft in season.
 const wk = Object.keys(cb.slates || {}).sort()[0];
@@ -85,6 +85,10 @@ const cfName = new Map(cf.teams.map((t) => [t.id, t.bk]));
 const CFODDS = { at: new Date().toISOString(), games: (cf.games || []).filter((g) => g.kick && cfName.has(g.home) && cfName.has(g.away)).slice(0, 6).map((g, i) => ({ away: cfName.get(g.away), home: cfName.get(g.home), start: g.kick,
   books: [{ b: 'FanDuel', t: '', ml: null, sp: [[g.margin - 2.5 + i, -110], [-(g.margin - 2.5 + i), -110]], to: [[g.total - 3, -110], [g.total - 3, -110]] },
     { b: 'DraftKings', t: '', ml: null, sp: [[g.margin - 2 + i, -105], [-(g.margin - 2 + i), -115]], to: [[g.total - 2.5, -110], [g.total - 2.5, -110]] }] })) };
+// And NHL: two books' moneylines and totals on every upcoming game, under the NHL's own codes.
+const NHODDS = { at: new Date().toISOString(), games: (nh.games || []).map((g) => ({ away: g.away, home: g.home, start: g.start, books: [
+  { b: 'FanDuel', t: '', ml: [120, -140], sp: [[1.5, -200], [-1.5, 170]], to: [[6.5, -110], [6.5, -110]] },
+  { b: 'DraftKings', t: '', ml: [125, -145], sp: [[1.5, -210], [-1.5, 175]], to: [[6, -120], [6, 100]] }] })) };
 // And NBA: two books on every upcoming game in the props file.
 const np = J('nba_props.json');
 const nbaGames = Object.entries(np.next || {}).flatMap(([t, list]) => list.filter((g) => g.home).map((g) => ({ away: g.opp, home: t, start: g.tip })));
@@ -100,7 +104,7 @@ const mate = ppPlayer && fan.players.find((p) => p.team === ppPlayer.team && p.i
 const INJURIES = { at: new Date().toISOString(), teams: ppPlayer ? { [ppPlayer.team]: [
   { id: String(ppPlayer.id), name: ppPlayer.name, pos: 'G', status: 'Day-To-Day', note: 'Questionable for Tuesday with a sore ankle.', date: null, ret: null },
   ...(mate ? [{ id: String(mate.id), name: mate.name, pos: 'F', status: 'Out', note: 'Out with a knee injury.', date: null, ret: '2026-11-01' }] : [])] } : {} };
-const oddsBody = (u) => JSON.stringify(u.includes('sport=ncaab') ? CBODDS : u.includes('sport=ncaaf') ? CFODDS : u.includes('sport=nba_props') ? PPLINES : u.includes('sport=nba') ? NBODDS : ODDS);
+const oddsBody = (u) => JSON.stringify(u.includes('sport=ncaab') ? CBODDS : u.includes('sport=ncaaf') ? CFODDS : u.includes('sport=nhl') ? NHODDS : u.includes('sport=nba_props') ? PPLINES : u.includes('sport=nba') ? NBODDS : ODDS);
 const SIGNED = ['cbbp_CBD002', 'me', 'grp_GRP001', 'fl', 'fl_NBA001', 'cbbp', 'cbbp_CBP001', 'cbbp_CBD001', 'bets'];
 
 const BAD = /\bundefined\b|\bNaN\b|\[object |\bInfinity\b|(^|\s)null(\s|$)/;
@@ -230,6 +234,11 @@ async function website() {
     const t = await p.locator('#view').innerText();
     if (!/Books: /.test(t)) res = 'college football games did not show sportsbook lines';
   }
+  if (res === true && NHODDS.games.length) {
+    await p.evaluate(() => { location.hash = 'nhl'; }); await p.waitForTimeout(2000);
+    const t = await p.locator('#view').innerText();
+    if (!/Books: [A-Z]{3} \d+%/.test(t)) res = 'NHL games did not show sportsbook prices';
+  }
   if (res === true && nbaSoon) {
     await p.evaluate(() => { location.hash = 'nba'; }); await p.waitForTimeout(2500);
     const sum = p.locator('.nshop summary').first();
@@ -243,7 +252,7 @@ async function website() {
     else if (!/Tonight's PTS lines[\s\S]*PrizePicks[\s\S]*21\.5[\s\S]*FanDuel/.test(t)) res = 'prop check did not show the book lines';
     if (process.env.SHOTS) await p.locator('#prop').screenshot({ path: path.join(process.env.SHOTS, 'prizepicks.png') });
   }
-  if (res === true) for (const [hash, nm] of [['board', 'NFL'], ['nba', 'NBA'], ['cbb', 'college'], ['cfb', 'college football']]) {
+  if (res === true) for (const [hash, nm] of [['board', 'NFL'], ['nba', 'NBA'], ['cbb', 'college'], ['cfb', 'college football'], ...(nh.games.length > 1 ? [['nhl', 'NHL']] : [])]) {
     await p.evaluate((x) => { location.hash = x; }, hash); await p.waitForTimeout(2500);
     const sw = p.locator('.swipe-wrap').first();
     if (!(await sw.count()) || (await p.locator('.swipe .sw-card').count()) < 2) { res = `${nm} page has no swipe row`; break; }
@@ -268,7 +277,7 @@ async function landing() {
 await landing();
 await run('signed out', PUBLIC, false);
 await run('signed in', SIGNED, true);
-await run('signed in, website', ['me', 'bets', 'cbb', 'cfb', ...Object.keys(core.kickoff || {}).slice(0, 3).map((g) => 'g_' + g)], true, true);
+await run('signed in, website', ['me', 'bets', 'cbb', 'cfb', 'nhl', ...Object.keys(core.kickoff || {}).slice(0, 3).map((g) => 'g_' + g)], true, true);
 await website();
 await taps();
 await browser.close(); server.close();
