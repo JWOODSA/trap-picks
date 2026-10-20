@@ -13,7 +13,12 @@
   // Public Supabase settings (safe to publish). The service role key is a Secret set in the dashboard.
   "vars": {
     "SUPABASE_URL": "https://eioikpqtmervibvxzmmf.supabase.co",
-    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0"
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0",
+    // Stripe plans (test mode). A product ID uses that product's default price (lib/server.js priceFor).
+    "STRIPE_PRICE_MONTHLY": "prod_VTOHe8j8twSXry",
+    "STRIPE_PRICE_YEARLY": "prod_VTOJpMCxEmtJHt",
+    "STRIPE_PRICE_ELITE_MONTHLY": "prod_VTOKE6tZDjw1QU",
+    "STRIPE_PRICE_ELITE_YEARLY": "prod_VTOMkiMq2B8DLi"
   },
   "observability": { "enabled": true },
   // College lines every 30 minutes from noon ET to after midnight ET (UTC hours; covers both EDT and EST).
