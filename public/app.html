@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "51f4d50ea0a5";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "35a3b142326d";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -3340,7 +3340,7 @@ body { background: transparent; }
     const d = r && await r.json().catch(() => null);
     if (d && d.url) location.href = d.url; else toast('Could not open billing. Try again soon.');
   }
-  const PRICE = { monthly: '$9.99/month', yearly: '$59/year', pro_monthly: '$9.99/month', pro_yearly: '$59/year', elite_monthly: '$19.99/month', elite_yearly: '$149/year' };
+  const PRICE = { monthly: '$9.99/month', yearly: '$59.99/year', pro_monthly: '$9.99/month', pro_yearly: '$59.99/year', elite_monthly: '$19.99/month', elite_yearly: '$149/year' };
   // Three tiers. Free and Pro are live; Elite (line shopping, report card, custom alerts) takes a
   // waitlist until its checkout opens. The waitlist is a private doc per person.
   const TIERS = {
@@ -3356,7 +3356,7 @@ body { background: transparent; }
       h('ul', null, TIERS[t].map((x) => h('li', null, x)))];
     if (t === 'pro' && SB.tier === 'free') body.push(h('div', { class: 'probtn' },
       h('button', { onclick: () => startCheckout('monthly') }, h('b', null, '$9.99'), h('span', null, 'per month')),
-      h('button', { class: 'best', onclick: () => startCheckout('yearly') }, h('b', null, '$59'), h('span', null, 'per year · save 51%'))));
+      h('button', { class: 'best', onclick: () => startCheckout('yearly') }, h('b', null, '$59.99'), h('span', null, 'per year · save 50%'))));
     if (t === 'elite' && !mine) body.push(h('div', { class: 'probtn' },
       h('button', { onclick: () => SB.tier === 'pro' ? openPortal() : startCheckout('monthly', 'elite') }, h('b', null, '$19.99'), h('span', null, 'per month')),
       h('button', { class: 'best', onclick: () => SB.tier === 'pro' ? openPortal() : startCheckout('yearly', 'elite') }, h('b', null, '$149'), h('span', null, 'per year · save 38%'))));
@@ -3376,7 +3376,7 @@ body { background: transparent; }
       h('p', null, 'Pro unlocks every TRAP and WATCH call with its trap meter and reasons, the Slip of the Day, share cards and line movement.'),
       h('div', { class: 'probtn' },
         h('button', { onclick: () => startCheckout('monthly') }, h('b', null, '$9.99'), h('span', null, 'per month')),
-        h('button', { class: 'best', onclick: () => startCheckout('yearly') }, h('b', null, '$59'), h('span', null, 'per year · save 51%'))),
+        h('button', { class: 'best', onclick: () => startCheckout('yearly') }, h('b', null, '$59.99'), h('span', null, 'per year · save 50%'))),
       h('small', null, 'Cancel anytime. Secure checkout by Stripe.'));
   }
   function signInCard() {
