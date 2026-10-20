@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "18e73beb583f";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "3eb376150258";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -363,6 +363,7 @@ body:not([data-sport=nfl]) .tabbar a.nfl, body:not([data-sport=nba]) .tabbar a.n
 .cg .cg-l { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .cg .cg-l span { font-family: var(--mono); font-size: 12.5px; padding: 4px 9px; border-radius: 999px; background: var(--card2); }
 .cg .cg-l span.our { background: rgba(245,38,27,.14); color: var(--ink); }
+.nshop.cg-shop { margin: -6px 0 10px; padding: 8px 14px 10px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 14px 14px; background: var(--card); }
 .cg .cg-t { margin-left: auto; font-size: 12px; color: var(--ink3); font-weight: 500; }
 /* Sport switcher */
 .sport { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px 0 10px; border-radius: 999px; background: var(--card2); border: 1px solid var(--line); font-weight: 800; font-size: 14px; letter-spacing: .03em; }
@@ -2058,7 +2059,7 @@ body { background: transparent; }
       let best = null;                                // best number for the side our line favors
       const side = g.margin >= -mid ? hi : 1 - hi;    // our margin vs the book's home spread: who we like more than the books do
       for (const b of books) { const x = b.sp[side]; if (!best || x[0] > best.pt || (x[0] === best.pt && dec(x[1]) > dec(best.price))) best = { pt: x[0], price: x[1], book: b.b }; }
-      return { homeSpread: mid, total: tots.length ? tots[Math.floor(tots.length / 2)] : null, n: books.length, best, bestTeam: (side === hi) ? H : A };
+      return { homeSpread: mid, total: tots.length ? tots[Math.floor(tots.length / 2)] : null, n: books.length, best, bestTeam: (side === hi) ? H : A, og: o, flip };
     }
     return null;
   }
@@ -2068,12 +2069,13 @@ body { background: transparent; }
     const bookLine = bk && (bk.homeSpread === 0 ? 'Pick\'em' : bk.homeSpread < 0 ? `${H.abbr} ${bk.homeSpread}` : `${A.abbr} -${bk.homeSpread}`);
     const gap = bk ? Math.round((g.margin + bk.homeSpread) * 10) / 10 : 0;   // + = we like the home team more than the books do
     const row = (t) => h('div', { class: 'cg-r' }, h('i', { style: `background:${t.color}` }), h('small', null, `#${t.rank}` + apTxt('cbb', t.id)), h('span', { class: 'nm' }, t.short || t.name));
-    return h('button', { class: 'cg', onclick: () => go('c_' + H.id) }, row(A), h('div', { class: 'cg-r', style: 'font-size:12px;color:var(--ink3);font-weight:500' }, g.neutral ? 'vs (neutral site)' : '@',
+    return h('div', null, h('button', { class: 'cg', onclick: () => go('c_' + H.id) }, row(A), h('div', { class: 'cg-r', style: 'font-size:12px;color:var(--ink3);font-weight:500' }, g.neutral ? 'vs (neutral site)' : '@',
         h('span', { class: 'cg-t' }, g.tip ? new Date(g.tip).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: ET }) + ' ET' : 'Time TBA')), row(H),
       h('div', { class: 'cg-l' }, h('span', { class: 'our' }, `Our line: ${cbLine(g)}`), h('span', null, `Total ${g.total}`), g.gp < 5 ? h('span', null, 'Early: mostly last season') : null),
       bk ? h('div', { class: 'cg-l cg-b' }, h('span', null, `Books: ${bookLine}`), bk.total != null ? h('span', null, `Total ${bk.total}`) : null,
         Math.abs(gap) >= 1 ? h('span', { class: 'gap' }, `We're ${Math.abs(gap)} pts higher on ${(gap > 0 ? H : A).abbr}`) : h('span', null, 'Close to ours'),
-        eliteOk() && bk.best ? h('span', null, `Best ${bk.bestTeam.abbr} ${sgnPt(bk.best.pt)} ${odds(bk.best.price)} at ${bk.best.book}`) : null) : null);
+        eliteOk() && bk.best ? h('span', null, `Best ${bk.bestTeam.abbr} ${sgnPt(bk.best.pt)} ${odds(bk.best.price)} at ${bk.best.book}`) : null) : null),
+      bk ? oddsShop(bk.og, (bk.flip ? H : A).abbr, (bk.flip ? A : H).abbr, CBO.at, g.tip || `${g.date}T23:00:00Z`) : '');
   }
   function cbSwipe(day) {
     const gs = CB.games.filter((g) => g.date === day).sort((a, b) => Math.min(CB.byId.get(a.home).rank, CB.byId.get(a.away).rank) - Math.min(CB.byId.get(b.home).rank, CB.byId.get(b.away).rank));
@@ -2181,7 +2183,7 @@ body { background: transparent; }
       let best = null;
       const side = g.margin >= -mid ? hi : 1 - hi;
       for (const b of books) { const x = b.sp[side]; if (!best || x[0] > best.pt || (x[0] === best.pt && dec(x[1]) > dec(best.price))) best = { pt: x[0], price: x[1], book: b.b }; }
-      return { homeSpread: mid, total: tots.length ? tots[Math.floor(tots.length / 2)] : null, n: books.length, best, bestTeam: side === hi ? H : A };
+      return { homeSpread: mid, total: tots.length ? tots[Math.floor(tots.length / 2)] : null, n: books.length, best, bestTeam: side === hi ? H : A, og: o, flip };
     }
     return null;
   }
@@ -2192,12 +2194,13 @@ body { background: transparent; }
     const gap = bk ? Math.round((g.margin + bk.homeSpread) * 10) / 10 : 0;
     const row = (t) => h('div', { class: 'cg-r' }, h('i', { style: `background:${t.color}` }), h('small', null, cfRk(t) + apTxt('cfb', t.id)), h('span', { class: 'nm' }, t.short || t.name));
     const to = H.id ? H.id : A.id;
-    return h('button', { class: 'cg', onclick: () => go('cf_' + to) }, row(A), h('div', { class: 'cg-r', style: 'font-size:12px;color:var(--ink3);font-weight:500' }, g.neutral ? 'vs (neutral site)' : '@',
+    return h('div', null, h('button', { class: 'cg', onclick: () => go('cf_' + to) }, row(A), h('div', { class: 'cg-r', style: 'font-size:12px;color:var(--ink3);font-weight:500' }, g.neutral ? 'vs (neutral site)' : '@',
         h('span', { class: 'cg-t' }, cfKick(g))), row(H),
       h('div', { class: 'cg-l' }, h('span', { class: 'our' }, `Our line: ${cfLine(g)}`), h('span', null, `Total ${g.total}`)),
       bk ? h('div', { class: 'cg-l cg-b' }, h('span', null, `Books: ${cfBookLine(g, bk)}`), bk.total != null ? h('span', null, `Total ${bk.total}`) : '',
         Math.abs(gap) >= 1 ? h('span', { class: 'gap' }, `We're ${Math.abs(gap)} pts higher on ${(gap > 0 ? H : A).abbr}`) : h('span', null, 'Close to ours'),
-        eliteOk() && bk.best ? h('span', null, `Best ${bk.bestTeam.abbr} ${sgnPt(bk.best.pt)} ${odds(bk.best.price)} at ${bk.best.book}`) : '') : '');
+        eliteOk() && bk.best ? h('span', null, `Best ${bk.bestTeam.abbr} ${sgnPt(bk.best.pt)} ${odds(bk.best.price)} at ${bk.best.book}`) : '') : ''),
+      bk ? oddsShop(bk.og, (bk.flip ? H : A).abbr, (bk.flip ? A : H).abbr, CFO.at, g.kick) : '');
   }
   const cfTop = (g) => Math.min(cfT(g, 'home').rank || 999, cfT(g, 'away').rank || 999);
   function cfSwipe(gs) {
@@ -2290,19 +2293,20 @@ body { background: transparent; }
     const side = g.win >= homeP ? 1 : 0;           // the side we like more than the books do
     let best = null;
     for (const b of mls) if (!best || dec(b.ml[side]) > dec(best.price)) best = { price: b.ml[side], book: b.b };
-    return { homeP, total: tots.length ? tots[Math.floor(tots.length / 2)] : null, n: mls.length, best, bestTeam: NH.byId.get(side ? g.home : g.away) };
+    return { homeP, total: tots.length ? tots[Math.floor(tots.length / 2)] : null, n: mls.length, best, bestTeam: NH.byId.get(side ? g.home : g.away), og: o };
   }
   const nhTime = (g) => new Date(g.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: ET }) + ' ET';
   function nhGameCard(g) {
     const H = NH.byId.get(g.home), A = NH.byId.get(g.away), bk = nhBooks(g);
     const gap = bk ? Math.round((g.win - bk.homeP) * 100) : 0;
     const row = (t) => h('div', { class: 'cg-r' }, h('i', { style: `background:${t.color}` }), h('small', null, t.rec), h('span', { class: 'nm' }, t.name));
-    return h('button', { class: 'cg', onclick: () => go('nh_' + H.id) }, row(A), h('div', { class: 'cg-r', style: 'font-size:12px;color:var(--ink3);font-weight:500' }, '@', h('span', { class: 'cg-t' }, nhTime(g))), row(H),
+    return h('div', null, h('button', { class: 'cg', onclick: () => go('nh_' + H.id) }, row(A), h('div', { class: 'cg-r', style: 'font-size:12px;color:var(--ink3);font-weight:500' }, '@', h('span', { class: 'cg-t' }, nhTime(g))), row(H),
       h('div', { class: 'cg-l' }, h('span', { class: 'our' }, `Our chance: ${nhChance(g)}`), h('span', null, `Total ${g.total}`)),
       bk ? h('div', { class: 'cg-l cg-b' }, h('span', null, `Books: ${bk.homeP >= 0.5 ? `${H.abbr} ${Math.round(bk.homeP * 100)}%` : `${A.abbr} ${Math.round((1 - bk.homeP) * 100)}%`}`),
         bk.total != null ? h('span', null, `Total ${bk.total}`) : '',
         Math.abs(gap) >= 4 ? h('span', { class: 'gap' }, `We're ${Math.abs(gap)}% higher on ${(gap > 0 ? H : A).abbr}`) : h('span', null, 'Close to ours'),
-        eliteOk() && bk.best ? h('span', null, `Best ${bk.bestTeam.abbr} ${odds(bk.best.price)} at ${bk.best.book}`) : '') : '');
+        eliteOk() && bk.best ? h('span', null, `Best ${bk.bestTeam.abbr} ${odds(bk.best.price)} at ${bk.best.book}`) : '') : ''),
+      bk ? oddsShop(bk.og, A.abbr, H.abbr, NHO.at, g.start) : '');
   }
   function nhSwipe(gs) {
     const ord = (g) => -(NH.byId.get(g.home).power + NH.byId.get(g.away).power);
@@ -4172,6 +4176,16 @@ body { background: transparent; }
     if (!og || !og.books.length) return box(h('span', { class: 'muted' }, 'No sportsbook has posted this game yet'));
     const sp = bestOf(og, 'home'), to = bestOf(og, 'over');
     return box(h('span', null, h('b', null, 'Line shopping '), etag(), h('small', { class: 'muted' }, ` ${g.homeT} ${sp ? sgnPt(sp.pt) : '–'} · total ${to ? to.pt : '–'}`)), ...shopBody(og, g.opp, g.homeT, NBO.at));
+  }
+
+  // The same line shopping under a college football, college basketball or NHL game card (website only, Elite).
+  // og: the books' game from that sport's shared odds copy; away and home: our labels for the books' away and home sides.
+  function oddsShop(og, away, home, asOf, start) {
+    if (!HOSTED || !og || !og.books.length || !start || Date.parse(start) <= Date.now()) return '';
+    const box = (sum, ...k) => h('details', { class: 'nshop cg-shop' }, h('summary', null, sum), ...k);
+    if (!eliteOk()) return box(h('span', null, 'Line shopping ', etag()), h('p', { class: 'muted', style: 'margin:8px 0 0' }, 'Part of Elite. Upgrade under Your plan.'));
+    const sp = bestOf(og, 'home'), to = bestOf(og, 'over');
+    return box(h('span', null, h('b', null, 'Line shopping '), etag(), h('small', { class: 'muted' }, ` ${home} ${sp ? sgnPt(sp.pt) : '–'} · total ${to ? to.pt : '–'}`)), ...shopBody(og, away, home, asOf));
   }
 
   // Custom alerts: private rules in data/users/<id>/alerts = {rules: {id: rule}}; /api/push-run checks

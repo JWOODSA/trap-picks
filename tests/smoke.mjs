@@ -238,6 +238,9 @@ async function website() {
     await p.evaluate(() => { location.hash = 'cfb'; }); await p.waitForTimeout(2000);
     const t = await p.locator('#view').innerText();
     if (!/Books: /.test(t)) res = 'college football games did not show sportsbook lines';
+    const cs = p.locator('.cg-shop summary').first();
+    if (res === true && !(await cs.count())) res = 'college football games did not show line shopping';
+    else if (res === true) { await cs.click(); await p.waitForTimeout(300); if (!/FanDuel|DraftKings/.test(await p.locator('.cg-shop').first().innerText())) res = 'college football line shopping did not show sportsbook prices'; if (process.env.SHOTS) { const c = p.locator('.cg-shop').first(); await c.scrollIntoViewIfNeeded(); await p.screenshot({ path: path.join(process.env.SHOTS, 'cfb-shop.png') }); } }
     await p.evaluate(() => { location.hash = 'cfbt'; }); await p.waitForTimeout(1500);
     if (res === true && !/AP \d/.test(await p.locator('#view').innerText())) res = 'college football rankings did not show the AP rank';
   }
@@ -245,6 +248,7 @@ async function website() {
     await p.evaluate(() => { location.hash = 'nhl'; }); await p.waitForTimeout(2000);
     const t = await p.locator('#view').innerText();
     if (!/Books: [A-Z]{3} \d+%/.test(t)) res = 'NHL games did not show sportsbook prices';
+    if (res === true && !(await p.locator('.cg-shop').count())) res = 'NHL games did not show line shopping';
   }
   if (res === true && nbaSoon) {
     await p.evaluate(() => { location.hash = 'nba'; }); await p.waitForTimeout(2500);
