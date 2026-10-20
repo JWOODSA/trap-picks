@@ -183,7 +183,6 @@ async function taps() {
 // Website-only taps (line shopping and custom alerts need the site's /api).
 async function website() {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'America/New_York' });
-  await ctx.addInitScript(() => { window.TRAP_SWIPE = true; });   // swipe rows are a preview until approved
   const p = await ctx.newPage(); const errs = [];
   p.on('pageerror', (e) => errs.push('script error: ' + e.message));
   await p.route('**/*', (r) => { const u = r.request().url(); if (!u.startsWith(`http://localhost:${PORT}/`)) return r.abort();

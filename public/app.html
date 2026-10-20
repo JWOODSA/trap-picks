@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "8ee39e886cf7";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "2e9599c2cd3b";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -1076,9 +1076,7 @@ body { background: transparent; }
     return out;
   }
   // Swipe rows: a sideways strip of each sport's matchups at the top of its page. Cards snap as you swipe.
-  // Preview until John approves: on with ?swipe=1 in the address.
-  const SWIPE_ON = /[?&]swipe=1/.test(location.search) || !!window.TRAP_SWIPE;
-  const swipeRow = (title, cards) => SWIPE_ON && cards.length ? h('div', { class: 'swipe-wrap fade' }, h('div', { class: 'sh' }, h('h2', null, title), h('span', null, 'Swipe →')), h('div', { class: 'swipe' }, cards)) : '';   // '' not null: replaceChildren would print "null"
+  const swipeRow = (title, cards) => cards.length ? h('div', { class: 'swipe-wrap fade' }, h('div', { class: 'sh' }, h('h2', null, title), h('span', null, 'Swipe →')), h('div', { class: 'swipe' }, cards)) : '';   // '' not null: replaceChildren would print "null"
   const tipText = (t) => new Date(t).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: ET });
   function nflSwipe(gs) {
     return swipeRow('This week', gs.slice(0, 16).map((g) => {
