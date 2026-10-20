@@ -1,4 +1,4 @@
-// GET /api/odds?sport=nfl|nba|ncaab: every US sportsbook's current spread, total and moneyline for each game
+// GET /api/odds?sport=nfl|nba|ncaab|ncaaf: every US sportsbook's current spread, total and moneyline for each game
 // (lib/odds.js keeps one shared copy). 503 until ODDS_API_KEY is set. With ELITE_ONLY=true it needs
 // a signed-in Elite member; during the free launch anyone can see it.
 import { json, userFrom, billingGet, isElite, rest } from '../../lib/server.js';

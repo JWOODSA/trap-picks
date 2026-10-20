@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "04468eb3cad5";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "e192e27ffe37";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -335,7 +335,7 @@ details.card[open] summary { margin-bottom: 10px; }
   padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); background: rgba(10,10,12,.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
 .tabbar nav { display: flex; width: 100%; max-width: 560px; }
 .tabbar nav a { flex: 1; }
-body:not([data-sport=nfl]) .tabbar a.nfl, body:not([data-sport=nba]) .tabbar a.nba, body:not([data-sport=ncaab]) .tabbar a.cbb { display: none; }
+body:not([data-sport=nfl]) .tabbar a.nfl, body:not([data-sport=nba]) .tabbar a.nba, body:not([data-sport=ncaab]) .tabbar a.cbb, body:not([data-sport=cfb]) .tabbar a.cfb { display: none; }
 .gm .gm-i { font-size: 20px; width: 34px; text-align: center; }
 .gm .prow .gbtn { padding: 8px 14px; font-size: 14px; }
 .gm-add summary { cursor: pointer; font-weight: 700; color: var(--yel); padding: 10px 2px 2px; list-style: none; }
@@ -887,6 +887,8 @@ body { background: transparent; }
   <a href="#cbb" data-tab="cbb" class="cbb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v4a2 2 0 0 0 0 4v6H4v-6a2 2 0 0 0 0-4z"/><path d="M9 9h6M9 14h6" stroke-linecap="round"/></svg>Games</a>
   <a href="#cbbt" data-tab="cbbt" class="cbb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Rankings</a>
   <a href="#cbbp" data-tab="cbbp" class="cbb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c1-3.5 3.6-5.5 6.5-5.5s5.5 2 6.5 5.5M15 14.6c2.6-.4 5 1.3 6 4.4"/></svg>Play</a>
+  <a href="#cfb" data-tab="cfb" class="cfb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v4a2 2 0 0 0 0 4v6H4v-6a2 2 0 0 0 0-4z"/><path d="M9 9h6M9 14h6" stroke-linecap="round"/></svg>Games</a>
+  <a href="#cfbt" data-tab="cfbt" class="cfb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Rankings</a>
   <a href="#me" data-tab="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>My Picks</a>
 </nav></div>
 
@@ -1991,6 +1993,7 @@ body { background: transparent; }
     { k: 'nfl', icon: '🏈', name: 'NFL', go: 'board', status: 'Live', items: ['TRAP calls with a public record since 2016', 'Moneyline plays on small underdogs', 'Line moves, weather, injuries, matchups', 'Player props, team pages, pick\'em'] },
     { k: 'nba', icon: '🏀', name: 'NBA', go: 'nba', status: 'Live', items: ['Prop check for any line you bring', 'What changed: role, teammates, opponent', 'Fantasy rankings and leagues with friends'] },
     { k: 'ncaab', icon: '🏀', name: 'NCAAB', go: 'cbb', status: 'New', items: ['Power ratings for every Division I team', 'Our own projected spread and total for each game', 'Rosters with transfers on their new team', 'Weekly pick\'em and team draft leagues with friends'] },
+    { k: 'cfb', icon: '🏈', name: 'CFB', go: 'cfb', status: 'New', items: ['Power ratings for every FBS team', 'Our own projected spread and total for every game', 'Sportsbook lines next to ours, and the best price', 'Each team\'s results against the spread'] },
     { k: 'wnba', icon: '🏀', name: 'WNBA', status: 'Soon', items: ['Season starts in May'] },
     { k: 'mlb', icon: '⚾', name: 'MLB', status: 'Soon', items: ['Season starts in March'] },
   ];
@@ -2127,6 +2130,127 @@ body { background: transparent; }
             t.players.map((p) => h('tr', null, h('td', null, h('b', null, p.name), h('small', { style: 'display:block;color:var(--ink3)' }, [p.pos, p.from && `transfer from ${p.from}`].filter(Boolean).join(' · '))),
               [p.pts, p.reb, p.ast, p.min].map((v) => h('td', null, f1(v))))))) : h('p', { class: 'muted' }, 'No returning stats on this roster.')));
     }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'College data failed to load.')));
+    return [box];
+  }
+
+  // ---------- college football ----------
+  // FBS ratings and our own projected spread and total (export_cfb.py), next to the sportsbooks' lines when we have them.
+  let CF = null, cfLoading = null;
+  const loadCfb = () => cfLoading || (cfLoading = fetch('cfb.json').then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => {
+    CF = d; CF.byId = new Map(d.teams.map((t) => [t.id, t])); return CF; }));
+  // FCS opponents share one rating, so they get a plain stand-in team.
+  const cfT = (g, side) => CF.byId.get(g[side]) || { id: null, abbr: (g.fcs || 'FCS').split(' ')[0].slice(0, 5).toUpperCase(), name: g.fcs || 'FCS team', short: g.fcs || 'FCS team', color: '#55555c', rank: null };
+  const cfRk = (t) => t.rank ? `#${t.rank}` : 'FCS';
+  const footy = () => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'ball'); s.innerHTML = '<g fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><ellipse cx="12" cy="12" rx="10" ry="6" transform="rotate(-35 12 12)"/><path d="M9 15l6-6M10 11l1.5 1.5M11.5 9.5l1.5 1.5M12.5 12.5l1.5 1.5"/></g>'; return s; };
+  const cfHero = () => { const m = CF.meta, a = m.accuracy, d = a.disagree;
+    return h('div', { class: 'fh fade' }, footy(), h('h1', null, 'College Football'),
+      h('p', null, `FBS, ${m.season} season. Ratings use this season's ${m.games_this_season} games plus last season's, and update every day.`),
+      h('p', { style: 'font-size:12.5px;opacity:.9' }, `Our line is our own number, not a sportsbook's. Tested on ${a.seasons} (${a.games.toLocaleString()} games, each week predicted from earlier games only): it picked the winner ${pct(a.winner_pct, 0)} of the time and missed the final margin by ${a.margin_mae} points on average. The posted line missed by ${a.line_mae}, so the books are sharper. When we disagreed by ${d.min}+ points our side went ${d.won}-${d.lost} against the spread (${pct(d.won / (d.won + d.lost), 0)}), not enough to bet on by itself.`)); };
+  const cfLine = (g) => { const H = cfT(g, 'home'), A = cfT(g, 'away'); if (g.margin === 0) return 'Pick\'em';
+    return g.margin > 0 ? `${H.abbr} -${g.margin}` : `${A.abbr} -${-g.margin}`; };
+  // Sportsbook lines (/api/odds?sport=ncaaf, one shared copy). Books write "School Mascot"; each team's bk is that name,
+  // matched after dropping accents, punctuation and "State"/"St". A game gets book lines only when both teams match.
+  const CFO = { games: null, at: null, p: null };
+  const loadCfOdds = () => CFO.p || (CFO.p = !HOSTED ? Promise.resolve() : fetch(`${window.TRAP_API}/odds?sport=ncaaf`, { headers: SB.session ? authHdr() : {} })
+    .then((r) => (r.ok ? r.json() : null)).then((d) => { if (d && d.games) Object.assign(CFO, { games: d.games, at: d.at }); }).catch(() => {}));
+  const bkNorm = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9 ]/g, '')
+    .replace(/\bstate\b/g, 'st').replace(/\bsaint\b/g, 'st').replace(/\s+/g, ' ').trim();
+  function cfBooks(g) {
+    if (!CFO.games || !g.kick) return null;
+    const H = CF.byId.get(g.home), A = CF.byId.get(g.away);
+    if (!H || !A) return null;
+    const nh = bkNorm(H.bk), na = bkNorm(A.bk), k = Date.parse(g.kick);
+    for (const o of CFO.games) {
+      if (Math.abs(Date.parse(o.start) - k) > 12 * 36e5) continue;
+      const oa = bkNorm(o.away), oh = bkNorm(o.home), flip = oa === nh && oh === na;
+      if (!(oa === na && oh === nh) && !flip) continue;
+      const books = o.books.filter((b) => b.sp[0] && b.sp[1]);
+      if (!books.length) return null;
+      const hi = flip ? 0 : 1;
+      const homePts = books.map((b) => b.sp[hi][0]).sort((x, y) => x - y), mid = homePts[Math.floor(homePts.length / 2)];
+      const tots = o.books.filter((b) => b.to[0]).map((b) => b.to[0][0]).sort((x, y) => x - y);
+      let best = null;
+      const side = g.margin >= -mid ? hi : 1 - hi;
+      for (const b of books) { const x = b.sp[side]; if (!best || x[0] > best.pt || (x[0] === best.pt && dec(x[1]) > dec(best.price))) best = { pt: x[0], price: x[1], book: b.b }; }
+      return { homeSpread: mid, total: tots.length ? tots[Math.floor(tots.length / 2)] : null, n: books.length, best, bestTeam: side === hi ? H : A };
+    }
+    return null;
+  }
+  const cfBookLine = (g, bk) => { const H = cfT(g, 'home'), A = cfT(g, 'away'); return bk.homeSpread === 0 ? 'Pick\'em' : bk.homeSpread < 0 ? `${H.abbr} ${bk.homeSpread}` : `${A.abbr} -${bk.homeSpread}`; };
+  const cfKick = (g) => g.kick ? new Date(g.kick).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: ET }) + ' ET' : `${shortDay(g.date)} · time TBA`;
+  function cfGameCard(g) {
+    const H = cfT(g, 'home'), A = cfT(g, 'away'), bk = cfBooks(g);
+    const gap = bk ? Math.round((g.margin + bk.homeSpread) * 10) / 10 : 0;
+    const row = (t) => h('div', { class: 'cg-r' }, h('i', { style: `background:${t.color}` }), h('small', null, cfRk(t)), h('span', { class: 'nm' }, t.short || t.name));
+    const to = H.id ? H.id : A.id;
+    return h('button', { class: 'cg', onclick: () => go('cf_' + to) }, row(A), h('div', { class: 'cg-r', style: 'font-size:12px;color:var(--ink3);font-weight:500' }, g.neutral ? 'vs (neutral site)' : '@',
+        h('span', { class: 'cg-t' }, cfKick(g))), row(H),
+      h('div', { class: 'cg-l' }, h('span', { class: 'our' }, `Our line: ${cfLine(g)}`), h('span', null, `Total ${g.total}`)),
+      bk ? h('div', { class: 'cg-l cg-b' }, h('span', null, `Books: ${cfBookLine(g, bk)}`), bk.total != null ? h('span', null, `Total ${bk.total}`) : '',
+        Math.abs(gap) >= 1 ? h('span', { class: 'gap' }, `We're ${Math.abs(gap)} pts higher on ${(gap > 0 ? H : A).abbr}`) : h('span', null, 'Close to ours'),
+        eliteOk() && bk.best ? h('span', null, `Best ${bk.bestTeam.abbr} ${sgnPt(bk.best.pt)} ${odds(bk.best.price)} at ${bk.best.book}`) : '') : '');
+  }
+  const cfTop = (g) => Math.min(cfT(g, 'home').rank || 999, cfT(g, 'away').rank || 999);
+  function cfSwipe(gs) {
+    return swipeRow('Top games this week', gs.slice().sort((a, b) => cfTop(a) - cfTop(b)).slice(0, 16).map((g) => {
+      const H = cfT(g, 'home'), A = cfT(g, 'away'), bk = cfBooks(g);
+      return h('button', { class: 'sw-card', style: `--tc:${H.color}`, onclick: () => go('cf_' + (H.id || A.id)) }, h('small', null, g.kick ? tipText(g.kick) : shortDay(g.date)),
+        h('b', { class: 'sw-mu' }, `${cfRk(A)} ${A.abbr} ${g.neutral ? 'vs' : '@'} ${cfRk(H)} ${H.abbr}`),
+        h('span', { class: 'sw-line' }, `Ours: ${cfLine(g)}`), h('span', { class: 'sw-tag' }, bk ? `Books: ${cfBookLine(g, bk)}` : `Total ${g.total}`));
+    }));
+  }
+  function cfbGames() {
+    const box = h('div', null, h('div', { class: 'loading' }, 'Loading college football…'));
+    loadCfb().then(() => {
+      const q = h('input', { class: 'search', type: 'search', placeholder: 'Find a team or conference', 'aria-label': 'Find a college football team' });
+      const list = h('div'), swipe = h('div');
+      const draw = () => {
+        const t = q.value.trim().toLowerCase();
+        const keep = (g) => !t || [cfT(g, 'home'), cfT(g, 'away')].some((x) => x.name.toLowerCase().includes(t) || (x.abbr || '').toLowerCase() === t || (x.conf || '').toLowerCase().includes(t));
+        swipe.replaceChildren(cfSwipe(CF.games.filter((g) => g.week === CF.meta.weeks[0])));
+        list.replaceChildren(...CF.meta.weeks.flatMap((w) => { const gs = CF.games.filter((g) => g.week === w && keep(g)).sort((a, b) => (a.kick || a.date).localeCompare(b.kick || b.date) || cfTop(a) - cfTop(b));
+          return gs.length ? [h('div', { class: 'sh' }, h('h2', null, `Week ${w}`), h('span', null, `${gs.length} games`)), ...gs.map(cfGameCard)] : []; }));
+        if (!list.children.length) list.append(h('p', { class: 'muted' }, CF.games.length ? 'No games match.' : 'No games scheduled in the next two weeks.'));
+      };
+      q.addEventListener('input', draw); draw(); loadCfOdds().then(() => { if (CFO.games) draw(); });
+      box.replaceChildren(cfHero(), swipe, q, list, h('p', { class: 'muted', style: 'margin:14px 2px 0;font-size:12px' }, `FBS games this week and next. Data: CFBD and ESPN via the free cfbfastR archive. Updated ${new Date(CF.meta.generated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`));
+    }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'College football data failed to load.')));
+    return [box];
+  }
+  function cfbRank() {
+    const box = h('div', null, h('div', { class: 'loading' }, 'Loading rankings…'));
+    loadCfb().then(() => {
+      const q = h('input', { class: 'search', type: 'search', placeholder: 'Search a team or conference', 'aria-label': 'Search college football teams' });
+      const list = h('div', { class: 'plist' });
+      const draw = () => { const t = q.value.trim().toLowerCase();
+        list.replaceChildren(...CF.teams.filter((x) => !t || x.name.toLowerCase().includes(t) || (x.conf || '').toLowerCase().includes(t)).sort((a, b) => a.rank - b.rank)
+          .map((x) => h('button', { class: 'frow', style: `--tc:${x.color}`, onclick: () => go('cf_' + x.id) }, h('span', { class: 'rk' }, x.rank), h('span', { class: 'pos' }, x.abbr),
+            h('span', { class: 'nm' }, x.name, h('small', null, `${x.rec} · ${x.conf}`)), h('span', { class: 'vl' }, sgn(x.rating), h('small', null, 'rating'))))); };
+      q.addEventListener('input', draw); draw();
+      box.replaceChildren(h('div', { class: 'sh' }, h('h2', null, 'Power ratings'), h('span', null, `All ${CF.teams.length} FBS teams`)),
+        h('p', { class: 'muted', style: 'margin:0 2px 10px' }, 'Rating = points better than an average FBS team on a neutral field.'), q, list);
+    }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'College football data failed to load.')));
+    return [box];
+  }
+  function cfbTeam(id) {
+    const box = h('div', null, h('div', { class: 'loading' }, 'Loading team…'));
+    Promise.all([loadCfb(), loadCfOdds()]).then(() => {
+      const t = CF.byId.get(+id); if (!t) { box.replaceChildren(...notFound()); return; }
+      const mine = (g) => g.home === t.id || g.away === t.id;
+      const gs = CF.games.filter(mine), rs = CF.results.filter(mine).reverse();
+      const res = (g) => { const home = g.home === t.id, us = home ? g.hp : g.ap, them = home ? g.ap : g.hp, o = cfT(g, home ? 'away' : 'home');
+        // ESPN's posted spread is for the home team; did this team cover it?
+        const sp = g.espn == null ? null : home ? g.espn : -g.espn, cov = sp == null ? null : us - them + sp;
+        return h('tr', null, h('td', null, `Wk ${g.week}`), h('td', null, `${home ? 'vs' : '@'} ${o.abbr}`), h('td', null, h('span', { class: 'res ' + (us > them ? 'W' : 'L') }, us > them ? 'W' : 'L'), ` ${us}-${them}`),
+          h('td', null, sp == null ? '–' : `${sgnPt(sp)} ${cov > 0 ? '✓' : cov < 0 ? '✗' : 'push'}`)); };
+      box.replaceChildren(
+        h('div', { class: 'ph fade', style: `background:linear-gradient(150deg, ${t.color}, #141417 120%)` }, h('div', { class: 'num' }, `#${t.rank}`), h('div', { class: 'pn' }, t.name),
+          h('div', { class: 'meta' }, `${t.rec} · ${t.conf}${t.rec_last ? ` · ${CF.meta.last_season}: ${t.rec_last}` : ''}`)),
+        kv([[sgn(t.rating), 'Rating', 'hot'], [f1(t.off), 'Points scored vs avg defense'], [f1(t.def), 'Points allowed vs avg offense'], [t.rank_last ? `#${t.rank_last}` : '–', `Our rank in ${CF.meta.last_season}`]]),
+        ...(gs.length ? [h('div', { class: 'sh' }, h('h2', null, 'Coming up'), h('span', null, 'Our line')), ...gs.map(cfGameCard)] : []),
+        rs.length ? h('div', { class: 'card' }, h('h3', null, 'This season'), h('p', { class: 'muted', style: 'margin:-4px 0 8px;font-size:13px' }, 'Score, and the posted spread for this team with whether it covered.'),
+          h('div', { class: 'scroll' }, h('table', { class: 'tbl' }, h('tr', null, ['Week', 'Opp', 'Result', 'Spread'].map((x) => h('th', null, x))), rs.map(res)))) : '');
+    }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'College football data failed to load.')));
     return [box];
   }
 
@@ -4552,6 +4676,9 @@ body { background: transparent; }
     else if (hash === 'cbbt') { tab = 'cbbt'; nodes = cbbRank(); }
     else if (kind === 'c') { tab = 'cbbt'; nodes = cbbTeam(arg); }
     else if (hash === 'cbbp') { tab = 'cbbp'; nodes = cbbPlay(); }
+    else if (hash === 'cfb') { tab = 'cfb'; nodes = cfbGames(); }
+    else if (hash === 'cfbt') { tab = 'cfbt'; nodes = cfbRank(); }
+    else if (kind === 'cf') { tab = 'cfbt'; nodes = cfbTeam(arg); }
     else if (kind === 'cbbp') { tab = 'cbbp'; nodes = cbLeaguePage(arg); }
     else if (kind === 'f') { tab = 'fantasy'; nodes = fplayer(arg); }
     else if (hash === 'fl') { tab = 'fl'; nodes = leaguesHome(); }
@@ -4564,10 +4691,11 @@ body { background: transparent; }
     if (!(kind === 'fl' && arg) && FL.code) flStop();
     if (!(kind === 'cbbp' && arg) && CL.code) clStop();
     if (kind !== 'grp' && GROUP.unsub) { GROUP.unsub(); GROUP.unsub = null; GROUP.code = null; }
-    const detail = (['g', 't', 'p', 'grp', 'f', 'fl', 'c', 'cbbp'].includes(kind) && arg) || hash === 'bets';
+    const detail = (['g', 't', 'p', 'grp', 'f', 'fl', 'c', 'cbbp', 'cf'].includes(kind) && arg) || hash === 'bets';
     // The sport follows the page: NBA pages switch the tab bar to NBA, NFL pages to NFL; shared pages keep the current one.
     if (['nba', 'fantasy', 'fl'].includes(hash) || kind === 'f' || kind === 'fl') setSport('nba');
     else if (['cbb', 'cbbt', 'cbbp'].includes(hash) || kind === 'c' || kind === 'cbbp') setSport('ncaab');
+    else if (['cfb', 'cfbt'].includes(hash) || kind === 'cf') setSport('cfb');
     else if (!['sports', 'me', 'bets', 'login'].includes(hash) && kind !== 'grp') setSport('nfl');
     document.getElementById('back').hidden = !detail;
     document.querySelectorAll('.tabbar a').forEach((a) => { if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
