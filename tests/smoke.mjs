@@ -183,6 +183,7 @@ async function taps() {
 // Website-only taps (line shopping and custom alerts need the site's /api).
 async function website() {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'America/New_York' });
+  await ctx.addInitScript(() => { window.TRAP_SWIPE = true; });   // swipe rows are a preview until approved
   const p = await ctx.newPage(); const errs = [];
   p.on('pageerror', (e) => errs.push('script error: ' + e.message));
   await p.route('**/*', (r) => { const u = r.request().url(); if (!u.startsWith(`http://localhost:${PORT}/`)) return r.abort();
@@ -223,6 +224,12 @@ async function website() {
     const t = await p.locator('#prop').innerText().catch(() => '');
     if (!/Tonight's PTS lines[\s\S]*PrizePicks[\s\S]*21\.5[\s\S]*FanDuel/.test(t)) res = 'prop check did not show the book lines';
     if (process.env.SHOTS) await p.locator('#prop').screenshot({ path: path.join(process.env.SHOTS, 'prizepicks.png') });
+  }
+  if (res === true) for (const [hash, nm] of [['board', 'NFL'], ['nba', 'NBA'], ['cbb', 'college']]) {
+    await p.evaluate((x) => { location.hash = x; }, hash); await p.waitForTimeout(2500);
+    const sw = p.locator('.swipe-wrap').first();
+    if (!(await sw.count()) || (await p.locator('.swipe .sw-card').count()) < 2) { res = `${nm} page has no swipe row`; break; }
+    if (process.env.SHOTS) { await sw.scrollIntoViewIfNeeded(); await p.screenshot({ path: path.join(process.env.SHOTS, `swipe-${hash}.png`) }); }
   }
   if (res !== true && !/fine before/.test(res)) fails.push('tap: set a line alert: ' + res);
   errs.forEach((e) => fails.push('tap: set a line alert: ' + e));

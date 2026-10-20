@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "c4c34963007b";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "1528f785d69d";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -806,6 +806,9 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
   .pp-line { margin:10px 0 4px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; } .pp-line > small { display:block; color:var(--ink3); font-size:12px; margin-top:6px; }
   .pp-books { display:flex; gap:6px; overflow-x:auto; margin-top:8px; padding-bottom:2px; scrollbar-width:none; } .pp-books::-webkit-scrollbar { display:none; }
   .pp-books button { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; min-width:72px; padding:6px 10px; border:1px solid var(--line); border-radius:10px; background:transparent; color:var(--ink); font:inherit; } .pp-books button small { font-size:11px; color:var(--ink3); } .pp-books button b { font-size:16px; } .pp-books button[aria-pressed="true"] { border-color:var(--red); background:rgba(225,29,42,.12); }
+  .swipe-wrap { margin:4px 0 6px; } .swipe { display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; scroll-padding-left:12px; margin:0 -12px; padding:2px 12px 10px; scrollbar-width:none; -webkit-overflow-scrolling:touch; } .swipe::-webkit-scrollbar { display:none; }
+  .sw-card { flex:0 0 152px; scroll-snap-align:start; display:flex; flex-direction:column; gap:4px; text-align:left; padding:12px; border-radius:14px; border:1px solid var(--line); border-top:3px solid var(--tc, var(--red)); background:var(--card, rgba(255,255,255,.04)); color:var(--ink); font:inherit; }
+  .sw-card small { color:var(--ink3); font-size:11.5px; } .sw-mu { font-size:15px; line-height:1.2; min-height:2.4em; } .sw-line { font-family:var(--mono, monospace); font-weight:700; font-size:15px; } .sw-tag { font-size:12px; color:var(--ink2); } .sw-tag .tag { font-size:10.5px; padding:1px 6px; }
   .nshop { margin-top:10px; border-top:1px solid var(--line); padding-top:8px; } .nshop > summary { cursor:pointer; font-size:14px; list-style:none; } .nshop > summary::-webkit-details-marker { display:none; } .nshop[open] > summary { margin-bottom:8px; }
 .shop-all summary { cursor: pointer; padding: 10px 0 4px; color: var(--ink2); font-size: 14px; }
 .shop-tbl > div { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 6px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 12px; }
@@ -1072,6 +1075,19 @@ body { background: transparent; }
     for (const s of out) { s.games.sort((a, b) => kickOf(a) - kickOf(b) || RANK[b.top.call] - RANK[a.top.call] || b.top.meter - a.top.meter); s.at = kickOf(s.games[0]); }
     return out;
   }
+  // Swipe rows: a sideways strip of each sport's matchups at the top of its page. Cards snap as you swipe.
+  // Preview until John approves: on with ?swipe=1 in the address.
+  const SWIPE_ON = /[?&]swipe=1/.test(location.search) || !!window.TRAP_SWIPE;
+  const swipeRow = (title, cards) => SWIPE_ON && cards.length ? h('div', { class: 'swipe-wrap fade' }, h('div', { class: 'sh' }, h('h2', null, title), h('span', null, 'Swipe →')), h('div', { class: 'swipe' }, cards)) : null;
+  const tipText = (t) => new Date(t).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: ET });
+  function nflSwipe(gs) {
+    return swipeRow('This week', gs.slice(0, 16).map((g) => {
+      const sp = spreadNow(g.id), c = g.top, ko = (C.kickoff || {})[g.id];
+      const line = sp == null ? 'No line yet' : sp === 0 ? 'Pick\'em' : sp > 0 ? `${g.home} -${sp}` : `${g.away} -${-sp}`;
+      return h('button', { class: 'sw-card', onclick: () => go('g_' + g.id) }, h('small', null, ko ? tipText(ko) : ''), h('b', { class: 'sw-mu' }, `${g.away} @ ${g.home}`),
+        h('span', { class: 'sw-line' }, line), C.meta.locked ? h('span', { class: 'sw-tag' }, 'Pro') : h('span', { class: 'sw-tag' }, h('span', { class: 'tag ' + c.call }, LABEL[c.call]), c.call === 'PASS' ? '' : ' ' + c.pick));
+    }));
+  }
   function board() {
     const all_ = games();
     const gs = all_.filter((g) => !started(g.id));
@@ -1102,6 +1118,7 @@ body { background: transparent; }
           h('div', { id: 'liveRec' }, h('b', null, recText(live)), h('span', null, live ? `live · ${sgn(live.units)}u` : 'live, grades after Sunday')),
           all ? h('div', null, h('b', null, pct(all.win_pct)), h('span', null, `${recText(all)} since 2016`)) : null),
         h('p', { class: 'meter-key' }, h('b', null, 'Trap meter 0-100:'), ' higher means the popular side is more likely to lose.')),
+      nflSwipe(gs),
       liveCard(),
       lockd ? proCard() : slipOfDay(),
       yourTeams(),
@@ -2036,6 +2053,16 @@ body { background: transparent; }
         Math.abs(gap) >= 1 ? h('span', { class: 'gap' }, `We're ${Math.abs(gap)} pts higher on ${(gap > 0 ? H : A).abbr}`) : h('span', null, 'Close to ours'),
         eliteOk() && bk.best ? h('span', null, `Best ${bk.bestTeam.abbr} ${sgnPt(bk.best.pt)} ${odds(bk.best.price)} at ${bk.best.book}`) : null) : null);
   }
+  function cbSwipe(day) {
+    const gs = CB.games.filter((g) => g.date === day).sort((a, b) => Math.min(CB.byId.get(a.home).rank, CB.byId.get(a.away).rank) - Math.min(CB.byId.get(b.home).rank, CB.byId.get(b.away).rank));
+    return swipeRow(day === etDayOf(new Date()) ? 'Top games today' : `Top games · ${shortDay(day)}`, gs.slice(0, 16).map((g) => {
+      const H = CB.byId.get(g.home), A = CB.byId.get(g.away), bk = cbBooks(g);
+      const bl = bk && (bk.homeSpread === 0 ? 'Pick\'em' : bk.homeSpread < 0 ? `${H.abbr} ${bk.homeSpread}` : `${A.abbr} -${bk.homeSpread}`);
+      return h('button', { class: 'sw-card', style: `--tc:${H.color}`, onclick: () => go('c_' + H.id) }, h('small', null, g.tip ? tipText(g.tip) : shortDay(g.date)),
+        h('b', { class: 'sw-mu' }, `#${A.rank} ${A.abbr || A.short} ${g.neutral ? 'vs' : '@'} #${H.rank} ${H.abbr || H.short}`),
+        h('span', { class: 'sw-line' }, `Ours: ${cbLine(g)}`), h('span', { class: 'sw-tag' }, bl ? `Books: ${bl}` : `Total ${g.total}`));
+    }));
+  }
   function cbbGames() {
     const box = h('div', null, h('div', { class: 'loading' }, 'Loading college games…'));
     loadCbb().then(() => {
@@ -2050,7 +2077,7 @@ body { background: transparent; }
         if (!list.children.length) list.append(h('p', { class: 'muted' }, 'No games match.'));
       };
       q.addEventListener('input', draw); draw(); loadCbOdds().then(() => { if (CBO.games) draw(); });
-      box.replaceChildren(cbHero(), q, list, h('p', { class: 'muted', style: 'margin:14px 2px 0;font-size:12px' }, `Games in the next week between Division I teams. Data: ESPN via the free sportsdataverse archive. Updated ${new Date(CB.meta.generated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`));
+      box.replaceChildren(cbHero(), cbSwipe(days[0]), q, list, h('p', { class: 'muted', style: 'margin:14px 2px 0;font-size:12px' }, `Games in the next week between Division I teams. Data: ESPN via the free sportsdataverse archive. Updated ${new Date(CB.meta.generated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`));
     }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'College data failed to load.')));
     return [box];
   }
@@ -2087,9 +2114,29 @@ body { background: transparent; }
     return [box];
   }
 
+  // Tonight's players: his points line (PrizePicks, else the books') and how often he cleared it in his last 10.
+  // Without lines yet, the top two scorers on each team with last season's average.
+  function nbaSwipe(todays, top) {
+    const cards = [];
+    for (const g of todays) for (const [t, o] of [[g.opp, g.homeT], [g.homeT, g.opp]]) {
+      const home = t === g.homeT;
+      const ps = F.players.filter((p) => p.team === t).sort((a, b) => b.pts - a.pts);
+      for (const p of ps.slice(0, 6)) {
+        const BL = bookLines(p, 'pts'), line = BL ? mainLine(BL) : null;
+        if (!line && !top(t).includes(p)) continue;
+        const L = (NP.logs[String(p.id)] || []).slice(-10), over = line == null ? null : L.filter((r) => r[6] > line).length;
+        cards.push({ p, line, over, n: L.length, home, o, tip: g.tip });
+      }
+    }
+    cards.sort((a, b) => (b.line != null) - (a.line != null) || b.p.pts - a.p.pts);
+    return swipeRow('Tonight\'s players', cards.slice(0, 20).map((c) => h('button', { class: 'sw-card', style: `--tc:${tcol(c.p.team)}`, onclick: () => { FS.toProp = true; go('f_' + c.p.id); } },
+      h('small', null, `${c.p.team} ${c.home ? 'vs' : '@'} ${c.o} · ${tipText(c.tip)}`), h('b', { class: 'sw-mu' }, c.p.name),
+      c.line != null ? h('span', { class: 'sw-line' }, `${c.line} PTS`) : h('span', { class: 'sw-line' }, `${f1(c.p.pts)} PTS avg`),
+      h('span', { class: 'sw-tag' }, c.line != null && c.n ? `Over in ${c.over} of last ${c.n}` : 'Tap for prop check'))));
+  }
   function nbaHome() {
     const box = h('div', null, h('div', { class: 'loading' }, 'Loading NBA games…'));
-    Promise.all([loadFantasy(), loadProps()]).then(() => {
+    Promise.all([loadFantasy(), loadProps(), loadPP()]).then(() => {
       const games = [];
       for (const [team, list] of Object.entries(NP.next)) for (const g of list) if (g.home) games.push({ ...g, homeT: team });
       const day = games.map((g) => g.date).sort()[0];
@@ -2098,6 +2145,7 @@ body { background: transparent; }
       const pb = (p) => h('button', { onclick: (e) => { e.stopPropagation(); FS.toProp = true; go('f_' + p.id); } }, `🎯 ${p.name.split(' ').slice(-1)[0]} ${f1(p.pts)}`);
       box.replaceChildren(
         h('div', { class: 'fh fade' }, ball(), h('h1', null, 'NBA'), h('p', null, `${NP.meta.season} season. Bring a line from your sportsbook and see how often a player cleared it, and what has changed since.`)),
+        nbaSwipe(todays, top),
         propFinder(),
         h('div', { class: 'sh' }, h('h2', null, day ? (day === etDayOf(new Date()) ? 'Tonight' : shortDay(day)) : 'Games'), h('span', null, `${todays.length} games`)),
         ...todays.map((g) => h('div', { class: 'ngame' },
