@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "35a3b142326d";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "1bacdeb28f4d";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -3356,12 +3356,14 @@ body { background: transparent; }
       h('ul', null, TIERS[t].map((x) => h('li', null, x)))];
     if (t === 'pro' && SB.tier === 'free') body.push(h('div', { class: 'probtn' },
       h('button', { onclick: () => startCheckout('monthly') }, h('b', null, '$9.99'), h('span', null, 'per month')),
-      h('button', { class: 'best', onclick: () => startCheckout('yearly') }, h('b', null, '$59.99'), h('span', null, 'per year · save 50%'))));
+      h('button', { class: 'best', onclick: () => startCheckout('yearly') }, h('b', null, '$59.99'), h('span', null, 'per year · save 50%'))), trialNote());
     if (t === 'elite' && !mine) body.push(h('div', { class: 'probtn' },
       h('button', { onclick: () => SB.tier === 'pro' ? openPortal() : startCheckout('monthly', 'elite') }, h('b', null, '$19.99'), h('span', null, 'per month')),
-      h('button', { class: 'best', onclick: () => SB.tier === 'pro' ? openPortal() : startCheckout('yearly', 'elite') }, h('b', null, '$149'), h('span', null, 'per year · save 38%'))));
+      h('button', { class: 'best', onclick: () => SB.tier === 'pro' ? openPortal() : startCheckout('yearly', 'elite') }, h('b', null, '$149'), h('span', null, 'per year · save 38%'))), SB.tier === 'pro' ? null : trialNote());
     return h('div', { class: 'tier t-' + t }, body);
   }
+  // New subscribers get 30 days free (functions/api/checkout.js); anyone who has subscribed before pays right away.
+  const trialNote = () => h('small', { class: 'muted', style: 'display:block;margin-top:6px' }, SB.status ? 'Cancel anytime. Secure checkout by Stripe.' : 'First 30 days free, then billed. Cancel anytime before then and you pay nothing.');
   function tiersCard() { return h('div', { class: 'tiers fade' }, ['free', 'pro', 'elite'].map(tierBlock)); }
   async function joinWaitlist() {
     if (ACCT.state !== 'ready') { go('login'); return toast('Sign in first, then join the waitlist.'); }
@@ -3377,7 +3379,7 @@ body { background: transparent; }
       h('div', { class: 'probtn' },
         h('button', { onclick: () => startCheckout('monthly') }, h('b', null, '$9.99'), h('span', null, 'per month')),
         h('button', { class: 'best', onclick: () => startCheckout('yearly') }, h('b', null, '$59.99'), h('span', null, 'per year · save 50%'))),
-      h('small', null, 'Cancel anytime. Secure checkout by Stripe.'));
+      h('small', null, SB.status ? 'Cancel anytime. Secure checkout by Stripe.' : 'First 30 days free, then billed. Cancel anytime. Secure checkout by Stripe.'));
   }
   function signInCard() {
     const em = h('input', { class: 'search', type: 'email', placeholder: 'you@gmail.com', autocomplete: 'email', 'aria-label': 'Email', style: 'margin:0' });
@@ -3465,7 +3467,7 @@ body { background: transparent; }
   function planCard() {
     const until = SB.until ? new Date(SB.until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
     return h('div', { class: 'card plan' }, h('h3', null, 'Your plan'),
-      SB.pro ? [h('p', { class: 'explain', style: 'margin:0 0 10px' }, h('b', null, SB.tier === 'elite' ? 'Elite' : 'Pro'), SB.plan ? ` · ${PRICE[SB.plan] || SB.plan}` : '', SB.status === 'canceled' ? ` · ends ${until}` : ` · renews ${until}`),
+      SB.pro ? [h('p', { class: 'explain', style: 'margin:0 0 10px' }, h('b', null, SB.tier === 'elite' ? 'Elite' : 'Pro'), SB.plan ? ` · ${PRICE[SB.plan] || SB.plan}` : '', SB.status === 'canceled' ? ` · ends ${until}` : SB.status === 'trialing' ? ` · free until ${until}, then billed` : ` · renews ${until}`),
         h('button', { class: 'gbtn alt', onclick: openPortal }, 'Manage subscription'), SB.tier === 'pro' ? tierBlock('elite') : null]
         : HOSTED && !window.TRAP_PAYWALL && !/[?&]plans=1/.test(location.search) ? [h('p', { class: 'explain', style: 'margin:0 0 10px' }, 'Everything is free during launch, including every TRAP call. Pro plans open later.')]
         : [h('p', { class: 'explain', style: 'margin:0 0 10px' }, 'Free plan. Upgrade to see this week\'s calls.'), tiersCard(),

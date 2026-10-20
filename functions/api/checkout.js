@@ -20,7 +20,8 @@ export async function onRequestPost({ request, env }) {
       line_items: { 0: { price, quantity: 1 } },
       client_reference_id: user.id,
       ...(b && b.stripe_customer ? { customer: b.stripe_customer } : { customer_email: user.email }),
-      subscription_data: { metadata: { user_id: user.id, plan } },
+      // First subscription only: TRIAL_DAYS free (default 30), card taken now, first charge when it ends.
+      subscription_data: { metadata: { user_id: user.id, plan }, ...(b && b.subscription ? {} : { trial_period_days: +(env.TRIAL_DAYS || 30) }) },
       metadata: { user_id: user.id, plan },
       allow_promotion_codes: 'true',
       success_url: `${origin}/app?checkout=done#me`,
