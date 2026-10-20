@@ -20,6 +20,13 @@
     "STRIPE_PRICE_ELITE_MONTHLY": "prod_VTOKE6tZDjw1QU",
     "STRIPE_PRICE_ELITE_YEARLY": "prod_VTOMkiMq2B8DLi"
   },
+  // Official address (John bought trap-picks.com on Cloudflare 2026-10-20). Cloudflare adds the DNS records itself.
+  // workers_dev keeps the old trap-picks.johnglenwoods99.workers.dev link working too.
+  "routes": [
+    { "pattern": "trap-picks.com", "custom_domain": true },
+    { "pattern": "www.trap-picks.com", "custom_domain": true }
+  ],
+  "workers_dev": true,
   "observability": { "enabled": true },
   // College lines every 30 minutes from noon ET to after midnight ET (UTC hours; covers both EDT and EST).
   "triggers": { "crons": ["*/30 16-23 * * *", "*/30 0-5 * * *"] },

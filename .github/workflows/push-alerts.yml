@@ -16,7 +16,7 @@ jobs:
   send:
     runs-on: ubuntu-latest
     env:
-      SITE_URL: ${{ vars.SITE_URL || 'https://trap-picks.johnglenwoods99.workers.dev' }}
+      SITE_URL: ${{ vars.SITE_URL || 'https://trap-picks.com' }}
     steps:
       - name: Wait for the Cloudflare deploy
         if: github.event_name == 'push'
