@@ -104,6 +104,9 @@ const mate = ppPlayer && fan.players.find((p) => p.team === ppPlayer.team && p.i
 const INJURIES = { at: new Date().toISOString(), teams: ppPlayer ? { [ppPlayer.team]: [
   { id: String(ppPlayer.id), name: ppPlayer.name, pos: 'G', status: 'Day-To-Day', note: 'Questionable for Tuesday with a sore ankle.', date: null, ret: null },
   ...(mate ? [{ id: String(mate.id), name: mate.name, pos: 'F', status: 'Out', note: 'Out with a knee injury.', date: null, ret: '2026-11-01' }] : [])] } : {} };
+// And AP polls: our top teams in reverse, so the AP rank differs from ours.
+const APCF = { at: new Date().toISOString(), poll: 'AP Top 25', ranks: Object.fromEntries(cfids.map((id, i) => [String(id), 5 - i])) };
+const APCB = { at: new Date().toISOString(), poll: 'AP Top 25', ranks: Object.fromEntries(cids.map((id, i) => [String(id), 5 - i])) };
 const oddsBody = (u) => JSON.stringify(u.includes('sport=ncaab') ? CBODDS : u.includes('sport=ncaaf') ? CFODDS : u.includes('sport=nhl') ? NHODDS : u.includes('sport=nba_props') ? PPLINES : u.includes('sport=nba') ? NBODDS : ODDS);
 const SIGNED = ['cbbp_CBD002', 'me', 'grp_GRP001', 'fl', 'fl_NBA001', 'cbbp', 'cbbp_CBP001', 'cbbp_CBD001', 'bets'];
 
@@ -122,6 +125,7 @@ async function run(label, routes, signedIn, website) {
     if (!u.startsWith(`http://localhost:${PORT}/`)) return r.abort();
     if (u.includes('/api/odds')) return r.fulfill({ status: 200, contentType: types['.json'], body: oddsBody(u) });
     if (u.includes('/api/injuries')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(INJURIES) });
+    if (u.includes('/api/rankings')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(u.includes('sport=cfb') ? APCF : APCB) });
     if (signedIn && /\/app(\.html)?$/.test(u.split('#')[0])) {
       const html = fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8').replace('<script>\n(() => {',
         `<script>window.TRAP_API = ${website ? '"/api"; window.TRAP_SUPABASE = undefined' : 'undefined'}; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`).replace('!HOSTED && window.claude && window.claude.use', 'window.claude && window.claude.use');
@@ -204,6 +208,7 @@ async function website() {
   await p.route('**/*', (r) => { const u = r.request().url(); if (!u.startsWith(`http://localhost:${PORT}/`)) return r.abort();
     if (u.includes('/api/odds')) return r.fulfill({ status: 200, contentType: types['.json'], body: oddsBody(u) });
     if (u.includes('/api/injuries')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(INJURIES) });
+    if (u.includes('/api/rankings')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(u.includes('sport=cfb') ? APCF : APCB) });
     if (u.includes('/api/')) return r.fulfill({ status: 404, body: '{}' });
     if (/\/app(\.html)?$/.test(u.split('#')[0])) return r.fulfill({ status: 200, contentType: types['.html'], body: fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8').replace('<script>\n(() => {',
       `<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = undefined; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`)
@@ -233,6 +238,8 @@ async function website() {
     await p.evaluate(() => { location.hash = 'cfb'; }); await p.waitForTimeout(2000);
     const t = await p.locator('#view').innerText();
     if (!/Books: /.test(t)) res = 'college football games did not show sportsbook lines';
+    await p.evaluate(() => { location.hash = 'cfbt'; }); await p.waitForTimeout(1500);
+    if (res === true && !/AP \d/.test(await p.locator('#view').innerText())) res = 'college football rankings did not show the AP rank';
   }
   if (res === true && NHODDS.games.length) {
     await p.evaluate(() => { location.hash = 'nhl'; }); await p.waitForTimeout(2000);

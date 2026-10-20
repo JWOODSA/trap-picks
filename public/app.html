@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "1e625f04d191";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "18e73beb583f";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -2067,7 +2067,7 @@ body { background: transparent; }
     const bk = cbBooks(g);
     const bookLine = bk && (bk.homeSpread === 0 ? 'Pick\'em' : bk.homeSpread < 0 ? `${H.abbr} ${bk.homeSpread}` : `${A.abbr} -${bk.homeSpread}`);
     const gap = bk ? Math.round((g.margin + bk.homeSpread) * 10) / 10 : 0;   // + = we like the home team more than the books do
-    const row = (t) => h('div', { class: 'cg-r' }, h('i', { style: `background:${t.color}` }), h('small', null, `#${t.rank}`), h('span', { class: 'nm' }, t.short || t.name));
+    const row = (t) => h('div', { class: 'cg-r' }, h('i', { style: `background:${t.color}` }), h('small', null, `#${t.rank}` + apTxt('cbb', t.id)), h('span', { class: 'nm' }, t.short || t.name));
     return h('button', { class: 'cg', onclick: () => go('c_' + H.id) }, row(A), h('div', { class: 'cg-r', style: 'font-size:12px;color:var(--ink3);font-weight:500' }, g.neutral ? 'vs (neutral site)' : '@',
         h('span', { class: 'cg-t' }, g.tip ? new Date(g.tip).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: ET }) + ' ET' : 'Time TBA')), row(H),
       h('div', { class: 'cg-l' }, h('span', { class: 'our' }, `Our line: ${cbLine(g)}`), h('span', null, `Total ${g.total}`), g.gp < 5 ? h('span', null, 'Early: mostly last season') : null),
@@ -2098,7 +2098,7 @@ body { background: transparent; }
           return gs.length ? [h('div', { class: 'sh' }, h('h2', null, shortDay(d)), h('span', null, `${gs.length} games`)), ...gs.map(cbGameCard)] : []; }));
         if (!list.children.length) list.append(h('p', { class: 'muted' }, 'No games match.'));
       };
-      q.addEventListener('input', draw); draw(); loadCbOdds().then(() => { if (CBO.games) draw(); });
+      q.addEventListener('input', draw); draw(); loadCbOdds().then(() => { if (CBO.games) draw(); }); loadAp('cbb').then(() => { if (AP.cbb) draw(); });
       box.replaceChildren(cbHero(), cbSwipe(days[0]), q, list, h('p', { class: 'muted', style: 'margin:14px 2px 0;font-size:12px' }, `Games in the next week between Division I teams. Data: ESPN via the free sportsdataverse archive. Updated ${new Date(CB.meta.generated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`));
     }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'College data failed to load.')));
     return [box];
@@ -2111,21 +2111,21 @@ body { background: transparent; }
       const draw = () => { const t = q.value.trim().toLowerCase();
         list.replaceChildren(...CB.teams.filter((x) => !t || x.name.toLowerCase().includes(t)).sort((a, b) => a.rank - b.rank).slice(0, t ? 60 : 100)
           .map((x) => h('button', { class: 'frow', style: `--tc:${x.color}`, onclick: () => go('c_' + x.id) }, h('span', { class: 'rk' }, x.rank), h('span', { class: 'pos' }, x.abbr),
-            h('span', { class: 'nm' }, x.name, h('small', null, x.gp ? `${x.rec} this season` : `${x.rec_last} last season`)), h('span', { class: 'vl' }, sgn(x.rating), h('small', null, 'rating'))))); };
-      q.addEventListener('input', draw); draw();
+            h('span', { class: 'nm' }, x.name, h('small', null, (x.gp ? `${x.rec} this season` : `${x.rec_last} last season`) + apTxt('cbb', x.id))), h('span', { class: 'vl' }, sgn(x.rating), h('small', null, 'rating'))))); };
+      q.addEventListener('input', draw); draw(); loadAp('cbb').then(() => { if (AP.cbb) draw(); });
       box.replaceChildren(h('div', { class: 'sh' }, h('h2', null, 'Power ratings'), h('span', null, 'Division I')),
-        h('p', { class: 'muted', style: 'margin:0 2px 10px' }, 'Rating = points better than an average Division I team on a neutral floor. Top 100 shown; search for the rest.'), q, list);
+        h('p', { class: 'muted', style: 'margin:0 2px 10px' }, 'Our rank is our own power rating: points better than an average Division I team on a neutral floor, from scores adjusted for opponents and home court. The AP rank is the media poll, shown for comparison. Top 100 shown; search for the rest.'), q, list);
     }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'College data failed to load.')));
     return [box];
   }
   function cbbTeam(id) {
     const box = h('div', null, h('div', { class: 'loading' }, 'Loading team…'));
-    Promise.all([loadCbb(), loadCbOdds()]).then(() => {
+    Promise.all([loadCbb(), loadCbOdds(), loadAp('cbb')]).then(() => {
       const t = CB.byId.get(+id); if (!t) { box.replaceChildren(...notFound()); return; }
       const gs = CB.games.filter((g) => g.home === t.id || g.away === t.id);
       box.replaceChildren(
         h('div', { class: 'ph fade', style: `background:linear-gradient(150deg, ${t.color}, #141417 120%)` }, h('div', { class: 'num' }, `#${t.rank}`), h('div', { class: 'pn' }, t.name),
-          h('div', { class: 'meta' }, t.gp ? `${t.rec} this season · last 10 ${t.last10}` : `${CB.meta.last_season}: ${t.rec_last}, ranked #${t.rank_last} by our ratings`)),
+          h('div', { class: 'meta' }, (apRk('cbb', t.id) ? `AP #${apRk('cbb', t.id)} · ` : '') + (t.gp ? `${t.rec} this season · last 10 ${t.last10}` : `${CB.meta.last_season}: ${t.rec_last}, ranked #${t.rank_last} by our ratings`))),
         kv([[sgn(t.rating), 'Rating', 'hot'], [f1(t.off), 'Points scored vs avg defense'], [f1(t.def), 'Points allowed vs avg offense'], [t.pace == null ? '–' : f1(t.pace), 'Possessions a game']]),
         ...(gs.length ? [h('div', { class: 'sh' }, h('h2', null, 'Coming up'), h('span', null, 'Our line')), ...gs.map(cbGameCard)] : []),
         h('div', { class: 'card' }, h('h3', null, 'Roster'), h('p', { class: 'muted', style: 'margin:-4px 0 8px;font-size:13px' }, `This season's roster with ${CB.meta.last_season} numbers. Freshmen and players who sat out last season are not listed yet.`),
@@ -2136,6 +2136,12 @@ body { background: transparent; }
     return [box];
   }
 
+  // AP Top 25 for college football and basketball (/api/rankings, ESPN's feed via our server, website only).
+  const AP = {};
+  const loadAp = (sp) => AP[sp + 'p'] || (AP[sp + 'p'] = !HOSTED ? Promise.resolve() : fetch(`${window.TRAP_API}/rankings?sport=${sp}`)
+    .then((r) => (r.ok ? r.json() : null)).then((d) => { if (d && d.ranks) AP[sp] = d.ranks; }).catch(() => {}));
+  const apRk = (sp, id) => (AP[sp] && id != null && AP[sp][String(id)]) || null;
+  const apTxt = (sp, id) => { const r = apRk(sp, id); return r ? ` · AP ${r}` : ''; };
   // ---------- college football ----------
   // FBS ratings and our own projected spread and total (export_cfb.py), next to the sportsbooks' lines when we have them.
   let CF = null, cfLoading = null;
@@ -2184,7 +2190,7 @@ body { background: transparent; }
   function cfGameCard(g) {
     const H = cfT(g, 'home'), A = cfT(g, 'away'), bk = cfBooks(g);
     const gap = bk ? Math.round((g.margin + bk.homeSpread) * 10) / 10 : 0;
-    const row = (t) => h('div', { class: 'cg-r' }, h('i', { style: `background:${t.color}` }), h('small', null, cfRk(t)), h('span', { class: 'nm' }, t.short || t.name));
+    const row = (t) => h('div', { class: 'cg-r' }, h('i', { style: `background:${t.color}` }), h('small', null, cfRk(t) + apTxt('cfb', t.id)), h('span', { class: 'nm' }, t.short || t.name));
     const to = H.id ? H.id : A.id;
     return h('button', { class: 'cg', onclick: () => go('cf_' + to) }, row(A), h('div', { class: 'cg-r', style: 'font-size:12px;color:var(--ink3);font-weight:500' }, g.neutral ? 'vs (neutral site)' : '@',
         h('span', { class: 'cg-t' }, cfKick(g))), row(H),
@@ -2215,7 +2221,7 @@ body { background: transparent; }
           return gs.length ? [h('div', { class: 'sh' }, h('h2', null, `Week ${w}`), h('span', null, `${gs.length} games`)), ...gs.map(cfGameCard)] : []; }));
         if (!list.children.length) list.append(h('p', { class: 'muted' }, CF.games.length ? 'No games match.' : 'No games scheduled in the next two weeks.'));
       };
-      q.addEventListener('input', draw); draw(); loadCfOdds().then(() => { if (CFO.games) draw(); });
+      q.addEventListener('input', draw); draw(); loadCfOdds().then(() => { if (CFO.games) draw(); }); loadAp('cfb').then(() => { if (AP.cfb) draw(); });
       box.replaceChildren(cfHero(), swipe, q, list, h('p', { class: 'muted', style: 'margin:14px 2px 0;font-size:12px' }, `FBS games this week and next. Data: CFBD and ESPN via the free cfbfastR archive. Updated ${new Date(CF.meta.generated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`));
     }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'College football data failed to load.')));
     return [box];
@@ -2228,16 +2234,16 @@ body { background: transparent; }
       const draw = () => { const t = q.value.trim().toLowerCase();
         list.replaceChildren(...CF.teams.filter((x) => !t || x.name.toLowerCase().includes(t) || (x.conf || '').toLowerCase().includes(t)).sort((a, b) => a.rank - b.rank)
           .map((x) => h('button', { class: 'frow', style: `--tc:${x.color}`, onclick: () => go('cf_' + x.id) }, h('span', { class: 'rk' }, x.rank), h('span', { class: 'pos' }, x.abbr),
-            h('span', { class: 'nm' }, x.name, h('small', null, `${x.rec} · ${x.conf}`)), h('span', { class: 'vl' }, sgn(x.rating), h('small', null, 'rating'))))); };
-      q.addEventListener('input', draw); draw();
+            h('span', { class: 'nm' }, x.name, h('small', null, `${x.rec} · ${x.conf}${apTxt('cfb', x.id)}`)), h('span', { class: 'vl' }, sgn(x.rating), h('small', null, 'rating'))))); };
+      q.addEventListener('input', draw); draw(); loadAp('cfb').then(() => { if (AP.cfb) draw(); });
       box.replaceChildren(h('div', { class: 'sh' }, h('h2', null, 'Power ratings'), h('span', null, `All ${CF.teams.length} FBS teams`)),
-        h('p', { class: 'muted', style: 'margin:0 2px 10px' }, 'Rating = points better than an average FBS team on a neutral field.'), q, list);
+        h('p', { class: 'muted', style: 'margin:0 2px 10px' }, 'Our rank is our own power rating: points better than an average FBS team on a neutral field, from scores adjusted for opponents and home field. The AP rank is the media poll, shown for comparison.'), q, list);
     }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'College football data failed to load.')));
     return [box];
   }
   function cfbTeam(id) {
     const box = h('div', null, h('div', { class: 'loading' }, 'Loading team…'));
-    Promise.all([loadCfb(), loadCfOdds()]).then(() => {
+    Promise.all([loadCfb(), loadCfOdds(), loadAp('cfb')]).then(() => {
       const t = CF.byId.get(+id); if (!t) { box.replaceChildren(...notFound()); return; }
       const mine = (g) => g.home === t.id || g.away === t.id;
       const gs = CF.games.filter(mine), rs = CF.results.filter(mine).reverse();
@@ -2248,7 +2254,7 @@ body { background: transparent; }
           h('td', null, sp == null ? '–' : `${sgnPt(sp)} ${cov > 0 ? '✓' : cov < 0 ? '✗' : 'push'}`)); };
       box.replaceChildren(
         h('div', { class: 'ph fade', style: `background:linear-gradient(150deg, ${t.color}, #141417 120%)` }, h('div', { class: 'num' }, `#${t.rank}`), h('div', { class: 'pn' }, t.name),
-          h('div', { class: 'meta' }, `${t.rec} · ${t.conf}${t.rec_last ? ` · ${CF.meta.last_season}: ${t.rec_last}` : ''}`)),
+          h('div', { class: 'meta' }, `${apRk('cfb', t.id) ? `AP #${apRk('cfb', t.id)} · ` : ''}${t.rec} · ${t.conf}${t.rec_last ? ` · ${CF.meta.last_season}: ${t.rec_last}` : ''}`)),
         kv([[sgn(t.rating), 'Rating', 'hot'], [f1(t.off), 'Points scored vs avg defense'], [f1(t.def), 'Points allowed vs avg offense'], [t.rank_last ? `#${t.rank_last}` : '–', `Our rank in ${CF.meta.last_season}`]]),
         ...(gs.length ? [h('div', { class: 'sh' }, h('h2', null, 'Coming up'), h('span', null, 'Our line')), ...gs.map(cfGameCard)] : []),
         rs.length ? h('div', { class: 'card' }, h('h3', null, 'This season'), h('p', { class: 'muted', style: 'margin:-4px 0 8px;font-size:13px' }, 'Score, and the posted spread for this team with whether it covered.'),
