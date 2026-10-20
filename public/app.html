@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "8cfb7fd67b15";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "ff2ba3917087";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -2484,12 +2484,17 @@ body { background: transparent; }
       h('button', { 'aria-label': 'Next week', disabled: i === ks.length - 1 ? true : null, onclick: () => { FL.wk = ks[i + 1]; onPick(); } }, '›'));
   }
 
+  // A league that drafts after a week's first tip-off starts scoring the next week, so games played
+  // before the draft never count (people could otherwise draft knowing those results).
+  const draftWk = (L) => { const ks = weekKeys(), t = Date.parse(L.draft_started_at || L.draft_at || ''); return Number.isFinite(t) ? (ks.find((k) => F.locks[k] && Date.parse(F.locks[k]) > t) || ks[ks.length - 1]) : ks[0]; };
   function seasonView(L) {
-    FL.wk = FL.wk || thisWeek();
-    const ks = weekKeys(), wi = ks.indexOf(FL.wk), live = hasLive(FL.wk);
+    const ks = weekKeys(), w0 = draftWk(L), i0 = ks.indexOf(w0);
+    FL.wk = FL.wk || (thisWeek() < w0 ? w0 : thisWeek());
+    const wi = ks.indexOf(FL.wk) - i0, live = hasLive(FL.wk), early = FL.wk < w0;
     const score = (uid) => uid ? (live ? bestScore(rosterOf(uid), FL.wk) : projScore(rosterOf(uid), FL.wk)) : 0;
-    const games1 = pairings(L.order, wi);
+    const games1 = early ? [] : pairings(L.order, wi);
     const matchups = h('div', { class: 'card' }, h('h3', null, 'Matchups'),
+      early ? h('p', { class: 'muted', style: 'margin:0' }, `Your league drafted after this week tipped off, so it doesn't count. Scoring starts ${wkLabel(w0)}.`) : null,
       h('div', { class: 'plist' }, games1.map(([a, b]) => {
         if (!a || !b) return h('div', { class: 'prow' }, h('span', { class: 'pos' }, 'BYE'), h('span', { class: 'nm' }, teamName(a || b)), h('span', null, ''));
         const sa = score(a), sb = score(b);
@@ -2502,8 +2507,8 @@ body { background: transparent; }
     // Standings from every finished week with real scores.
     const rec = Object.fromEntries(L.order.map((u) => [u, { w: 0, l: 0, t: 0, pf: 0 }]));
     ks.forEach((wk, i) => {
-      if (!hasLive(wk) || wk >= thisWeek()) return;
-      pairings(L.order, i).forEach(([a, b]) => {
+      if (!hasLive(wk) || wk >= thisWeek() || wk < w0) return;
+      pairings(L.order, i - i0).forEach(([a, b]) => {
         if (!a || !b) return;
         const sa = bestScore(rosterOf(a), wk), sb = bestScore(rosterOf(b), wk);
         rec[a].pf += sa; rec[b].pf += sb;
@@ -2514,7 +2519,7 @@ body { background: transparent; }
     const standings = h('div', { class: 'card' }, h('h3', null, 'Standings'), h('table', { class: 'tbl' },
       h('tr', null, h('th', null, 'Team'), h('th', null, 'W-L'), h('th', null, 'Pts')),
       order.map((u) => h('tr', null, h('td', { style: 'font-family:var(--body)' }, teamName(u) + (u === ACCT.id ? ' (you)' : '')), h('td', null, `${rec[u].w}-${rec[u].l}${rec[u].t ? '-' + rec[u].t : ''}`), h('td', null, f1(rec[u].pf))))),
-      Object.values(rec).every((r) => !r.w && !r.l) ? h('p', { class: 'muted', style: 'margin:10px 0 0' }, `Standings start after week 1. The season tips off ${fmtDate(F.meta.first_game, { month: 'short', day: 'numeric' })}.`) : null);
+      Object.values(rec).every((r) => !r.w && !r.l) ? h('p', { class: 'muted', style: 'margin:10px 0 0' }, (w0 === ks[0] ? `Standings start after week 1. The season tips off ${fmtDate(F.meta.first_game, { month: 'short', day: 'numeric' })}.` : `Standings start after ${wkLabel(w0)}, your league's first week.`)) : null);
     const rosters = L.order.map((u) => {
       const ps = rosterOf(u).map(pById).filter(Boolean).map((p) => ({ p, v: live ? pts(p.id, FL.wk) : (p.fpts || 0) * gamesIn(p, FL.wk) })).sort((a, b) => b.v - a.v);
       return h('details', { class: 'card', 'data-k': 'r_' + u, open: u === ACCT.id ? true : null }, h('summary', null, teamName(u) + (u === ACCT.id ? ' (you)' : '')),
