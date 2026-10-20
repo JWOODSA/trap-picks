@@ -79,7 +79,14 @@ const cbName = new Map(cb.teams.map((t) => [t.id, t.bk || t.name]));
 const CBODDS = { at: new Date().toISOString(), games: (cb.games || []).slice(0, 6).map((g, i) => ({ away: cbName.get(g.away), home: cbName.get(g.home), start: g.tip || `${g.date}T23:00:00Z`,
   books: [{ b: 'FanDuel', t: '', ml: null, sp: [[g.margin - 2.5 + i, -110], [-(g.margin - 2.5 + i), -110]], to: [[g.total - 3, -110], [g.total - 3, -110]] },
     { b: 'DraftKings', t: '', ml: null, sp: [[g.margin - 2 + i, -105], [-(g.margin - 2 + i), -115]], to: [[g.total - 2.5, -110], [g.total - 2.5, -110]] }] })) };
-const oddsBody = (u) => JSON.stringify(u.includes('sport=ncaab') ? CBODDS : ODDS);
+// And NBA: two books on every upcoming game in the props file.
+const np = J('nba_props.json');
+const nbaGames = Object.entries(np.next || {}).flatMap(([t, list]) => list.filter((g) => g.home).map((g) => ({ away: g.opp, home: t, start: g.tip })));
+const NBODDS = { at: new Date().toISOString(), games: nbaGames.map((g) => ({ ...g, books: [
+  { b: 'FanDuel', t: '', ml: [140, -160], sp: [[4.5, -110], [-4.5, -110]], to: [[221.5, -110], [221.5, -110]] },
+  { b: 'DraftKings', t: '', ml: [135, -155], sp: [[4, -108], [-4, -112]], to: [[222, -110], [222, -110]] }] })) };
+const nbaSoon = nbaGames.some((g) => Date.parse(g.start) > Date.now());
+const oddsBody = (u) => JSON.stringify(u.includes('sport=ncaab') ? CBODDS : u.includes('sport=nba') ? NBODDS : ODDS);
 const SIGNED = ['cbbp_CBD002', 'me', 'grp_GRP001', 'fl', 'fl_NBA001', 'cbbp', 'cbbp_CBP001', 'cbbp_CBD001', 'bets'];
 
 const BAD = /\bundefined\b|\bNaN\b|\[object |\bInfinity\b|(^|\s)null(\s|$)/;
@@ -201,6 +208,12 @@ async function website() {
     await p.evaluate(() => { location.hash = 'cbb'; }); await p.waitForTimeout(2000);
     const t = await p.locator('#view').innerText();
     if (!/Books: /.test(t)) res = 'college games did not show sportsbook lines';
+  }
+  if (res === true && nbaSoon) {
+    await p.evaluate(() => { location.hash = 'nba'; }); await p.waitForTimeout(2500);
+    const sum = p.locator('.nshop summary').first();
+    if (!(await sum.count())) res = 'NBA games did not show line shopping';
+    else { await sum.click(); await p.waitForTimeout(300); const t = await p.locator('.nshop').first().innerText(); if (!/FanDuel|DraftKings/.test(t)) res = 'NBA line shopping did not show sportsbook prices'; }
   }
   if (res !== true && !/fine before/.test(res)) fails.push('tap: set a line alert: ' + res);
   errs.forEach((e) => fails.push('tap: set a line alert: ' + e));

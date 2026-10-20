@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "1bacdeb28f4d";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "50fbf87b6376";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -803,6 +803,7 @@ details.arch summary { display: flex; justify-content: space-between; padding: 8
 .rc-note { font-size: 13px; margin: 12px 0 0; }
 .shop-row { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; padding: 8px 0; border-top: 1px solid var(--line); }
 .shop-row:first-of-type { border-top: 0; } .shop-row span small { display: block; color: var(--ink3); font-size: 12px; } .shop-row > small { grid-column: 1 / -1; font-size: 12px; }
+  .nshop { margin-top:10px; border-top:1px solid var(--line); padding-top:8px; } .nshop > summary { cursor:pointer; font-size:14px; list-style:none; } .nshop > summary::-webkit-details-marker { display:none; } .nshop[open] > summary { margin-bottom:8px; }
 .shop-all summary { cursor: pointer; padding: 10px 0 4px; color: var(--ink2); font-size: 14px; }
 .shop-tbl > div { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 6px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 12px; }
 .shop-tbl .shop-th { color: var(--ink3); border-top: 0; font-weight: 700; }
@@ -2083,7 +2084,7 @@ body { background: transparent; }
         ...todays.map((g) => h('div', { class: 'ngame' },
           h('div', { class: 'ng-h' }, h('span', { class: 'chip', style: `background:${tcol(g.opp)}` }), g.opp, h('span', { class: 'at' }, '@'), g.homeT, h('span', { class: 'chip', style: `background:${tcol(g.homeT)}` }),
             h('small', null, new Date(g.tip).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: ET }) + ' ET')),
-          h('div', { class: 'ng-p' }, [...top(g.opp), ...top(g.homeT)].map(pb)), sitBox([g.opp, g.homeT]))));
+          h('div', { class: 'ng-p' }, [...top(g.opp), ...top(g.homeT)].map(pb)), nbaShop(g), sitBox([g.opp, g.homeT]))));
     }).catch(() => box.replaceChildren(h('p', { class: 'muted' }, 'NBA data failed to load.')));
     return [box];
   }
@@ -3693,7 +3694,7 @@ body { background: transparent; }
   // Open to everyone while the paywall is off (launch) and in the Claude app; Elite only once it is on.
   const eliteOk = () => !HOSTED || !window.TRAP_PAYWALL || SB.tier === 'elite';
   const etag = () => h('span', { class: 'etag' }, 'Elite');
-  const eliteLock = (what) => h('div', { class: 'card' }, h('h3', null, what, etag()), h('p', { class: 'muted', style: 'margin:0' }, 'Part of Elite. Join the Elite waitlist under Your plan to hear when it opens.'));
+  const eliteLock = (what) => h('div', { class: 'card' }, h('h3', null, what, etag()), h('p', { class: 'muted', style: 'margin:0' }, 'Part of Elite. Upgrade under Your plan.'));
   const sgnPt = (v) => v === 0 ? 'PK' : (v > 0 ? '+' : '') + v;
   // The middle price of a list of American odds (two middle prices are averaged as payouts), back in American odds.
   const median = (a) => { const d = a.map(dec).sort((x, y) => x - y), n = d.length; if (!n) return null;
@@ -3814,22 +3815,51 @@ body { background: transparent; }
     if (!ODDS.games) return card(note('Loading prices from every sportsbook…'));
     const og = oddsFor(g.id);
     if (!og || !og.books.length) return card(note('No sportsbook has posted this game yet.'));
+    return card(...shopBody(og, g.away, g.home, ODDS.at), alertBtn(g));
+  }
+  // The best spread, total and moneyline across books, and every book's numbers (NFL and NBA).
+  function shopBody(og, away, home, asOf) {
     const row = (label, b) => b ? h('div', { class: 'shop-row' }, h('span', null, h('b', null, label(b.pt)), h('small', null, b.book)), h('b', { class: 'mono' }, odds(b.price)),
       h('small', { class: 'muted' }, b.typ != null && dec(b.price) > dec(b.typ) ? `+${usd(100 * (dec(b.price) - dec(b.typ)))} per $100 vs typical ${odds(b.typ)}` : 'typical price')) : null;
     const mlBest = (i) => og.books.filter((b) => b.ml).reduce((a, b) => (!a || dec(b.ml[i]) > dec(a.price) ? { book: b.b, price: b.ml[i] } : a), null);
     const mlRow = (t, b) => b ? h('div', { class: 'shop-row' }, h('span', null, h('b', null, t + ' ML'), h('small', null, b.book)), h('b', { class: 'mono' }, odds(b.price)), h('small', { class: 'muted' }, 'best moneyline')) : null;
     const cell = (x) => x ? `${sgnPt(x[0])} ${odds(x[1])}` : '–';
-    return card(
+    return [
       h('p', { class: 'muted', style: 'margin:-4px 0 8px;font-size:13px' }, `Best number at ${og.books.length} sportsbooks.`),
-      row((p) => `${g.away} ${sgnPt(p)}`, bestOf(og, 'away')), row((p) => `${g.home} ${sgnPt(p)}`, bestOf(og, 'home')),
+      row((p) => `${away} ${sgnPt(p)}`, bestOf(og, 'away')), row((p) => `${home} ${sgnPt(p)}`, bestOf(og, 'home')),
       row((p) => `Over ${p}`, bestOf(og, 'over')), row((p) => `Under ${p}`, bestOf(og, 'under')),
-      mlRow(g.away, mlBest(0)), mlRow(g.home, mlBest(1)),
+      mlRow(away, mlBest(0)), mlRow(home, mlBest(1)),
       h('details', { class: 'shop-all' }, h('summary', null, 'Every sportsbook'),
-        h('div', { class: 'shop-tbl' }, h('div', { class: 'shop-th' }, h('span', null, 'Book'), h('span', null, g.away), h('span', null, g.home), h('span', null, 'Total')),
+        h('div', { class: 'shop-tbl' }, h('div', { class: 'shop-th' }, h('span', null, 'Book'), h('span', null, away), h('span', null, home), h('span', null, 'Total')),
           og.books.map((b) => h('div', null, h('span', null, b.b), h('span', { class: 'mono' }, cell(b.sp[0])), h('span', { class: 'mono' }, cell(b.sp[1])),
             h('span', { class: 'mono' }, b.to[0] ? `o${b.to[0][0]} ${odds(b.to[0][1])}` : '–'))))),
-      h('p', { class: 'snap', style: 'margin:8px 0 0' }, `Prices as of ${at(ODDS.at)}. Lines move fast, so check your book before you bet.`),
-      alertBtn(g));
+      h('p', { class: 'snap', style: 'margin:8px 0 0' }, `Prices as of ${at(asOf)}. Lines move fast, so check your book before you bet.`)];
+  }
+
+  // NBA line shopping on the Games tab: /api/odds?sport=nba (one shared copy, refreshed at most every 15 minutes).
+  const NBO = { at: null, games: null, state: 'idle', t: 0 };
+  async function loadNbaOdds() {
+    if (!HOSTED || NBO.state === 'loading' || Date.now() - NBO.t < 5 * 60e3) return;
+    NBO.state = 'loading';
+    const r = await fetch(`${window.TRAP_API}/odds?sport=nba`, { headers: SB.session ? authHdr() : {} }).catch(() => null);
+    NBO.t = Date.now();
+    const d = r && r.ok ? await r.json().catch(() => null) : null;
+    if (d && d.games) Object.assign(NBO, { games: d.games, at: d.at, state: 'ok' });
+    else NBO.state = r && r.status === 503 ? 'off' : 'err';
+    document.querySelectorAll('.nshop').forEach((el) => { const n = nbaShop(JSON.parse(el.dataset.g)); if (n) el.replaceWith(n); });
+  }
+  // g: {opp (away), homeT, tip}. Matched on both team codes and a start within 12 hours of our tip time.
+  function nbaShop(g) {
+    if (!HOSTED || Date.parse(g.tip) <= Date.now()) return null;
+    const box = (sum, ...k) => h('details', { class: 'nshop', 'data-g': JSON.stringify({ opp: g.opp, homeT: g.homeT, tip: g.tip }) }, h('summary', null, sum), ...k);
+    if (!eliteOk()) return box(h('span', null, 'Line shopping ', etag()), h('p', { class: 'muted', style: 'margin:8px 0 0' }, 'Part of Elite. Upgrade under Your plan.'));
+    loadNbaOdds();
+    if (NBO.state === 'off') return null;
+    if (!NBO.games) return box(h('span', { class: 'muted' }, NBO.state === 'err' ? 'Sportsbook prices unavailable right now' : 'Loading sportsbook prices…'));
+    const og = NBO.games.find((x) => x.away === g.opp && x.home === g.homeT && Math.abs(Date.parse(x.start) - Date.parse(g.tip)) < 12 * 36e5);
+    if (!og || !og.books.length) return box(h('span', { class: 'muted' }, 'No sportsbook has posted this game yet'));
+    const sp = bestOf(og, 'home'), to = bestOf(og, 'over');
+    return box(h('span', null, h('b', null, 'Line shopping '), etag(), h('small', { class: 'muted' }, ` ${g.homeT} ${sp ? sgnPt(sp.pt) : '–'} · total ${to ? to.pt : '–'}`)), ...shopBody(og, g.opp, g.homeT, NBO.at));
   }
 
   // Custom alerts: private rules in data/users/<id>/alerts = {rules: {id: rule}}; /api/push-run checks
