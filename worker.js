@@ -9,7 +9,7 @@ import * as slip from './functions/api/slip.js';
 import * as push from './functions/api/push.js';
 import * as pushRun from './functions/api/push-run.js';
 import * as oddsApi from './functions/api/odds.js';
-import { scheduledOdds } from './lib/odds.js';
+import { scheduledOdds, scheduledProps } from './lib/odds.js';
 import * as pro from './functions/pro/_middleware.js';
 import * as hidden from './functions/alerts/_middleware.js';
 
@@ -44,5 +44,6 @@ export default {
   // Timed jobs (crons in wrangler.jsonc): college sportsbook lines and closing lines.
   async scheduled(event, env, ctx) {
     ctx.waitUntil(scheduledOdds(env).then((r) => console.log('scheduledOdds', JSON.stringify(r))).catch((e) => console.log('scheduledOdds failed', e.message)));
+    ctx.waitUntil(scheduledProps(env).then((r) => console.log('scheduledProps', JSON.stringify(r))).catch((e) => console.log('scheduledProps failed', e.message)));
   },
 };
