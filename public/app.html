@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "8d0723255e15";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "e3d0c0c643df";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -3302,7 +3302,7 @@ body { background: transparent; }
     return card;
   }
 
-  // ---------- kickoff forecast (website only: the relay reaches Open-Meteo) ----------
+  // ---------- kickoff forecast (website only: the relay reaches the National Weather Service) ----------
   // One fetch per game, shared by the board badge and the game page graphic.
   const WX = new Map();
   function wxFor(g) {
@@ -3405,7 +3405,7 @@ body { background: transparent; }
     const u = g.info || {};
     const box = h('div', { class: 'card wxcard' }, h('h3', null, 'Kickoff weather'), h('p', { class: 'muted' }, 'Loading forecast…'));
     p.then((w) => {
-      if (w.error) { box.lastChild.textContent = w.error.includes('window') ? 'Forecast opens about two weeks before kickoff.' : 'Forecast unavailable right now.'; return; }
+      if (w.error) { box.lastChild.textContent = w.error.includes('window') ? 'Forecast opens about a week before kickoff.' : w.error.includes('outside the US') ? 'No forecast for games outside the US.' : 'Forecast unavailable right now.'; return; }
       const k = wxKind(w);
       const under = w.wind >= 20 ? C.wind['20+ mph'] : w.wind >= 15 ? C.wind['15-19 mph'] : null;
       const notes = [];
@@ -3420,7 +3420,7 @@ body { background: transparent; }
           w.precip != null ? h('div', null, h('b', null, `${w.precip.toFixed(2)}"`), h('span', null, 'Rain that hour')) : null),
         notes.length ? h('div', { class: 'flag' }, notes.join(' ')) : null,
         /Retractable/.test(u.roof_label || '') ? h('p', { class: 'snap' }, 'Retractable roof: the team decides on game day whether it is open.') : null,
-        h('p', { class: 'snap' }, `Open-Meteo forecast for ${at(w.at)}. Checked ${at(w.fetched)}.`)].filter(Boolean));
+        h('p', { class: 'snap' }, `National Weather Service forecast for ${at(w.at)}. Checked ${at(w.fetched)}.`)].filter(Boolean));
     });
     return box;
   }

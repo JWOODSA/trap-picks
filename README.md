@@ -4,7 +4,7 @@
 
 - `public/index.html` is the home page (from `web/landing.html`). `public/app.html` is the app, served at `/app`. Data files sit next to them.
 - `functions/api/live/[league].js` relays ESPN live scores (`/api/live/nfl`, `/api/live/nba`), cached 15 seconds.
-- `functions/api/weather.js` relays the free Open-Meteo forecast: `/api/weather?lat=..&lon=..&at=<kickoff ISO>` returns temperature, wind, gusts, direction, rain chance, rain amount and weather code for the kickoff hour, cached 30 minutes.
+- `functions/api/weather.js` relays the free National Weather Service forecast (US only, about 7 days out): `/api/weather?lat=..&lon=..&at=<kickoff ISO>` returns temperature, wind, gusts, direction, rain chance, rain amount and weather code for the kickoff hour, cached 30 minutes.
 - Accounts: Supabase (Google, or a one-tap email link). `supabase/schema.sql` creates the tables and access rules.
 - Tiers: Free, Pro ($9.99/mo, $59/yr) and Elite ($19.99/mo, $149/yr, waitlist for now; Elite includes Pro). `billing.plan` is pro_monthly, pro_yearly, elite_monthly or elite_yearly, worked out from the Stripe price so plan switches count. Waitlist sign-ups are private docs at `data/users/<id>/waitlist`.
 - Pro: Stripe subscriptions. `functions/api/checkout.js` opens Stripe Checkout, `functions/api/portal.js` opens Stripe's billing page, `functions/api/stripe-webhook.js` keeps each member's Pro status current, and `functions/pro/_middleware.js` serves `/pro/core.json` (this week's calls) only to Pro members.

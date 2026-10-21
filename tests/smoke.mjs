@@ -91,11 +91,13 @@ const NHODDS = { at: new Date().toISOString(), games: (nh.games || []).map((g) =
   { b: 'DraftKings', t: '', ml: [125, -145], sp: [[1.5, -210], [-1.5, 175]], to: [[6, -120], [6, 100]] }] })) };
 // And NBA: two books on every upcoming game in the props file.
 const np = J('nba_props.json');
-const nbaGames = Object.entries(np.next || {}).flatMap(([t, list]) => list.filter((g) => g.home).map((g) => ({ away: g.opp, home: t, start: g.tip })));
+const nbaGames = Object.entries(np.next || {}).flatMap(([t, list]) => list.filter((g) => g.home).map((g) => ({ away: g.opp, home: t, start: g.tip, date: g.date })));
 const NBODDS = { at: new Date().toISOString(), games: nbaGames.map((g) => ({ ...g, books: [
   { b: 'FanDuel', t: '', ml: [140, -160], sp: [[4.5, -110], [-4.5, -110]], to: [[221.5, -110], [221.5, -110]] },
   { b: 'DraftKings', t: '', ml: [135, -155], sp: [[4, -108], [-4, -112]], to: [[222, -110], [222, -110]] }] })) };
-const nbaSoon = nbaGames.some((g) => Date.parse(g.start) > Date.now());
+// The Games tab shows the first game day in the file, so only those games can still offer line shopping.
+const nbaDay = nbaGames.map((g) => g.date).sort()[0];
+const nbaSoon = nbaGames.some((g) => g.date === nbaDay && Date.parse(g.start) > Date.now());
 // And player lines from PrizePicks and the books: the top scorer with game logs, tipping in three hours.
 const ppPlayer = fan.players.filter((p) => (np.logs[String(p.id)] || []).length).sort((a, b) => b.pts - a.pts)[0];
 const PPLINES = { at: new Date().toISOString(), players: ppPlayer ? { [ppPlayer.name]: { away: 'BOS', home: 'NY', start: new Date(Date.now() + 3 * 36e5).toISOString(), lines: { pts: { PrizePicks: [21.5, null], Underdog: [21.5, -122], FanDuel: [22.5, -115] }, reb: { DraftKings: [6.5, -110] } } } } : {} };
