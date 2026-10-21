@@ -107,6 +107,8 @@ const INJURIES = { at: new Date().toISOString(), teams: ppPlayer ? { [ppPlayer.t
 // And AP polls: our top teams in reverse, so the AP rank differs from ours.
 const APCF = { at: new Date().toISOString(), poll: 'AP Top 25', ranks: Object.fromEntries(cfids.map((id, i) => [String(id), 5 - i])) };
 const APCB = { at: new Date().toISOString(), poll: 'AP Top 25', ranks: Object.fromEntries(cids.map((id, i) => [String(id), 5 - i])) };
+// And final scores: every college football game this week, home team won 30-20.
+const FINALS = { date: '', games: (cf.games || []).map((g) => ({ a: { id: String(g.away), ab: '', nm: '' }, h: { id: String(g.home), ab: '', nm: '' }, s: [20, 30], done: true })) };
 const oddsBody = (u) => JSON.stringify(u.includes('sport=ncaab') ? CBODDS : u.includes('sport=ncaaf') ? CFODDS : u.includes('sport=nhl') ? NHODDS : u.includes('sport=nba_props') ? PPLINES : u.includes('sport=nba') ? NBODDS : ODDS);
 const SIGNED = ['cbbp_CBD002', 'me', 'grp_GRP001', 'fl', 'fl_NBA001', 'cbbp', 'cbbp_CBP001', 'cbbp_CBD001', 'bets'];
 
@@ -126,6 +128,7 @@ async function run(label, routes, signedIn, website) {
     if (u.includes('/api/odds')) return r.fulfill({ status: 200, contentType: types['.json'], body: oddsBody(u) });
     if (u.includes('/api/injuries')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(INJURIES) });
     if (u.includes('/api/rankings')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(u.includes('sport=cfb') ? APCF : APCB) });
+    if (u.includes('/api/finals')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(FINALS) });
     if (signedIn && /\/app(\.html)?$/.test(u.split('#')[0])) {
       const html = fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8').replace('<script>\n(() => {',
         `<script>window.TRAP_API = ${website ? '"/api"; window.TRAP_SUPABASE = undefined' : 'undefined'}; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`).replace('!HOSTED && window.claude && window.claude.use', 'window.claude && window.claude.use');
@@ -209,6 +212,7 @@ async function website() {
     if (u.includes('/api/odds')) return r.fulfill({ status: 200, contentType: types['.json'], body: oddsBody(u) });
     if (u.includes('/api/injuries')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(INJURIES) });
     if (u.includes('/api/rankings')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(u.includes('sport=cfb') ? APCF : APCB) });
+    if (u.includes('/api/finals')) return r.fulfill({ status: 200, contentType: types['.json'], body: JSON.stringify(FINALS) });
     if (u.includes('/api/')) return r.fulfill({ status: 404, body: '{}' });
     if (/\/app(\.html)?$/.test(u.split('#')[0])) return r.fulfill({ status: 200, contentType: types['.html'], body: fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8').replace('<script>\n(() => {',
       `<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = undefined; window.SEED = ${JSON.stringify(SEED)};</script><script src="/__mock.js"></script>\n<script>\n(() => {`)
@@ -243,6 +247,21 @@ async function website() {
     else if (res === true) { await cs.click(); await p.waitForTimeout(300); if (!/FanDuel|DraftKings/.test(await p.locator('.cg-shop').first().innerText())) res = 'college football line shopping did not show sportsbook prices'; if (process.env.SHOTS) { const c = p.locator('.cg-shop').first(); await c.scrollIntoViewIfNeeded(); await p.screenshot({ path: path.join(process.env.SHOTS, 'cfb-shop.png') }); } }
     await p.evaluate(() => { location.hash = 'cfbt'; }); await p.waitForTimeout(1500);
     if (res === true && !/AP \d/.test(await p.locator('#view').innerText())) res = 'college football rankings did not show the AP rank';
+    // One-tap bet: log the first side offered on a college football game, then see it grade itself from the final.
+    await p.evaluate(() => { location.hash = 'cfb'; }); await p.waitForTimeout(1500);
+    if (res === true) {
+      const ql = p.locator('.qlog').first();
+      if (!(await ql.count())) res = 'college football games had no Log a bet button';
+      else {
+        await ql.click(); await p.waitForTimeout(300); if (process.env.SHOTS) await p.screenshot({ path: path.join(process.env.SHOTS, 'quick-bet.png') }); await p.locator('.qopt').first().click(); await p.waitForTimeout(300);
+        await p.getByLabel('Stake in dollars').fill('10'); await p.getByRole('button', { name: 'Save bet' }).click(); await p.waitForTimeout(800);
+        await p.evaluate(() => { location.hash = 'bets'; }); await p.waitForTimeout(2500);
+        const bets = await p.evaluate(() => Object.values((JSON.parse(localStorage.getItem('mockdb'))['data/users/me/bets'] || {}).items || {}));
+        const qb = bets.find((b) => b.src === 'quick');
+        if (!qb || !qb.legs || qb.legs[0].sport !== 'cfb') res = 'quick bet did not save: ' + JSON.stringify(qb);
+        else if (!qb.result) res = 'quick bet did not grade from the final score';
+      }
+    }
   }
   if (res === true && NHODDS.games.length) {
     await p.evaluate(() => { location.hash = 'nhl'; }); await p.waitForTimeout(2000);
