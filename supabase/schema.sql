@@ -120,3 +120,18 @@ create table if not exists public.odds_close (
 );
 create index if not exists odds_close_start on public.odds_close (sport, start);
 alter table public.odds_close enable row level security;
+
+-- In-app feedback (functions/api/feedback.js writes with the service role; no public access).
+create table if not exists public.feedback (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  kind text not null check (kind in ('bug','idea','other')),
+  message text not null check (char_length(message) between 3 and 2000),
+  page text, sport text, app_build text,
+  user_id uuid references auth.users(id) on delete set null,
+  email text, user_agent text,
+  status text not null default 'new'
+);
+alter table public.feedback enable row level security;
+revoke all on public.feedback from anon, authenticated;
+create index if not exists feedback_created_idx on public.feedback (created_at desc);

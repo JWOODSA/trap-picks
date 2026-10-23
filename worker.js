@@ -12,11 +12,12 @@ import * as oddsApi from './functions/api/odds.js';
 import * as injuries from './functions/api/injuries.js';
 import * as rankings from './functions/api/rankings.js';
 import * as finals from './functions/api/finals.js';
+import * as feedback from './functions/api/feedback.js';
 import { scheduledOdds, scheduledProps } from './lib/odds.js';
 import * as pro from './functions/pro/_middleware.js';
 import * as hidden from './functions/alerts/_middleware.js';
 
-const API = { weather, checkout, portal, 'stripe-webhook': webhook, slip, push, 'push-run': pushRun, odds: oddsApi, injuries, rankings, finals };
+const API = { weather, checkout, portal, 'stripe-webhook': webhook, slip, push, 'push-run': pushRun, odds: oddsApi, injuries, rankings, finals, feedback };
 
 // Pages Functions export onRequest or onRequest<Method>; pick the one for this request.
 function pick(mod, method) {
