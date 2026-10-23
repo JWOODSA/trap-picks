@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Trap Picks">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "2ce37099384b";</script>
+<script>window.TRAP_API = "/api"; window.TRAP_SUPABASE = {"url": "https://eioikpqtmervibvxzmmf.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpb2lrcHF0bWVydmlidnh6bW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTM0MDQsImV4cCI6MjEwNzQ4OTQwNH0.yVxTvwlNwH3NhSudhsLsoWITtIf8EXbhfsBiDrHAVs0", "google": false}; window.TRAP_PAYWALL = false; window.TRAP_BUILD = "63cd011a5a46";</script>
 </head><body>
 <style>
 /* One deliberate theme: city at night. Black streets, trap red, white light. */
@@ -66,6 +66,18 @@ a { color: inherit; }
 .steps em { font-style: normal; font-weight: 700; color: var(--yel); }
 .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
 .keys div { display: grid; justify-items: start; gap: 5px; padding: 9px; border-radius: 10px; background: rgba(255,255,255,.06); font-size: 13px; color: var(--ink2); }
+.howread summary { cursor: pointer; list-style: none; font-size: 13px; color: var(--ink2); padding: 4px 0 0; }
+.howread summary::-webkit-details-marker { display: none; }
+.howread summary::after { content: ' +'; }
+.howread[open] summary::after { content: ' –'; }
+.howread[open] summary { margin-bottom: 8px; }
+details.passfold summary { font-size: 16px; }
+.gfold summary { cursor: pointer; list-style: none; font-size: 13px; font-weight: 700; color: var(--ink3); padding: 8px 0 4px; letter-spacing: .04em; text-transform: uppercase; }
+.gfold summary::-webkit-details-marker { display: none; }
+.gfold summary::after { content: ' +'; }
+.gfold[open] summary::after { content: ' –'; }
+.slip .gfold { padding: 0 12px 6px; }
+details.passfold summary small { display: block; font-family: var(--body); font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--ink2); margin-top: 2px; }
 .hero .meter-key { margin: 0 0 6px; font-size: 13.5px; color: var(--ink2); }
 .hero .meter-key b { color: var(--ink); }
 .hero .hero-count { margin: 0 0 12px; font-family: var(--disp); font-weight: 800; font-size: 20px; text-transform: uppercase; color: var(--yel); }
@@ -1006,7 +1018,7 @@ body { background: transparent; }
       h('div', { class: 'perf' }),
       (legs.length ? legs : [g.top]).map(leg),
       reasons.length ? h('ul', { class: 'why' }, reasons.map((r) => h('li', null, r))) : null,
-      gameStats(g),
+      statsFold(g),
       h('div', { class: 'ft' }, h('span', null, g.info ? `${g.info.away_coach} vs ${g.info.home_coach}` : ''), h('span', null, 'Matchup →')));
   }
 
@@ -1051,13 +1063,15 @@ body { background: transparent; }
       rows.map((x) => h('p', null, h('b', null, `${x.t} without ${x.player} (${x.status})`), `: ${x.without.pf} points a game, ${x.without.su} straight up, ${x.without.ats} against the spread in ${x.without.g} games. With him: ${x.with.pf}, ${x.with.su}, ${x.with.ats}.`)),
       h('small', null, 'Last two seasons, regular season. Small samples swing a lot; the line may already reflect it.'));
   }
+  // Board cards keep the matchup table folded so the board scans fast; a tap opens it in place.
+  const statsFold = (g) => h('details', { class: 'gfold', onclick: (e) => e.stopPropagation() }, h('summary', null, 'Matchup stats'), gameStats(g));
   function gcard(g) {
     const open = () => go('g_' + g.id);
     return h('article', { class: 'card gcard fade', role: 'link', tabindex: 0, onclick: open, onkeydown: (e) => { if (e.key === 'Enter') open(); } },
       h('div', { class: 'gc-hd' }, h('span', { class: 'chip', style: `background:${col(g.away)}` }), h('b', null, `${g.away} @ ${g.home}`), h('span', { class: 'chip', style: `background:${col(g.home)}` }),
         h('span', { class: 'tag PASS' }, 'PASS'), wxBadge(g)),
       h('div', { class: 'lbadge', 'data-live-badge': `${g.away}@${g.home}`, hidden: true }),
-      gameStats(g),
+      statsFold(g),
       h('div', { class: 'gc-ft' }, h('span', null, g.info ? `${g.info.away_coach} vs ${g.info.home_coach}` : ''), h('span', null, 'Matchup →')));
   }
 
@@ -1111,27 +1125,26 @@ body { background: transparent; }
       if (lockd) return [sh(title, aside), passRow(s.games)];
       return [sh(title, aside),
         plays.map(slip),
-        passes.length && !plays.length ? h('p', { class: 'muted', style: 'margin:0 2px 8px;font-size:13px' }, s.games.length === 1 ? 'No edge in this one. The popular side looks fairly priced.' : 'No edges here. The popular side looks fairly priced.') : null,
-        passes.map(gcard)];
+        passes.length ? h('details', { class: 'card passfold' }, h('summary', null, `${passes.length}${plays.length ? ' more' : ''} game${passes.length === 1 ? '' : 's'}`, h('small', null, plays.length ? 'No edge in these. Tap to see them.' : 'No edges here. The popular side looks fairly priced.')), passes.map(gcard)) : null];
     };
     return [
       h('section', { class: 'hero fade' },
         h('h1', null, 'Trap ', h('span', null, 'or die.')),
         h('p', { class: 'lede' }, 'Most people bet the ', h('em', null, 'favorite'), ' and the ', h('em', null, 'over'), '. We find games where that side has lost more than it should since 1999, and show you the other side.'),
-        h('div', { class: 'keys' },
-          h('div', null, h('span', { class: 'tag TRAP' }, 'TRAP'), 'Bet it'),
-          h('div', null, h('span', { class: 'tag LEAN' }, 'WATCH'), 'Close'),
-          h('div', null, h('span', { class: 'tag PASS' }, 'PASS'), 'Skip')),
         h('div', { class: 'stats' },
           h('div', { class: 'hot' }, h('b', null, traps), h('span', null, `trap${traps === 1 ? '' : 's'} still to play`)),
           h('div', { id: 'liveRec' }, h('b', null, recText(live)), h('span', null, live ? `live · ${sgn(live.units)}u` : 'live, grades after Sunday')),
           all ? h('div', null, h('b', null, pct(all.win_pct)), h('span', null, `${recText(all)} since 2016`)) : null),
-        h('p', { class: 'meter-key' }, h('b', null, 'Trap meter 0-100:'), ' higher means the popular side is more likely to lose.')),
-      nflSwipe(gs),
+        h('details', { class: 'howread' }, h('summary', null, 'How to read this'),
+          h('div', { class: 'keys' },
+            h('div', null, h('span', { class: 'tag TRAP' }, 'TRAP'), 'Strong edge'),
+            h('div', null, h('span', { class: 'tag LEAN' }, 'WATCH'), 'Close'),
+            h('div', null, h('span', { class: 'tag PASS' }, 'PASS'), 'No edge')),
+          h('p', { class: 'meter-key' }, h('b', null, 'Trap meter 0-100:'), ' higher means the popular side is more likely to lose.'))),
       liveCard(),
-      lockd ? proCard() : slipOfDay(),
       yourTeams(),
       ss.length ? ss.flatMap(slotView).flat(3) : [sh('Up next', ''), h('p', { class: 'muted' }, 'No more games on the board yet. The next lines post with the next refresh.')],
+      lockd ? proCard() : slipOfDay(),
       h('button', { class: 'arch-link', onclick: () => { go('record'); setTimeout(() => document.getElementById('archive')?.scrollIntoView({ block: 'start' }), 60); } }, h('b', null, 'Past picks'), h('span', null, `${C.ledger.filter((r) => r.result).length} graded · see the archive →`)),
     ];
   }

@@ -284,7 +284,7 @@ async function website() {
     else if (!/Tonight's PTS lines[\s\S]*PrizePicks[\s\S]*21\.5[\s\S]*FanDuel/.test(t)) res = 'prop check did not show the book lines';
     if (process.env.SHOTS) await p.locator('#prop').screenshot({ path: path.join(process.env.SHOTS, 'prizepicks.png') });
   }
-  if (res === true) for (const [hash, nm] of [['board', 'NFL'], ['nba', 'NBA'], ['cbb', 'college'], ['cfb', 'college football'], ...(nh.games.length > 1 ? [['nhl', 'NHL']] : [])]) {
+  if (res === true) for (const [hash, nm] of [['nba', 'NBA'], ['cbb', 'college'], ['cfb', 'college football'], ...(nh.games.length > 1 ? [['nhl', 'NHL']] : [])]) {
     await p.evaluate((x) => { location.hash = x; }, hash); await p.waitForTimeout(2500);
     const sw = p.locator('.swipe-wrap').first();
     if (!(await sw.count()) || (await p.locator('.swipe .sw-card').count()) < 2) { res = `${nm} page has no swipe row`; break; }
